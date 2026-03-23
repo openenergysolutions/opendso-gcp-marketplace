@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "genesis-node-app.fullname" . }}
+  labels:
+    {{- include "genesis-node-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPort }}
+      protocol: TCP
+      name: web
+  selector:
+    {{- include "genesis-node-app.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,122 @@
+{{- $citus := include "opendso.citusDb.settings" . | fromYaml }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "der-dispatch-svc.fullname" . }}
+  labels:
+    {{- include "der-dispatch-svc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "der-dispatch-svc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "der-dispatch-svc.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "der-dispatch-svc.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: der-dispatch
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "der-dispatch-svc.image" (dict "imageRoot" .Values.global.images.derDispatchSvc "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.derDispatchSvc.pullPolicy }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          env:
+            - name: PLATFORM_NODE_IP
+              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+            - name: PLATFORM_NATS_PORT
+              value: {{ .Values.env.PLATFORM_NATS_PORT | quote }}
+            - name: POSTGRES_DB
+              value: {{ $citus.name | quote }}
+            - name: PGHOST
+              value: {{ $citus.host | quote }}
+            - name: PGPORT
+              value: {{ $citus.port | quote }}
+            - name: PGUSER
+              value: {{ $citus.user | quote }}
+            - name: PGPASSWORD
+              value: {{ $citus.password | quote }}
+            - name: PGDATABASE
+              value: {{ $citus.name | quote }}
+            - name: RUST_BACKTRACE
+              value: {{ .Values.env.RUST_BACKTRACE | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ printf "%s-der-dispatch-svc-keycloak-env" .Release.Name }}
+                optional: true
+          volumeMounts:
+            - name: circuit-config
+              mountPath: /resources
+              readOnly: true
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- if .Values.livenessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            {{- else if .Values.livenessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.tcpSocket.port }}
+            {{- else if .Values.livenessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.livenessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- if .Values.readinessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            {{- else if .Values.readinessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.tcpSocket.port }}
+            {{- else if .Values.readinessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.readinessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+      volumes:
+        - name: circuit-config
+          configMap:
+            name: {{ .Release.Name }}-der-dispatch-svc-config
+            items:
+              - key: config.yml
+                path: config.yml
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

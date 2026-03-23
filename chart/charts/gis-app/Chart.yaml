@@ -1,0 +1,9 @@
+apiVersion: v2
+name: gis-app
+description: GIS Application for OpenDSO
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: OpenDSO Team
+    email: info@openenergysolutions.com

@@ -1,0 +1,10 @@
+{
+  "api": {
+    "uri": "https://api.demo-gcp.oesinc.dev/api"
+  },
+  "keycloakUrl": "https://keycloak.demo-gcp.oesinc.dev",
+  "keycloakRealm": "oes",
+  "keycloakClientId": "gms",
+  "googleTagId": "GTM-B7JGQS2",
+  "googleTagEnv": "&gtm_auth=NaiPwz5U_xGuF4hoZ7yHUw&gtm_preview=env-5&gtm_cookies_win=x"
+}

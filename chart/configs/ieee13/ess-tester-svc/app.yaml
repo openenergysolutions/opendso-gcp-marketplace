@@ -1,0 +1,380 @@
+oes-app:
+  log_level: info
+  log_file: ess-tester.log
+  log_file_enabled: false
+nats:
+  connection_url: nats://{{ .Release.Name }}-nats-service:4222
+  creds: ''
+  auth: 'NIL'
+database:
+  {{- $appsDb := include "opendso.appsDb.settings" . | fromYaml }}
+  user: {{ $appsDb.user | quote }}
+  password: {{ $appsDb.password | quote }}
+  host: {{ $appsDb.host | quote }}
+  port: {{ $appsDb.port }}
+  dbname: {{ $appsDb.name | quote }}
+  connect_timeout: 10
+app_settings:
+  enabled: true
+  app_name: "ess-testing"
+  app_version: "0.1.0"
+  app_id: 523e928c-af04-4704-b42b-9beef44c4431
+  regions: []
+  process_interval_ms: 1000
+  storage_url: ''
+  ess_manager_integration: false
+environment_settings:
+  - region: b7097ac6-5f26-11ef-bca7-8f04628153e5
+    tmp_mrid: b01db192-104b-4aa2-8593-2c4a2991558e
+    hum_mrid: b01db192-104b-4aa2-8593-2c4a2991558e
+    pres_mrid: b01db192-104b-4aa2-8593-2c4a2991558e
+    env_tmp_mrid: b01db192-104b-4aa2-8593-2c4a2991558e
+    env_hum_mrid: b01db192-104b-4aa2-8593-2c4a2991558e
+    env_pres_mrid: b01db192-104b-4aa2-8593-2c4a2991558e
+test_settings:
+  - test_type: AVAILABLE_ENERGY_CAPACITY
+    charge_power: 100
+    discharge_power: 100
+    number_of_cycles: 3
+    charge_discharge_settling_time_min: 10
+    cycle_settling_time_min: 10
+    taper_time_hour: 1
+    test_fields:
+      # nameplates
+      - name: RATED_CAPACITY
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 1000000
+      - name: RATED_POWER
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 100000
+      - name: MAX_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.9
+      - name: MIN_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.1
+      # user parameters
+      - name: TEST_CAPACITY
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 1.0  # 100% of rated power, can be 25, 50, 75, 100
+      - name: RTE_AC_AC
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 0.8
+      # openfmb
+      - name: PCS_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: PCC_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: GRID_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      - name: AUX_LOAD_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      # environment (openfmb)
+      - name: AMBIENT_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_PRESSURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_PRESSURE
+        required: false
+        present: false
+        source: 1
+  - test_type: RATED_CONTINUOUS_POWER
+    number_of_cycles: 3
+    charge_discharge_settling_time_min: 10
+    cycle_settling_time_min: 10
+    taper_time_hour: 1
+    test_fields:
+      # nameplates
+      - name: RATED_CAPACITY
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 500000
+      - name: RATED_POWER
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 100000
+      - name: MAX_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.6
+      - name: MIN_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.4
+      # user parameters
+      - name: TEST_CAPACITY
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 1.0  # 100% of rated power, can be 25, 50, 75, 100
+      - name: RTE_AC_AC
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 0.8
+      # openfmb
+      - name: PCS_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: PCC_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: GRID_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      - name: AUX_LOAD_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      # environment (openfmb)
+      - name: AMBIENT_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_PRESSURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_PRESSURE
+        required: false
+        present: false
+        source: 1
+  - test_type: VOLT_VAR_REGULATION
+    number_of_cycles: 3
+    charge_discharge_settling_time_min: 10
+    cycle_settling_time_min: 10
+    taper_time_hour: 1
+    test_fields:
+      # nameplates
+      - name: RATED_CAPACITY
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 500000
+      - name: RATED_POWER
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 100000
+      - name: MAX_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.6
+      - name: MIN_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.4
+      # user parameters
+      - name: TEST_CAPACITY
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 1.0  # 100% of rated power, can be 25, 50, 75, 100
+      - name: RTE_AC_AC
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 0.8
+      # openfmb
+      - name: PCS_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: PCC_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: GRID_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      - name: AUX_LOAD_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      # environment (openfmb)
+      - name: AMBIENT_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_PRESSURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_PRESSURE
+        required: false
+        present: false
+        source: 1
+  - test_type: WATT_VAR_CHARACTERIZATION
+    number_of_cycles: 3
+    charge_discharge_settling_time_min: 10
+    cycle_settling_time_min: 10
+    taper_time_hour: 1
+    test_fields:
+      # nameplates
+      - name: RATED_CAPACITY
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 500000
+      - name: RATED_POWER
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 100000
+      - name: MAX_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.6
+      - name: MIN_SOC
+        required: true
+        present: false
+        source: 0
+        value:
+          FloatValue: 0.4
+      # user parameters
+      - name: TEST_CAPACITY
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 1.0  # 100% of rated power, can be 25, 50, 75, 100
+      - name: RTE_AC_AC
+        required: true
+        present: false
+        source: 2
+        value:
+          FloatValue: 0.8
+      # openfmb
+      - name: PCS_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: PCC_MEASUREMENT
+        required: true
+        present: false
+        source: 1
+      - name: GRID_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      - name: AUX_LOAD_MEASUREMENT
+        required: false
+        present: false
+        source: 1
+      # environment (openfmb)
+      - name: AMBIENT_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: AMBIENT_PRESSURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_TEMPERATURE
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_HUMIDITY
+        required: false
+        present: false
+        source: 1
+      - name: CHAMBER_PRESSURE
+        required: false
+        present: false
+        source: 1

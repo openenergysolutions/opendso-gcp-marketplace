@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "genesis-node-app.fullname" . }}-nginx
+  labels:
+    {{- include "genesis-node-app.labels" . | nindent 4 }}
+data:
+  default.conf: |
+{{ include "opendso.frontend.nginx" . | indent 4 }}

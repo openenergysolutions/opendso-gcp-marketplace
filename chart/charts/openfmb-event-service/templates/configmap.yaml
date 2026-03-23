@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "openfmb-event-service.fullname" . }}-config
+  labels:
+    {{- include "openfmb-event-service.labels" . | nindent 4 }}
+data:
+  config.yml: |
+    nats:
+      servers:
+        - {{ printf "nats://%s-nats-service:4222" .Release.Name | quote }}
+      tls:
+        enabled: {{ .Values.config.nats.tls.enabled }}
+        {{- if .Values.config.nats.tls.enabled }}
+        certFile: {{ .Values.config.nats.tls.certFile | quote }}
+        keyFile: {{ .Values.config.nats.tls.keyFile | quote }}
+        caFile: {{ .Values.config.nats.tls.caFile | quote }}
+        {{- end }}
+
+    logging:
+      level: {{ .Values.config.logging.level | quote }}
+
+    output:
+      path: {{ .Values.config.output.path | quote }}

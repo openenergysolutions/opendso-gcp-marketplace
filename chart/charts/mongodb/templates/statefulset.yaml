@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "mongodb.fullname" . }}
+  labels:
+    {{- include "mongodb.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "mongodb.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mongodb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "mongodb.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "mongodb.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "mongodb.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.mongodb.pullPolicy }}
+          {{- if .Values.tls.enabled }}
+          command:
+            - mongod
+            - --bind_ip_all
+            - --tlsMode
+            - {{ .Values.tls.mode }}
+            - --tlsCertificateKeyFile
+            - /etc/mongodb/tls/mongodb.pem
+            - --tlsCAFile
+            - /etc/mongodb/tls/ca.crt
+            {{- if .Values.tls.allowConnectionsWithoutTLS }}
+            - --tlsAllowConnectionsWithoutCertificates
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: mongodb
+              containerPort: 27017
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "America/Los_Angeles"
+            - name: MONGODB_INITDB_ROOT_USERNAME
+              value: {{ .Values.auth.rootUsername | quote }}
+            - name: MONGODB_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.fullname" . }}-secret
+                  key: root-password
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+            - name: log
+              mountPath: /var/log/mongodb
+            {{- if .Values.tls.enabled }}
+            - name: tls-certs
+              mountPath: /etc/mongodb/tls
+              readOnly: true
+            {{- end }}
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "databases" "explicit" .Values.resources) | nindent 12 }}
+
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  {{- if .Values.tls.enabled }}
+                  mongosh --tls --tlsCAFile /etc/mongodb/tls/ca.crt --tlsAllowInvalidCertificates --eval "db.adminCommand('ping')"
+                  {{- else }}
+                  mongosh --eval "db.adminCommand('ping')"
+                  {{- end }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  {{- if .Values.tls.enabled }}
+                  mongosh --tls --tlsCAFile /etc/mongodb/tls/ca.crt --tlsAllowInvalidCertificates --eval "db.adminCommand('ping')"
+                  {{- else }}
+                  mongosh --eval "db.adminCommand('ping')"
+                  {{- end }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tls.enabled }}
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: {{ if .Values.tls.existingSecret }}{{ .Values.tls.existingSecret }}{{ else }}{{ include "mongodb.fullname" . }}-tls{{ end }}
+            defaultMode: 0400
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ include "mongodb.storageClass" . }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.dataSize }}
+    - metadata:
+        name: log
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ include "mongodb.storageClass" . }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.logSize }}

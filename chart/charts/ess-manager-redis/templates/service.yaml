@@ -1,0 +1,17 @@
+{{- if dig "ess-manager-redis" "enabled" false .Values.global }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ess-manager-redis.fullname" . }}
+  labels:
+    {{- include "ess-manager-redis.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    {{- include "ess-manager-redis.selectorLabels" . | nindent 4 }}
+{{- end }}

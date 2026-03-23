@@ -1,0 +1,13 @@
+{
+  "resource": "/home/resource/config.yml",
+  "retention": 7200,
+  "maintenance": 3600,
+  "partition": 1800,
+  "vacuum": 8000,
+  "insert": 10,
+  "timeout": 5,
+  "retry": 3,
+  "enabled": true,
+  "log": false,
+  "trace": false
+}

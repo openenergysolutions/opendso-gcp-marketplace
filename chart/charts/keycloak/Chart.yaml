@@ -1,0 +1,9 @@
+apiVersion: v2
+name: keycloak
+description: Keycloak Identity and Access Management for OpenDSO
+type: application
+version: 0.1.0
+appVersion: "21.1.1"
+maintainers:
+  - name: OpenDSO Team
+    email: info@openenergysolutions.com

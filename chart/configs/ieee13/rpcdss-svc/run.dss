@@ -1,0 +1,52 @@
+!---can set to your directory and run this to see plots if desired---
+
+clear
+
+compile "C:\code\jira_ocp-2784\rpcdss-develop\data\IEEE13Node-NES\work here\IEEE13Nodeckt.dss" 
+
+solve
+
+
+! Sets the size for the PD icons and plots any under 5kW
+
+
+Set DaisySize=5
+
+Set MarkSwitches=Yes
+Set SwitchMarkerCode=9
+
+Set MarkCapacitor=Yes
+Set CapMarkerCode=37
+Set CapMarkerSize=3
+
+Set MarkRegulator=Yes
+Set RegMarkerCode=47
+Set RegMarkerSize=3
+
+Set MarkTransformer=Yes
+Set TransMarkerCode=35
+Set TransMarkerSize=3
+
+Set MarkPVSystem=Yes
+Set PVMarkerCode=24
+Set PVMarkerSize=10
+
+Set MarkStorage=Yes
+Set StoreMarkerCode=9
+Set StoreMarkerSize=10
+
+ClearBusMArkers
+AddBusMarker Bus=634 code=35 color=Olive size=4
+AddBusMarker Bus=645 code=35 color=Olive size=4
+AddBusMarker Bus=671 code=35 color=Olive size=4
+AddBusMarker Bus=692 code=35 color=Olive size=4
+AddBusMarker Bus=675 code=35 color=Olive size=4
+AddBusMarker Bus=652 code=35 color=Olive size=4
+AddBusMarker Bus=611 code=35 color=Olive size=4
+AddBusMarker Bus=680 code=35 color=Olive size=4
+AddBusMarker Bus=674 code=35 color=Olive size=4
+AddBusMarker Bus=646 code=35 color=Olive size=4
+AddBusMarker Bus=684 code=35 color=Olive size=4
+
+Plot type=daisy power max=5000 labels=y dots=y subs=y
+

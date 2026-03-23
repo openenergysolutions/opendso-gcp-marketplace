@@ -1,0 +1,203 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "keycloak.fullname" . }}
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "keycloak.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "keycloak.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.persistence.enabled }}
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Fixing permissions on /opt/keycloak/data..."
+              chown -R 1000:1000 /opt/keycloak/data
+              chmod -R 755 /opt/keycloak/data
+              echo "Permissions fixed!"
+          volumeMounts:
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data
+          securityContext:
+            runAsUser: 0
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "keycloak.image" (dict "imageRoot" .Values.global.images.keycloak "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.keycloak.pullPolicy }}
+          {{- if .Values.config.importRealm }}
+          args: ["start", "--import-realm"]
+          {{- else }}
+          args: ["start-dev"]
+          {{- end }}
+          {{- $hostname := .Values.config.hostname | default "" }}
+          {{- $hostnamePort := .Values.config.hostnamePort | default "" }}
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: {{ .Values.admin.username | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.admin.password | quote }}
+            - name: KC_PROXY
+              value: {{ .Values.proxy | quote }}
+            {{- if $hostname }}
+            {{- $hostnameUrl := printf "https://%s" $hostname }}
+            {{- if and $hostnamePort (ne $hostnamePort "443") }}
+            - name: KC_HOSTNAME_URL
+              value: "{{ $hostnameUrl }}:{{ $hostnamePort }}"
+            - name: KC_HOSTNAME_ADMIN_URL
+              value: "{{ $hostnameUrl }}:{{ $hostnamePort }}"
+            {{- else }}
+            - name: KC_HOSTNAME_URL
+              value: "{{ $hostnameUrl }}"
+            - name: KC_HOSTNAME_ADMIN_URL
+              value: "{{ $hostnameUrl }}"
+            {{- end }}
+            {{- end }}
+            - name: KC_HOSTNAME_STRICT
+              value: {{ .Values.config.hostnameStrict | quote }}
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              value: {{ .Values.config.hostnameStrictHttps | quote }}
+            {{- if .Values.config.httpsEnabled }}
+            - name: KC_HTTPS_CERTIFICATE_FILE
+              value: {{ .Values.config.httpsCertFile | quote }}
+            - name: KC_HTTPS_CERTIFICATE_KEY_FILE
+              value: {{ .Values.config.httpsKeyFile | quote }}
+            - name: KC_HTTPS_PORT
+              value: {{ .Values.config.httpsPort | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.httpPort }}
+              protocol: TCP
+            {{- if .Values.config.httpsEnabled }}
+            - name: https
+              containerPort: {{ .Values.config.httpsPort }}
+              protocol: TCP
+            {{- end }}
+          volumeMounts:
+            {{- if .Values.tls.enabled }}
+            - name: cert-file
+              mountPath: /opt/keycloak/conf/server.crt.pem
+              subPath: {{ .Values.tls.certFilename | default "server-cert.pem" }}
+              readOnly: true
+            - name: key-file
+              mountPath: /opt/keycloak/conf/server.key.pem
+              subPath: {{ .Values.tls.keyFilename | default "server-key.pem" }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.config.importRealm }}
+            - name: keycloak-config
+              mountPath: /opt/keycloak/conf/keycloak.conf
+              subPath: keycloak.conf
+              readOnly: true
+            - name: realm-import
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data/h2
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /realms/master
+              port: {{ .Values.config.httpPort }}
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- if .Values.livenessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            {{- else if .Values.livenessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.tcpSocket.port }}
+            {{- else if .Values.livenessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.livenessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- if .Values.readinessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            {{- else if .Values.readinessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.tcpSocket.port }}
+            {{- else if .Values.readinessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.readinessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+      volumes:
+        {{- if .Values.tls.enabled }}
+        - name: cert-file
+          secret:
+            secretName: {{ .Values.tls.certSecret }}
+        - name: key-file
+          secret:
+            secretName: {{ .Values.tls.keySecret }}
+        {{- end }}
+        {{- if .Values.config.importRealm }}
+        - name: keycloak-config
+          configMap:
+            name: {{ .Values.siteConfigMap | default (printf "%s-keycloak-site-config" .Release.Name) }}
+        - name: realm-import
+          configMap:
+            name: {{ .Values.realmConfigMap | default (printf "%s-keycloak-realm-import" .Release.Name) }}
+        {{- if .Values.persistence.enabled }}
+        - name: keycloak-data
+          persistentVolumeClaim:
+            claimName: {{ include "keycloak.fullname" . }}
+        {{- else }}
+        - name: keycloak-data
+          emptyDir: {}
+        {{- end }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

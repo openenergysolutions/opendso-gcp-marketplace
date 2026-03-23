@@ -1,0 +1,86 @@
+{{- if dig "nats-auth-svc" "enabled" false .Values.global }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nats-auth-svc.fullname" . }}
+  labels:
+    {{- include "nats-auth-svc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "nats-auth-svc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "nats-auth-svc.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-keycloak
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak JWKS endpoint: {{ include "nats-auth-svc.jwksUrl" . }}"
+              until wget -q -O /dev/null --no-check-certificate {{ include "nats-auth-svc.jwksUrl" . | quote }}; do
+                echo "Keycloak not ready yet, retrying in 5s..."
+                sleep 5
+              done
+              echo "Keycloak JWKS endpoint is ready"
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "nats-auth-svc.image" (dict "imageRoot" .Values.global.images.natsAuthSvc "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.natsAuthSvc.pullPolicy }}
+          env:
+            - name: PLATFORM_NODE_IP
+              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+            - name: KEYCLOAK_URL
+              value: {{ include "nats-auth-svc.realmUrl" . | quote }}
+            - name: JWK_ENDPOINT_URL
+              value: {{ include "nats-auth-svc.jwksUrl" . | quote }}
+            - name: JWKS_CACHE_TTL
+              value: {{ .Values.jwks.cacheTTL | quote }}
+            - name: JWKS_REFRESH_UNKNOWN_KID
+              value: {{ .Values.jwks.refreshUnknownKID | quote }}
+            - name: JWKS_TIMEOUT
+              value: {{ .Values.jwks.timeout | quote }}
+            - name: JWKS_INSECURE_TLS
+              value: {{ .Values.jwks.insecureTLS | quote }}
+            - name: NATS_KEY_PATH
+              value: "/keys"
+          volumeMounts:
+            - name: nats-keys
+              mountPath: /keys
+              readOnly: true
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+      volumes:
+        - name: nats-keys
+          secret:
+            secretName: {{ .Values.natsKeysSecret }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

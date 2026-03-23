@@ -1,0 +1,72 @@
+# Default values for keycloak-db
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# PostgreSQL configuration
+auth:
+  username: keycloak
+  password: password
+  database: keycloak
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""  # Uses global.storageClass if empty
+  size: 5Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5432
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Pod configuration
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health check configuration
+healthcheck:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+# Health probes
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - pg_isready
+      - -U
+      - keycloak
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - pg_isready
+      - -U
+      - keycloak
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

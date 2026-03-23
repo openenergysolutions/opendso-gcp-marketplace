@@ -1,0 +1,278 @@
+{
+    "dss": {
+        "breaker": {
+            "phasedevices": [
+                {
+                    "ABC": "Transformer.Sub"
+                }
+            ]
+        },
+        "r1": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.632645"
+                }
+            ]
+        },
+        "r2": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.632670"
+                }
+            ]
+        },
+        "r5": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.671692"
+                }
+            ]
+        },
+        "rder633": {
+            "phasedevices": [
+                {
+                    "ABC": "Transformer.xfmr_633"
+                }
+            ]
+        },
+        "rder692": {
+            "phasedevices": [
+                {
+                    "ABC": "Transformer.xfmr_692"
+                }
+            ]
+        },
+        "rder675": {
+            "phasedevices": [
+                {
+                    "ABC": "Transformer.xfmr_675"
+                }
+            ]
+        },
+        "rder680": {
+            "phasedevices": [
+                {
+                    "ABC": "Transformer.xfmr_680"
+                }
+            ]
+        },
+        "c675": {
+            "phasedevices": [
+                {
+                    "ABC": "Capacitor.Cap1"
+                }
+            ]
+        },
+        "c611": {
+            "phasedevices": [
+                {
+                    "C": "Capacitor.Cap2"
+                }
+            ]
+        },
+        "l634": {
+            "phasedevices": [
+                {
+                    "A": "Load.634a"
+                },
+                {
+                    "B": "Load.634b"
+                },
+                {
+                    "C": "Load.634c"
+                }
+            ]
+        },
+        "l645": {
+            "phasedevices": [
+                {
+                    "B": "Load.645b"
+                },
+                {
+                    "C": "Load.645c"
+                }
+            ]
+        },
+        "l646": {
+            "phasedevices": [
+                {
+                    "BC": "Load.646b"
+                }
+            ]
+        },
+        "l652": {
+            "phasedevices": [
+                {
+                    "A": "Load.652"
+                }
+            ]
+        },
+        "l671": {
+            "phasedevices": [
+                {
+                    "ABC": "Load.671"
+                }
+            ]
+        },
+        "l675": {
+            "phasedevices": [
+                {
+                    "A": "Load.675a"
+                },
+                {
+                    "B": "Load.675b"
+                },
+                {
+                    "C": "Load.675c"
+                }
+            ]
+        },
+        "ml680": {
+            "phasedevices": [
+                {
+                    "ABC": "Load.680"
+                }
+            ]
+        },
+        "ml684": {
+            "phasedevices": [
+                {
+                    "C": "Load.ml684"
+                }
+            ]
+        },
+        "l692": {
+            "phasedevices": [
+                {
+                    "AC": "Load.692"
+                }
+            ]
+        },
+        "l611": {
+            "phasedevices": [
+                {
+                    "A": "Load.611"
+                }
+            ]
+        },
+        "l674": {
+            "phasedevices": [
+                {
+                    "ABC": "Load.674"
+                }
+            ]
+        },
+        "Source": {
+            "phasedevices": [
+                {
+                    "ABC": "Vsource.source"
+                }
+            ]
+        },
+        "Sdist": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.Sdist"
+                }
+            ]
+        },
+        "sub": {
+            "phasedevices": [
+                {
+                    "ABC": "Transformer.Sub"
+                }
+            ]
+        },
+        "vr1a": {
+            "phasedevices": [
+                {
+                    "A": "Transformer.Reg1"
+                }
+            ]
+        },
+        "vr1b": {
+            "phasedevices": [
+                {
+                    "B": "Transformer.Reg2"
+                }
+            ]
+        },
+        "vr1c": {
+            "phasedevices": [
+                {
+                    "C": "Transformer.Reg3"
+                }
+            ]
+        },
+        "pv692": {
+            "phasedevices": [
+                {
+                    "ABC": "PVSystem.PV_692"
+                }
+            ]
+        },
+        "pv675": {
+            "phasedevices": [
+                {
+                    "ABC": "PVSystem.PV_675"
+                }
+            ]
+        },
+        "pv633": {
+            "phasedevices": [
+                {
+                    "ABC": "PVSystem.PV_633"
+                }
+            ]
+        },
+        "ev690": {
+            "phasedevices": [
+                {
+                    "ABC": "Storage.ESS_690"
+                }
+            ]
+        },
+        "ev695": {
+            "phasedevices": [
+                {
+                    "ABC": "Storage.ESS_695"
+                }
+            ]
+        },
+        "ess615": {
+            "phasedevices": [
+                {
+                    "ABC": "Storage.ESS_615"
+                }
+            ]
+        },
+        "dg690": {
+            "phasedevices": [
+                {
+                    "ABC": "Generator.DG_690"
+                }
+            ]
+        },
+        "rec1": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.650632"
+                }
+            ]
+        },
+        "rec2": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.670671"
+                }
+            ]
+        },
+        "rec3": {
+            "phasedevices": [
+                {
+                    "ABC": "Line.671680"
+                }
+            ]
+        }
+    }
+}

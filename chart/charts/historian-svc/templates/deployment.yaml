@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "historian-svc.fullname" . }}
+  labels:
+    {{- include "historian-svc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "historian-svc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "historian-svc.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: historian-node
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "historian-svc.image" (dict "imageRoot" .Values.global.images.historianSvc "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.historianSvc.pullPolicy }}
+          args:
+            {{- toYaml .Values.historian.args | nindent 12 }}
+            {{- if dig "nats-auth-svc" "enabled" false .Values.global }}
+            - "--nats-auth"
+            {{- end }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.historian.port }}
+          env:
+            - name: PLATFORM_NATS_SERVICE
+              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+            {{- $citus := include "opendso.citusDb.settings" . | fromYaml }}
+            - name: PGHOST
+              value: {{ $citus.host | quote }}
+            - name: PGUSER
+              value: {{ $citus.user | quote }}
+            - name: PGDATABASE
+              value: {{ $citus.name | quote }}
+            - name: PGPASSWORD
+              value: {{ $citus.password | quote }}
+            - name: PGPORT
+              value: {{ $citus.port | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ printf "%s-historian-svc-keycloak-env" .Release.Name }}
+                optional: true
+          volumeMounts:
+            - name: historian-svc-resources
+              mountPath: /home/config
+            - name: circuit-config
+              mountPath: /home/resource
+            - name: service-config
+              mountPath: /resources
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- if .Values.livenessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            {{- else if .Values.livenessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.tcpSocket.port }}
+            {{- else if .Values.livenessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.livenessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- if .Values.readinessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            {{- else if .Values.readinessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.tcpSocket.port }}
+            {{- else if .Values.readinessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.readinessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+        - name: historian-envoy-node
+          image: {{ include "historian-svc.image" (dict "imageRoot" .Values.global.images.envoy "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.envoy.pullPolicy }}
+          env:
+            - name: ENVOY_UID
+              value: "0"
+          args: ["-c", "/etc/envoy/envoy.yaml"]
+          ports:
+            - name: envoy-grpc
+              containerPort: {{ .Values.envoy.grpcPort }}
+            - name: envoy-admin
+              containerPort: {{ .Values.envoy.adminPort }}
+          resources:
+            {{- toYaml .Values.envoy.resources | nindent 12 }}
+          volumeMounts:
+            - name: envoy-historian-config
+              mountPath: /etc/envoy/envoy.yaml
+              subPath: envoy.yaml
+              readOnly: true
+            {{- if .Values.tls.enabled }}
+            - name: cert-file
+              mountPath: /certs/server-cert.pem
+              subPath: server-cert.pem
+              readOnly: true
+            - name: key-file
+              mountPath: /certs/server-key.pem
+              subPath: server-key.pem
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: circuit-config
+          configMap:
+            name: {{ .Release.Name }}-topology-nodes-site-config
+            items:
+              - key: config.yml
+                path: config.yml
+        - name: service-config
+          configMap:
+            name: {{ include "historian-svc.fullname" . }}-config
+            items:
+              - key: config.yml
+                path: config.yaml
+        - name: envoy-historian-config
+          configMap:
+            name: {{ include "historian-svc.fullname" . }}-envoy
+        - name: historian-svc-resources
+          configMap:
+            name: {{ include "historian-svc.fullname" . }}-historian
+        {{- if .Values.tls.enabled }}
+        - name: cert-file
+          secret:
+            secretName: {{ .Values.tls.certSecret }}
+        - name: key-file
+          secret:
+            secretName: {{ .Values.tls.keySecret }}
+        - name: root-ca
+          secret:
+            secretName: {{ .Values.tls.rootCaSecret }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

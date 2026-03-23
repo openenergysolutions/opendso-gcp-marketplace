@@ -1,0 +1,6 @@
+apiVersion: v2
+name: opendso-apps-db
+description: Shared PostgreSQL database for OpenDSO applications
+type: application
+version: 0.1.0
+appVersion: "16.0"

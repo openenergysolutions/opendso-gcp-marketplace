@@ -1,0 +1,9 @@
+apiVersion: v2
+name: nats
+description: NATS Messaging Server for OpenDSO
+type: application
+version: 0.1.0
+appVersion: "2.9.9"
+maintainers:
+  - name: OpenDSO Team
+    email: info@openenergysolutions.com

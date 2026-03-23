@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}-service
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.clientPort }}
+      targetPort: {{ .Values.service.clientPort }}
+      name: client
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}-service-mon
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.monitorPort }}
+      targetPort: {{ .Values.service.monitorPort }}
+      name: monitoring
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}-service-ws
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.websocketPort }}
+      targetPort: {{ .Values.service.websocketPort }}
+      name: websocket
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}-service-mqtt
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.mqttPort }}
+      targetPort: {{ .Values.service.mqttPort }}
+      name: mqtt
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+{{- if .Values.nodePort.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}-nodeport
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.service.clientPort }}
+      targetPort: {{ .Values.service.clientPort }}
+      nodePort: {{ .Values.nodePort.port }}
+      protocol: TCP
+      name: client
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+{{- end }}
+{{- if .Values.websocketNodePort.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}-ws-nodeport
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.service.websocketPort }}
+      targetPort: {{ .Values.service.websocketPort }}
+      nodePort: {{ .Values.websocketNodePort.port }}
+      protocol: TCP
+      name: websocket
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}
+{{- end }}

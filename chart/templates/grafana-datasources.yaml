@@ -1,0 +1,47 @@
+{{- if (index .Values.global "grafana").enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-datasources
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Historian DB
+        type: postgres
+        url: {{ .Release.Name }}-citus-db:5432
+        database: ofmb_db
+        user: citususer
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1500
+        secureJsonData:
+          password: $CITUS_PASSWORD
+        isDefault: true
+        editable: true
+      - name: OpenDSO Apps DB
+        type: postgres
+        url: {{ .Release.Name }}-opendso-apps-db:5432
+        database: ess_tester
+        user: essuser
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1500
+        secureJsonData:
+          password: $OPENDSO_APPS_DB_PASSWORD
+        editable: true
+      - name: Assets DB
+        type: postgres
+        url: {{ .Release.Name }}-opendso-apps-db:5432
+        database: assets
+        user: essuser
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1500
+        secureJsonData:
+          password: $OPENDSO_APPS_DB_PASSWORD
+        editable: true
+{{- end }}

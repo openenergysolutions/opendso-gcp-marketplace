@@ -1,0 +1,85 @@
+replicaCount: 1
+
+image:
+  repository: oesinc/der-dispatch
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+args: ["-c", "/resources/config.yml"]
+
+imagePullSecrets:
+  - name: regcred
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 8080
+
+env:
+  # NOTE: PLATFORM_NODE_IP is templated in deployment.yaml as {{ .Release.Name }}-nats-service
+  # This value is for documentation only and is overridden by the template
+  PLATFORM_NODE_IP: opendso-nats-service
+  PLATFORM_NATS_PORT: "4222"
+  RUST_BACKTRACE: "1"
+  # Database environment variables are managed by opendso.citusDb.settings helper
+  # See deployment.yaml for actual values
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health probes
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "pgrep -f der-dispatch || exit 1"
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "pgrep -f der-dispatch || exit 1"
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

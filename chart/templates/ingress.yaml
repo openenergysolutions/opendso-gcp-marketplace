@@ -1,0 +1,263 @@
+{{- if .Values.ingress.enabled -}}
+{{- /*
+Define the domain to use for ingress routes.
+Priority: global.domain > ingress.domain
+This allows centralizing domain configuration in global.domain
+*/ -}}
+{{- $domain := .Values.global.domain | default .Values.ingress.domain -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  labels:
+    app.kubernetes.io/name: opendso-ingress
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:    
+    # Genesis Node App (root app)
+    {{- if (index .Values.global "genesis-node-app").enabled }}
+    - host: gms.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-genesis-node-app
+                port:
+                  number: 8081
+
+    - host: {{ $domain | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-genesis-node-app
+                port:
+                  number: 8081
+    {{- end }}    
+
+    # Keycloak Authentication
+    {{- if .Values.global.keycloak.enabled }}
+    - host: keycloak.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-keycloak-svc
+                port:
+                  number: 8080
+    {{- end }}    
+
+    # GIS App
+    {{- if (index .Values.global "gis-app").enabled }}
+    - host: gis.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-gis-app
+                port:
+                  number: 8084
+    {{- end }}
+
+    # Oneline App
+    {{- if (index .Values.global "one-line-app").enabled }}
+    - host: oneline.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-one-line-app
+                port:
+                  number: 8085
+    {{- end }}
+
+    # Event Viewer App
+    {{- if (index .Values.global "event-viewer-app").enabled }}
+    - host: eventviewer.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-event-viewer-app
+                port:
+                  number: 8088
+    {{- end }}
+
+    # Inventory App
+    {{- if (index .Values.global "inventory-app").enabled }}
+    - host: inventory.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-inventory-app
+                port:
+                  number: 8089
+    {{- end }}
+
+    # OpenFMB Event Creator App
+    {{- if (index .Values.global "openfmb-event-creator-app").enabled }}
+    - host: openfmbeventcreator.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-openfmb-event-creator-app
+                port:
+                  number: 8090
+    {{- end }}
+
+    # Data Viewer App
+    {{- if (index .Values.global "data-viewer-app").enabled }}
+    - host: dataviewer.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-data-viewer-app
+                port:
+                  number: 8093
+    {{- end }}
+
+    # Inspector App
+    {{- if (index .Values.global "inspector-app").enabled }}
+    - host: openfmb.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-inspector-app
+                port:
+                  number: 8086
+    {{- end }}
+
+    # DER Dispatch App
+    {{- if (index .Values.global "der-dispatch-app").enabled }}
+    - host: derdispatch.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-der-dispatch-app
+                port:
+                  number: 8095
+    {{- end }}
+
+    # ESS Manager App (device details)
+    {{- if (index .Values.global "ess-manager-app").enabled }}
+    - host: device.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-ess-manager-app
+                port:
+                  number: 8094
+    {{- end }}
+
+    # ESS Tester App
+    {{- if (index .Values.global "ess-tester-app").enabled }}
+    - host: esstesting.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-ess-tester-app
+                port:
+                  number: 8096
+    {{- end }}
+
+    # Historian App
+    {{- if (index .Values.global "historian-app").enabled }}
+    - host: historian.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-historian-app
+                port:
+                  number: 8087
+    {{- end }}
+
+    # Schedule Dispatch App
+    {{- if (index .Values.global "schedule-dispatch-app").enabled }}
+    - host: scheduledispatch.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-schedule-dispatch-app
+                port:
+                  number: 8094
+    {{- end }}
+
+    # OpenDSO Docs App
+    {{- if (index .Values.global "opendso-docs-app").enabled }}
+    - host: docs.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-opendso-docs-app
+                port:
+                  number: 8092
+    {{- end }}
+
+    # Grafana - Monitoring & Dashboards
+    {{- if (index .Values.global "grafana").enabled }}
+    - host: grafana.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-grafana
+                port:
+                  number: 80
+    {{- end }}
+{{- end }}

@@ -1,0 +1,68 @@
+replicaCount: 1
+
+image:
+  repository: oesinc/event-viewer-app
+  pullPolicy: IfNotPresent
+  tag: "c6ab8cc0"
+
+imagePullSecrets:
+  - name: regcred
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8088
+
+containerPort: 8088
+
+# UI Environment Configuration
+environment:
+  apiUrl: "https://opendso-gms-api:8000"
+  natsUrl: "wss://opendso-nats-service-ws:9222"
+
+tls:
+  enabled: false  # Set to true and provide secrets for TLS
+  certSecret: server-cert
+  keySecret: server-key
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health probes
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: 8088
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: 8088
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

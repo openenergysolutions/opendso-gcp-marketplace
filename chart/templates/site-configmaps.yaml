@@ -1,0 +1,415 @@
+# Site-specific ConfigMaps generated from configs/ directory
+# These ConfigMaps are created based on the selected site (global.site)
+
+{{- $site := .Values.global.site | default "ieee13" }}
+
+# Keycloak ConfigMap
+{{- if (index .Values.global "keycloak").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keycloak-site-config
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  keycloak.conf: |
+{{ .Files.Get (printf "configs/%s/keycloak/conf/keycloak.conf" $site) | indent 4 }}
+{{- end }}
+
+# Keycloak Realm Import ConfigMap
+# Dynamically replaces hard-coded domain/port in realm JSON with ingress values
+{{- if (index .Values.global "keycloak").enabled }}
+{{- $domain := .Values.global.domain | default .Values.ingress.domain }}
+{{- $httpsPort := .Values.ingress.ports.https | toString }}
+{{- $hostSuffix := "" }}
+{{- if and $httpsPort (ne $httpsPort "443") }}
+{{- $hostSuffix = printf ":%s" $httpsPort }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keycloak-realm-import
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  oes-realm.json: |
+{{- /* Prefer the generated realm (with injected secrets) if it exists; fall back to base */ -}}
+{{- $generatedRealmFile := printf "configs/%s/keycloak/realm/oes-realm-generated.json" $site }}
+{{- $realmJson := "" }}
+{{- if .Files.Glob $generatedRealmFile }}
+{{- $realmJson = .Files.Get $generatedRealmFile }}
+{{- else }}
+{{- $realmJson = .Files.Get (printf "configs/%s/keycloak/realm/oes-realm.json" $site) }}
+{{- end }}
+{{- /* Replace hard-coded local URLs with actual ingress configuration */ -}}
+{{- $realmJson = $realmJson | replace "demo-gcp.oesinc.dev" (printf "%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "gms.demo-gcp.oesinc.dev" (printf "gms.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "keycloak.demo-gcp.oesinc.dev" (printf "keycloak.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "gis.demo-gcp.oesinc.dev" (printf "gis.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "scheduledispatch.demo-gcp.oesinc.dev" (printf "scheduledispatch.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "derdispatch.demo-gcp.oesinc.dev" (printf "derdispatch.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "historian.demo-gcp.oesinc.dev" (printf "historian.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "openfmbeventcreator.demo-gcp.oesinc.dev" (printf "openfmbeventcreator.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "inspector.demo-gcp.oesinc.dev" (printf "inspector.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "device.demo-gcp.oesinc.dev" (printf "device.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "oneline.demo-gcp.oesinc.dev" (printf "oneline.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "openfmb.demo-gcp.oesinc.dev" (printf "openfmb.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "dataviewer.demo-gcp.oesinc.dev" (printf "dataviewer.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "docs.demo-gcp.oesinc.dev" (printf "docs.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "eventviewer.demo-gcp.oesinc.dev" (printf "eventviewer.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "inventory.demo-gcp.oesinc.dev" (printf "inventory.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "maverick.demo-gcp.oesinc.dev" (printf "maverick.%s%s" $domain $hostSuffix) }}
+{{- $realmJson = $realmJson | replace "esstesting.demo-gcp.oesinc.dev" (printf "esstesting.%s%s" $domain $hostSuffix) }}
+{{ $realmJson | indent 4 }}
+  master-realm.json: |
+{{ .Files.Get (printf "configs/%s/keycloak/realm/master-realm.json" $site) | indent 4 }}
+{{- end }}
+
+# Topology Genesis ConfigMap
+{{- if (index .Values.global "topology-genesis").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-topology-genesis-site-config
+  labels:
+    app.kubernetes.io/name: topology-genesis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  cim.xml: |
+{{ .Files.Get (printf "configs/%s/topology-genesis/cim.xml" $site) | indent 4 }}
+  cimex.config: |
+{{ .Files.Get (printf "configs/%s/topology-genesis/cimex.config" $site) | indent 4 }}
+{{- end }}
+
+# Topology Nodes ConfigMap
+{{- if (index .Values.global "topology-nodes").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-topology-nodes-site-config
+  labels:
+    app.kubernetes.io/name: topology-nodes
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yml: |
+{{ .Files.Get (printf "configs/%s/topology-nodes/config.yaml" $site) | indent 4 }}
+{{- end }}
+
+# Genesis Node App ConfigMap (site-specific settings)
+{{- if (index .Values.global "genesis-node-app").enabled }}
+{{- $domain := .Values.global.domain | default .Values.ingress.domain }}
+{{- $httpsPort := .Values.ingress.ports.https | toString }}
+{{- $hostSuffix := "" }}
+{{- if and $httpsPort (ne $httpsPort "443") }}
+{{- $hostSuffix = printf ":%s" $httpsPort }}
+{{- end }}
+{{- $keycloakUrl := .Values.global.keycloak.url }}
+{{- if not $keycloakUrl }}
+{{- $keycloakUrl = printf "https://keycloak.%s%s" $domain $hostSuffix }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-genesis-node-app-site-config
+  labels:
+    app.kubernetes.io/name: genesis-node-app
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  algorithm.json: |
+{{ .Files.Get (printf "configs/%s/genesis-node-app/algorithm.json" $site) | indent 4 }}
+  applicationsSettings.json: |
+{{ .Files.Get (printf "configs/%s/genesis-node-app/applicationsSettings.json" $site) | indent 4 }}
+  der.json: |
+{{ .Files.Get (printf "configs/%s/genesis-node-app/der.json" $site) | indent 4 }}
+  environment.json: |
+    {
+      "api": {
+        "uri": {{ printf "%s/api" .Values.global.environment.apiUrl | quote }}
+      },
+      "keycloakUrl": {{ $keycloakUrl | quote }},
+      "keycloakRealm": {{ .Values.global.keycloak.realm | default "oes" | quote }},
+      "keycloakClientId": {{ ((.Values.global.keycloak.clientIds).ui) | default "gms" | quote }},
+      "googleTagId": {{ .Values.global.environment.googleTagId | default "GTM-B7JGQS2" | quote }},
+      "googleTagEnv": {{ .Values.global.environment.googleTagEnv | default "&gtm_auth=NaiPwz5U_xGuF4hoZ7yHUw&gtm_preview=env-5&gtm_cookies_win=x" | quote }}
+    }
+  historianState.json: |
+{{ .Files.Get (printf "configs/%s/genesis-node-app/historianState.json" $site) | indent 4 }}
+  servicesSettings.json: |
+{{ .Files.Get (printf "configs/%s/genesis-node-app/servicesSettings.json" $site) | indent 4 }}
+{{- end }}
+
+# ESS Tester Svc ConfigMap
+{{- if (index .Values.global "ess-tester-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ess-tester-svc-site-config
+  labels:
+    app.kubernetes.io/name: ess-tester-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $essTesterApp := .Files.Get (printf "configs/%s/ess-tester-svc/app.yaml" $site) }}
+{{ tpl $essTesterApp . | indent 4 }}
+{{- end }}
+
+# ESS Manager App ConfigMap
+{{- if (index .Values.global "ess-manager-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ess-manager-svc-site-config
+  labels:
+    app.kubernetes.io/name: ess-manager-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $essManagerApp := .Files.Get (printf "configs/%s/ess-manager-svc/app.yaml" $site) }}
+{{ tpl $essManagerApp . | indent 4 }}
+{{- end }}
+
+# Historian Service ConfigMaps
+{{- if (index .Values.global "historian-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-historian-svc-config
+  labels:
+    app.kubernetes.io/name: historian-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yml: |
+{{- $historianConfig := .Files.Get (printf "configs/%s/historian-svc/config.yml" $site) }}
+{{ tpl $historianConfig . | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-historian-svc-historian
+  labels:
+    app.kubernetes.io/name: historian-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  historian.json: |
+{{ .Files.Get (printf "configs/%s/historian-svc/historian.json" $site) | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-historian-svc-envoy
+  labels:
+    app.kubernetes.io/name: historian-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  envoy.yaml: |
+{{ .Files.Get (printf "configs/%s/historian-svc/envoy.yaml" $site) | indent 4 }}
+{{- end }}
+
+# CVR Service ConfigMap
+{{- if (index .Values.global "cvr-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-cvr-svc-site-config
+  labels:
+    app.kubernetes.io/name: cvr-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $cvrApp := .Files.Get (printf "configs/%s/cvr-svc/app.yaml" $site) }}
+{{ tpl $cvrApp . | indent 4 }}
+{{- end }}
+
+# OmegaDSS ConfigMap (used by omegadss-svc and cvr-svc)
+{{- if or (index .Values.global "omegadss-svc").enabled (index .Values.global "cvr-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-omegadss-site-config
+  labels:
+    app.kubernetes.io/name: omegadss
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  omegadss.json: |
+{{ .Files.Get (printf "configs/%s/omegadss/omegadss.json" $site) | indent 4 }}
+{{- end }}
+
+# CVR OpenFMB Services ConfigMap
+{{- if (index .Values.global "cvr-openfmb-services-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-cvr-openfmb-services-svc-site-config
+  labels:
+    app.kubernetes.io/name: cvr-openfmb-services-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $cvrOpenfmbApp := .Files.Get (printf "configs/%s/cvr-openfmb-services-svc/app.yaml" $site) }}
+{{ tpl $cvrOpenfmbApp . | indent 4 }}
+{{- end }}
+
+# CVR Genetic Algorithm Service ConfigMap (DSS files)
+{{- if (index .Values.global "cvr-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-cvr-genetic-algorithm-svc-site-config
+  labels:
+    app.kubernetes.io/name: cvr-genetic-algorithm-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  IEEE13Nodeckt.dss: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEE13Nodeckt.dss" $site) | indent 4 }}
+  IEEELineCodes.dss: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEELineCodes.dss" $site) | indent 4 }}
+  LineConstantsCode.DSS: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/LineConstantsCode.DSS" $site) | indent 4 }}
+  PVsystem.dss: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/PVsystem.dss" $site) | indent 4 }}
+  run.dss: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/run.dss" $site) | indent 4 }}
+  Load1.csv: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/Load1.csv" $site) | indent 4 }}
+  IEEE13Node_BusXY.csv: |
+{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEE13Node_BusXY.csv" $site) | indent 4 }}
+{{- end }}
+
+# RPCDSS Service ConfigMap
+{{- if (index .Values.global "rpcdss-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-rpcdss-svc-site-config
+  labels:
+    app.kubernetes.io/name: rpcdss-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  IEEE13Nodeckt.dss: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/IEEE13Nodeckt.dss" $site) | indent 4 }}
+  IEEELineCodes.dss: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/IEEELineCodes.dss" $site) | indent 4 }}
+  LineConstantsCode.DSS: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/LineConstantsCode.DSS" $site) | indent 4 }}
+  PVsystem.dss: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/PVsystem.dss" $site) | indent 4 }}
+  run.dss: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/run.dss" $site) | indent 4 }}
+  Load1.csv: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/Load1.csv" $site) | indent 4 }}
+  IEEE13Node_BusXY.csv: |
+{{ .Files.Get (printf "configs/%s/rpcdss-svc/IEEE13Node_BusXY.csv" $site) | indent 4 }}
+{{- end }}
+
+# DER Dispatch Service ConfigMap
+# Note: This mounts the topology-nodes config which maps circuit UUIDs to node lists
+# This matches docker-compose behavior where CIRCUIT_CONFIG is mounted to /resources/config.yml
+{{- if (index .Values.global "der-dispatch-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-der-dispatch-svc-config
+  labels:
+    app.kubernetes.io/name: der-dispatch-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yml: |
+{{- $derDispatchConfig := .Files.Get (printf "configs/%s/topology-nodes/config.yaml" $site) }}
+{{ tpl $derDispatchConfig . | indent 4 }}
+{{- end }}
+
+# Citus DB Init Script ConfigMap
+{{- if and (index .Values.global "citus-db").enabled (not (dig "citus-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-citus-db-initdb
+  labels:
+    app.kubernetes.io/name: citus-db
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+{{ (.Files.Glob (printf "configs/%s/citus-db/*.sql" $site)).AsConfig | indent 2 }}
+{{- end }}
+
+# MongoDB Init Script ConfigMap
+{{- if (index .Values.global "mongodb").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-mongodb-init
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  mongo-init.js: |
+{{- $mongoInit := .Files.Get (printf "configs/%s/mongodb/mongo-init.js" $site) }}
+{{ tpl $mongoInit . | indent 4 }}
+{{- end }}
+
+# OpenDSO Apps DB Init Script ConfigMap
+{{- if and (index .Values.global "opendso-apps-db").enabled (not (dig "opendso-apps-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-opendso-apps-db-initdb
+  labels:
+    app.kubernetes.io/name: opendso-apps-db
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+{{ (.Files.Glob (printf "configs/%s/opendso-apps-db/schema/*.sql" $site)).AsConfig | indent 2 }}
+{{- end }}
+
+# Asset Health Service ConfigMap
+{{- if (index .Values.global "asset-health-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-asset-health-svc-site-config
+  labels:
+    app.kubernetes.io/name: asset-health-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $assetHealthApp := .Files.Get (printf "configs/%s/asset-health-svc/app.yaml" $site) }}
+{{ tpl $assetHealthApp . | indent 4 }}
+{{- end }}

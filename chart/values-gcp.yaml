@@ -1,0 +1,526 @@
+# OpenDSO Helm Chart - GCP/GKE Production Values
+# This file contains GCP-specific configurations for deploying OpenDSO to Google Kubernetes Engine
+
+global:
+  # Deployment environment configuration
+  deployment:
+    environment: production
+    cloudProvider: gcp
+
+  # Resource profile (minimal, default, production)
+  resourceProfile: production
+
+  # Domain configuration
+  # IMPORTANT: Replace with your actual domain
+  domain: "demo-gcp.oesinc.dev"
+
+  # Storage class for GKE persistent disks
+  # Options: "standard-rwo" (HDD) or "pd-ssd" (SSD)
+  # pd-ssd recommended for production workloads
+  storageClass: "standard-rwo"
+
+  imageRegistry: "us-east1-docker.pkg.dev/opendso-dev/oesinc"
+
+  # Image pull secrets
+  imagePullSecrets:
+    - name: regsecret
+
+  # Frontend environment variables
+  # These URLs are exposed to browser clients
+  environment:
+    apiUrl: "https://api.demo-gcp.oesinc.dev"
+    natsUrl: "wss://nats.demo-gcp.oesinc.dev"
+    googleTagId: "GTM-B7JGQS2"
+
+  # Keycloak configuration
+  keycloak:
+    url: "https://keycloak.demo-gcp.oesinc.dev"
+    internalUrl: "http://opendso-keycloak-svc:8080"
+    realm: "oes"
+    clientIds:
+      ui: "gms"
+      api: "gms"
+
+  # TLS configuration for demo/POC
+  # Using self-signed certificates from scripts/lib/create-certs.sh
+  tls:
+    existingSecret: "opendso-tls"  # Created by create-certs.sh
+
+  # Database Services (global enable/disable flags)
+  mongodb:
+    enabled: true
+    tls:
+      enabled: true
+      existingSecret: "opendso-mongodb-tls"  # Default: <release-name>-mongodb-tls (overridden by deploy scripts)
+      mode: preferTLS
+      allowConnectionsWithoutTLS: true
+
+  citus-db:
+    enabled: true
+
+# ============================================================================
+# Database Services (Subchart-specific configurations)
+# ============================================================================
+
+# MongoDB configuration
+mongodb:
+  enabled: true  # Set to false if using MongoDB Atlas
+
+  persistence:
+    enabled: true
+    # storageClass: standard-rwo  # Uses global.storageClass
+    dataSize: 10Gi  # Production size 
+    logSize: 5Gi
+    deleteOnUpgrade: false  # IMPORTANT: Keep data on upgrades
+
+  initdb:
+    createConfigMap: false  # Parent chart provides the ConfigMap
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+  tls:
+    enabled: true
+    existingSecret: "opendso-mongodb-tls"
+    mode: preferTLS  # Change to "requireTLS" after migration
+    allowConnectionsWithoutTLS: true
+
+  # External MongoDB configuration (if using managed service)
+  # Uncomment and configure if enabled: false
+  # externalDatabase:
+  #   enabled: true
+  #   host: "your-mongodb-atlas-url"
+  #   port: 27017
+  #   database: "settings_api"
+  #   existingSecret: "mongodb-credentials"
+  #   usernameKey: "username"
+  #   passwordKey: "password"
+
+# Citus DB (PostgreSQL) configuration
+citus-db:
+  enabled: true  # Set to false if using Cloud SQL
+
+  persistence:
+    enabled: true
+    # storageClass: standard-rwo  # Uses global.storageClass
+    size: 50Gi  # Production size (dev: 10Gi)
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+  # External PostgreSQL configuration (if using Cloud SQL)
+  # Uncomment and configure if enabled: false
+  # externalDatabase:
+  #   enabled: true
+  #   host: "your-cloudsql-host"
+  #   port: 5432
+  #   database: "ofmb_db"
+  #   username: "citususer"
+  #   existingSecret: "citus-db-credentials"
+  #   usernameKey: "username"
+  #   passwordKey: "password"
+
+# OpenDSO Apps DB (TimescaleDB/PostgreSQL) configuration
+opendso-apps-db:
+  enabled: true
+
+  persistence:
+    enabled: true
+    # storageClass: standard-rwo  # Uses global.storageClass
+    size: 10Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  # External PostgreSQL configuration (if using Cloud SQL)
+  # externalDatabase:
+  #   enabled: true
+  #   host: "your-cloudsql-host"
+  #   port: 5432
+  #   database: "ess_tester"
+  #   username: "essuser"
+  #   existingSecret: "apps-db-credentials"
+
+# ============================================================================
+# Core Services
+# ============================================================================
+
+# Keycloak (Authentication)
+keycloak:
+  config:
+    # Hostname (OPTIONAL - defaults to keycloak.{global.domain})
+    # Only set this if you want Keycloak to use a different hostname
+    # hostname: "keycloak.demo-gcp.oesinc.dev"
+    hostnamePort: "443"
+    hostnameStrict: "true"
+    httpsEnabled: true
+    httpsCertFile: "/opt/keycloak/conf/server.crt.pem"
+    httpsKeyFile: "/opt/keycloak/conf/server.key.pem"
+
+  persistence:
+    enabled: true
+    # storageClass: standard-rwo  # Uses global.storageClass
+    size: 10Gi
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+# GMS API (Backend REST API)
+gms-api:
+  replicaCount: 1  # High availability
+
+  # Health probe configuration
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  persistence:
+    enabled: false  # Set to true if you need persistent logs
+    # storageClass: standard-rwo  # Uses global.storageClass
+    size: 1Gi
+
+# NATS (Message Bus)
+nats:
+  tls:
+    enabled: true
+    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+  authCallout:
+    enabled: false  # Enabled only via values-nats-auth-generated.yaml
+
+  # Disable NodePort (using LoadBalancer/Ingress)
+  nodePort:
+    enabled: false
+  websocketNodePort:
+    enabled: false
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Historian Service
+historian-svc:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# ESS Manager Redis (Cache)
+ess-manager-redis:
+  persistence:
+    enabled: true
+    # storageClass: standard-rwo  # Uses global.storageClass
+    size: 1Gi
+
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ============================================================================
+# Frontend Applications
+# ============================================================================
+
+# Genesis Node App (GMS)
+genesis-node-app:
+  replicaCount: 2
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Data Viewer App
+data-viewer-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Event Viewer App
+event-viewer-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# GIS App
+gis-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Historian App
+historian-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Inspector App (OpenFMB)
+inspector-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Inventory App
+inventory-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# One-Line App
+one-line-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# OpenDSO Docs App
+opendso-docs-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# OpenFMB Event Creator App
+openfmb-event-creator-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Schedule Dispatch App
+schedule-dispatch-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ESS Manager App
+ess-manager-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ESS Tester App
+ess-tester-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# DER Dispatch App
+der-dispatch-app:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ============================================================================
+# Ingress Configuration
+# ============================================================================
+
+ingress:
+  enabled: true
+  className: nginx
+  serviceType: LoadBalancer
+
+  # LoadBalancer configuration (standard ports)
+  ports:
+    http: 80
+    https: 443
+
+  # Domain for all ingress routes (OPTIONAL - defaults to global.domain)
+  # Only set this if you want ingress to use a different domain than global.domain
+  # domain: "demo-gcp.oesinc.dev"
+
+  # TLS configuration
+  # Using cert-manager with Let's Encrypt for automatic certificate management
+  tls:
+    enabled: true
+    certManager:
+      enabled: true  # Automatic Let's Encrypt certificates
+      issuerName: letsencrypt-prod  # Use 'letsencrypt-staging' for testing
+    # Self-signed certificate secret (only used if certManager.enabled=false)
+    # secretName: "opendso-tls"
+
+  # Ingress annotations
+  annotations:
+
+    # Force SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Proxy timeouts (important for long-running requests)
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+
+    # Buffer settings (for large headers from Keycloak)
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+
+    # CORS settings
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+
+    # GCP-specific annotations (uncomment if needed)
+    # cloud.google.com/neg: '{"ingress": true}'
+    # cloud.google.com/backend-config: '{"default": "opendso-backend-config"}'
+
+# ============================================================================
+# Monitoring & Observability
+# ============================================================================
+
+# Grafana (Monitoring/Dashboards)
+grafana:
+  persistence:
+    enabled: true
+    # storageClass: standard-rwo  # Uses global.storageClass
+    size: 10Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  # Admin credentials
+  # Default: admin / (auto-generated password in secret)
+  # Change this after first login!
+
+# ============================================================================
+# Optional Services (disabled by default)
+# ============================================================================
+
+# DER Management Service
+der-management:
+  enabled: false
+
+# Asset Health Sim Service
+asset-health-sim-service:
+  enabled: false
+
+# Keycloak DB (separate database for Keycloak)
+keycloak-db:
+  enabled: false
+
+# ============================================================================
+# Notes - Demo/POC Deployment with Google Cloud Endpoints
+# ============================================================================
+
+# This configuration uses Google Cloud Endpoints domain for demo/POC:
+# Domain: demo-gcp.oesinc.dev
+# Certificates: Self-signed (from scripts/lib/create-certs.sh)
+#
+# Before deploying:
+# 1. Create GKE cluster and configure kubectl
+# 2. Install nginx-ingress controller with LoadBalancer
+# 3. Create namespace: kubectl create namespace opendso
+# 4. Generate self-signed certificates:
+#    ./scripts/lib/create-certs.sh opendso demo-gcp.oesinc.dev
+# 5. Create registry secret (if using private registry):
+#    kubectl create secret docker-registry regsecret ...
+# 6. Configure Cloud Endpoints ESP:
+#    - Map *.demo-gcp.oesinc.dev to LoadBalancer IP
+#    - Or use individual subdomain mappings in Cloud Endpoints
+#
+# Deploy with:
+# helm install opendso ./opendso -f values-gcp.yaml -n opendso --timeout 15m
+#
+# Note: Browsers will show certificate warnings with self-signed certs.
+# For production, use a real domain name with Let's Encrypt or Google-managed certificates.

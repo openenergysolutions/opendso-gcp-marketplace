@@ -1,0 +1,69 @@
+oes-app:
+  app_name: "ahs"
+  log_level: info
+  module_log_levels:
+  - module: tokio_postgres
+    level: info
+nats:
+  connection_url: nats://{{ .Release.Name }}-nats-service:4222
+  creds: ''
+  auth: 'NIL'
+database:
+  {{- $appsDb := include "opendso.appsDb.settings" . | fromYaml }}
+  user: {{ $appsDb.user | quote }}
+  password: {{ $appsDb.password | quote }}
+  host: {{ $appsDb.host | quote }}
+  port: {{ $appsDb.port }}
+  dbname: 'assets'
+  connect_timeout: 10
+app_settings:
+  enabled: true
+  # remove ai_config will disable AI analytics
+  ai_config:
+    ai_provider: Gemini
+    ai_model: "gemini-2.5-pro"
+    api_key: "AIzaSyB24OMlxOCfpGRGD0LaplGKuPfAilkHviA"
+    api_endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
+  process_interval_seconds: 5
+  analysis_cron_schedule: "0 0 0 * * *"
+  process_interval_seconds: 5
+  region: 290347ae-a0a6-4036-8d0c-0b45bd052376
+  app_id: 0c8316d3-1c47-4bf9-b02c-5e31db0f5b2a
+  # nameplates, these should be provided by topology service or openfmb capabilities
+  asset_nameplates:
+    - name: r1
+      mrid: dd894cc5-d97d-4ea3-a5b9-e6fc466a332f
+      kv_base: 4.16
+      i_base: 500.0
+    - name: r2
+      mrid: 313ec703-63fa-47cf-b70d-91bf490186cb
+      kv_base: 4.16
+      i_base: 1200.0
+    - name: r5
+      mrid: a0f00b95-bb73-4e6e-82bb-1c320fcf6adc
+      kv_base: 4.16
+      i_base: 500.0
+    - name: breaker
+      mrid: 18a74588-a787-4c9f-b953-93b69b29ce7b
+      kv_base: 115.0
+      i_base: 695.0
+    - name: rder680
+      mrid: 6e86c913-aaf2-445f-b8f9-d4f754096186
+      kv_base: 0.48
+      i_base: 400.0
+    - name: rder692
+      mrid: 4c42fd6c-075f-49e0-8e10-e8890f0a0c8a
+      kv_base: 0.48
+      i_base: 500.0
+    - name: rder675
+      mrid: 97b59eae-6cf5-43cf-a89f-d5193fa28e11
+      kv_base: 0.48
+      i_base: 400.0
+    - name: rder633
+      mrid: 851c9d81-c13b-49c4-941d-fbce6d2bfc12
+      kv_base: 0.48
+      i_base: 400.0
+    - name: dg690
+      mrid: 760b289f-eb3b-4100-9bfe-64a2327edd91
+      kv_base: 0.48
+      i_base: 600.0

@@ -1,0 +1,17 @@
+{{- if dig "keycloak-db" "enabled" false .Values.global }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "keycloak-db.fullname" . }}
+  labels:
+    {{- include "keycloak-db.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: postgresql
+      protocol: TCP
+      name: postgresql
+  selector:
+    {{- include "keycloak-db.selectorLabels" . | nindent 4 }}
+{{- end }}

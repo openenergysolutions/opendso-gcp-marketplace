@@ -1,0 +1,111 @@
+file:
+  id: openfmb-adapter-main
+  edition: 2.1
+  version: 2.1.0.0
+  plugin: ''
+logging:
+  logger-name: application
+  console:
+    enabled: false
+  rotating-file:
+    enabled: false
+    path: adapter.log
+    max-size: 1048576
+    max-files: 3
+plugins:
+  capture:
+    enabled: false
+    file: capture.txt
+  replay:
+    enabled: false
+    file: capture.txt
+  dnp3-master:
+    enabled: true
+    thread-pool-size: 1
+    masters:
+    - path: /openfmb/load-template.yaml
+      local-path: dnp3-master\dnp3-master-template.yaml
+      session-name: Session
+      overrides:
+      - key: name
+        value: L1
+      - key: channel.outstation-ip
+        value: 192.168.100.102
+      - key: channel.port
+        value: 20000
+      - key: protocol.master-address
+        value: 1
+      - key: protocol.outstation-address
+        value: 1024
+      - key: polls[0].interval-ms
+        value: 500
+      - key: profiles[0].mapping.energyConsumer.conductingEquipment.namedObject.name.value.value
+        value: L1
+      - key: profiles[0].mapping.energyConsumer.conductingEquipment.mRID.value
+        value: 9e0af603-a5c5-4b59-a21d-4b4fc6d905cd
+      - key: profiles[1].mapping.energyConsumer.conductingEquipment.namedObject.name.value.value
+        value: L1
+      - key: profiles[1].mapping.energyConsumer.conductingEquipment.mRID.value
+        value: 9e0af603-a5c5-4b59-a21d-4b4fc6d905cd
+      - key: profiles[2].mapping.energyConsumer.conductingEquipment.namedObject.name.value.value
+        value: L1
+      - key: profiles[2].mapping.energyConsumer.conductingEquipment.mRID.value
+        value: 9e0af603-a5c5-4b59-a21d-4b4fc6d905cd
+  dnp3-outstation:
+    enabled: false
+    thread-pool-size: 1
+    outstations: []
+  modbus-master:
+    enabled: false
+    thread-pool-size: 1
+    sessions: []
+  modbus-outstation:
+    enabled: false
+    thread-pool-size: 1
+    sessions: []
+  mqtt:
+    enabled: false
+    max-queued-messages: 100
+    server-address: 127.0.0.1
+    client-id: client1
+    connect-retry-delay-ms: 5000
+    security:
+      security-type: tls_mutual_auth
+      ca-trusted-cert-file: cert.pem
+      client-private-key-file: client_key.pem
+      client-cert-chain-file: client_cert.pem
+      username: ''
+      password: ''
+    publish: []
+    subscribe: []
+  nats:
+    enabled: true
+    max-queued-messages: 100
+    connect-url: nats://nats-2
+    connect-retry-seconds: 5
+    security:
+      security-type: none
+      ca-trusted-cert-file: cert.pem
+      client-private-key-file: client_key.pem
+      client-cert-chain-file: client_cert.pem
+      jwt-creds-file: ''
+    publish:
+    - profile: LoadReadingProfile
+      subject: 9e0af603-a5c5-4b59-a21d-4b4fc6d905cd
+    - profile: LoadStatusProfile
+      subject: 9e0af603-a5c5-4b59-a21d-4b4fc6d905cd
+    subscribe:
+    - profile: LoadControlProfile
+      subject: 9e0af603-a5c5-4b59-a21d-4b4fc6d905cd
+  timescaledb:
+    enabled: false
+    database-url: postgresql://user:password@localhost:5432/dbname
+    store-measurement: true
+    table-name: data
+    store-raw-message: false
+    raw-table-name: raw_data
+    raw-data-format: 0
+    max-queued-messages: 100
+    connect-retry-seconds: 5
+    data-store-interval-seconds: 0
+...

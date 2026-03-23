@@ -1,0 +1,12 @@
+certs/
+certs-*/
+**/**/*.tgz
+chart/values-nats-auth-generated.yaml
+
+# NATS private key seeds — generated at deploy time, never commit
+*.nk
+*.xk
+chart/configs/*/nats-auth-svc/keys/
+
+# Local test Dockerfile (not for marketplace submission)
+deployer/Dockerfile.test

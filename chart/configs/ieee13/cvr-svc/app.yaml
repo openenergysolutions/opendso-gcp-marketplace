@@ -1,0 +1,55 @@
+oes-app:
+  log_level: info
+  id: cfb367ce-e83b-4e33-902c-3aef0bbb3fc1
+nats:
+  connection_url: nats://{{ .Release.Name }}-nats-service:4222
+  creds: ''
+  auth: 'NIL'
+cvr:
+  app_name: CVR
+  enabled: true
+  comm_check_sec: 60
+  control_timeout_sec: 600
+  control_wait_ms: 1000
+  process_interval_ms: 1000
+  # Algorithm
+  laminar: false
+  algorithm: GA
+  algorithm_service_url: 'http://{{ .Release.Name }}-cvr-genetic-algorithm-svc:50081'
+  app_id: fd32c1f5-7cb1-4fa4-b578-0e5ac023c47f
+  dss_monitoring_bus: RG60
+  dss_name_mapping_file: '/omegadss/omegadss.json'   
+  number_time_points: 1
+  v_limit: 0.95
+  penalty_factor: 10.0
+  population_size: 100
+  maximum_allowed_fitness_score: 5.0  
+  generation_limit: 1000
+  num_individuals_per_parents: 2
+  selection_ratio: 7.0
+  num_crossover_points: 1
+  mutation_rate: 0.05  
+  elitism_ratio: 0.1
+  max_iterations_without_improvement: 100  
+  regulator_min_tap: -16
+  regulator_max_tap: 16
+  regulator_step_size: 1
+  event_level_reduction_ratios: [1, 2, 4]
+  default_reduction_ratio: 0.98
+  monitor_points:
+   - 6a6ce283-ca69-4002-ae48-32c9eb58b32f
+  control_points:
+   - fd32c1f5-7cb1-4fa4-b578-0e5ac023c47f
+   - cae018bb-c751-49f2-ab7e-c9ecfc674b68
+   - bd20d8a6-21ad-4aa3-a494-649af8039ffe
+  device_interface_grpc_url: http://{{ .Release.Name }}-cvr-openfmb-services-svc:50082
+  schedules:
+   - name: default
+     id: 5c6a381b-ea49-4c12-84f5-93d5defa3394
+     enabled: true
+     level: 3
+     appId: c9c94c12-fbbc-48a5-b291-a1be4e1b0abc
+     repeatSequence: 2 #  0 = no repeat, 2 = repeat every 2 mins, 5 = repeat every 5 mins, etc.
+     startTime: "4:0"
+     endTime: "23:0"
+     # voltage_reduction_ratio: 0.95

@@ -1,0 +1,190 @@
+# OpenDSO High Availability Overlay
+# Apply on top of values-gcp.yaml to scale out for production traffic:
+#
+#   ./scripts/deploy-gcp.sh --values opendso/values-ha.yaml
+#
+# Provides ~60+ pods with:
+#   - 2-3 replicas per stateless service
+#   - Production-grade resource limits
+#   - SSD storage for databases
+#   - Autoscaling for GMS API
+
+# ============================================================================
+# Stateful components — production storage and resources
+# ============================================================================
+
+mongodb:
+  persistence:
+    size: 50Gi
+    storageClass: pd-ssd
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 8Gi
+      cpu: 4000m
+  config:
+    wiredTiger:
+      cacheSizeGB: 4
+
+citus-db:
+  persistence:
+    size: 100Gi
+    storageClass: pd-ssd
+  resources:
+    requests:
+      memory: 4Gi
+      cpu: 2000m
+    limits:
+      memory: 16Gi
+      cpu: 8000m
+  config:
+    maxConnections: 200
+    sharedBuffers: "2GB"
+    effectiveCacheSize: "8GB"
+
+keycloak-db:
+  persistence:
+    size: 10Gi
+    storageClass: pd-ssd
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+opendso-apps-db:
+  persistence:
+    size: 20Gi
+    storageClass: pd-ssd
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+
+# ============================================================================
+# Stateless components — replica counts and resources
+# ============================================================================
+
+nats:
+  replicas: 3
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+keycloak:
+  replicas: 2
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+
+grafana:
+  replicas: 2
+  persistence:
+    enabled: true
+    size: 10Gi
+
+gms-api:
+  replicas: 3
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+historian-svc:
+  replicas: 2
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+
+openfmb-event-service:
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+topology-nodes:
+  replicas: 2
+
+der-dispatch-svc:
+  replicas: 2
+
+cvr-svc:
+  replicas: 2
+
+cvr-genetic-algorithm-svc:
+  replicas: 2
+
+cvr-openfmb-services-svc:
+  replicas: 2
+
+ess-manager-svc:
+  replicas: 2
+
+asset-health-svc:
+  replicas: 2
+
+omegadss-svc:
+  replicas: 2
+
+rpcdss-svc:
+  replicas: 2
+
+gms-app:
+  replicas: 3
+
+data-viewer-app:
+  replicas: 2
+
+historian-app:
+  replicas: 2
+
+inventory-app:
+  replicas: 2
+
+event-viewer-app:
+  replicas: 2
+
+der-dispatch-app:
+  replicas: 2
+
+ess-manager-app:
+  replicas: 2
+
+one-line-app:
+  replicas: 2
+
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"

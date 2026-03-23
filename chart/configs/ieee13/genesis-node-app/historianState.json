@@ -1,0 +1,11 @@
+{
+  "title": "Historian Settings",
+  "type": "object",
+  "properties": {
+    "enabledHistorian": {
+      "title": "Historian Running State",
+      "type": "boolean",
+      "value": true
+    }
+  }
+}

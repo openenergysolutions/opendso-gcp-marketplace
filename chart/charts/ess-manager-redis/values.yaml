@@ -1,0 +1,78 @@
+replicaCount: 1
+
+global:
+  images: {}
+
+image:
+  repository: redis
+  pullPolicy: IfNotPresent
+  tag: "7.0"
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 6379
+
+# Redis command arguments
+args:
+  - redis-server
+  - --save
+  - "60"
+  - "1"
+  - --loglevel
+  - warning
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""  # Uses global.storageClass if empty
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health probes
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - redis-cli
+      - ping
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - redis-cli
+      - ping
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

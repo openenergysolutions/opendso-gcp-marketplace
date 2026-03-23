@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "topology-nodes.fullname" . }}
+  labels:
+    {{- include "topology-nodes.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "topology-nodes.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "topology-nodes.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "topology-nodes.image" (dict "imageRoot" .Values.global.images.topologyNodes "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.topologyNodes.pullPolicy }}
+          {{- if or .Values.args (dig "nats-auth-svc" "enabled" false .Values.global) }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+            {{- if dig "nats-auth-svc" "enabled" false .Values.global }}
+            - "--nats-auth"
+            {{- end }}
+          {{- end }}
+          env:
+            - name: PLATFORM_NATS_SERVICE
+              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+            {{- range $key, $value := .Values.env }}
+            {{- if ne $key "PLATFORM_NATS_SERVICE" }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ printf "%s-topology-nodes-keycloak-env" .Release.Name }}
+                optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /resources
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.siteConfigMap | default (printf "%s-topology-nodes-site-config" .Release.Name) }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

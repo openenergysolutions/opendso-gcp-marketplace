@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-frontend-environment
+  labels:
+    app.kubernetes.io/name: opendso-frontend-environment
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  environment.json: |
+    {
+      "api": {
+        "uri": {{ printf "%s/api" .Values.global.environment.apiUrl | quote }}
+      },
+      "nats": {
+        "uri": {{ printf "wss://%s-nats-service-ws:9222" .Release.Name | quote }}
+      },
+      "googleTagId": {{ .Values.global.environment.googleTagId | default "GTM-B7JGQS2" | quote }},
+      "googleTagEnv": {{ .Values.global.environment.googleTagEnv | default "&gtm_auth=NaiPwz5U_xGuF4hoZ7yHUw&gtm_preview=env-5&gtm_cookies_win=x" | quote }}
+    }

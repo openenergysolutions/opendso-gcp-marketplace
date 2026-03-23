@@ -1,0 +1,45 @@
+{
+  "title": "DER App Settings",
+  "type": "object",
+  "properties": {
+    "enabledDer": {
+      "title": "App State",
+      "type": "boolean",
+      "value": false
+    },
+    "varValue": {
+      "type": "number",
+      "title": "VAr Value",
+      "required": false,
+      "value": 0
+    },
+    "batterySettingsHeader": {
+      "type":"header",
+      "title":"Battery Settings"
+    },
+    "batteryCharge": {
+      "type": "number",
+      "title": "Charge Value",
+      "required": false,
+      "value": 0
+    },
+    "batteryLowNeutral": {
+      "type": "number",
+      "title": "Low Neutral Value",
+      "required": false,
+      "value": 0
+    },
+    "batteryHighNeutral": {
+      "type": "number",
+      "title": "High Neutral Value",
+      "required": false,
+      "value": 0
+    },
+    "batteryDischarge": {
+      "type": "number",
+      "title": "Discharge Value",
+      "required": false,
+      "value": 0
+    }
+  }
+}

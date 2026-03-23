@@ -1,0 +1,137 @@
+# Development Environment Values
+# Override for local Kubernetes development (minikube, kind, k3s, Docker Desktop)
+#
+# Usage:
+#   helm install opendso ./opendso -f opendso/values-dev.yaml --namespace opendso --create-namespace
+#
+# This configuration uses:
+# - LoadBalancer for ingress (MetalLB/minikube tunnel required)
+# - Local domain (demo-gcp.oesinc.dev with /etc/hosts)
+# - mkcert for TLS certificates
+# - Lower resource limits for local development
+
+global:
+  deployment:
+    environment: development
+    cloudProvider: local
+
+  # Pull all images from GCP Artifact Registry (same as GCP deployment)
+  imageRegistry: "us-east1-docker.pkg.dev/opendso-dev/oesinc"
+
+  imagePullSecrets:
+    - name: regsecret
+
+  # Storage class for local development
+  storageClass: standard  # or hostpath for some local clusters
+
+  # Keycloak configuration
+  keycloak:
+    enabled: true
+    # External URL for browser-based authentication
+    url: "https://keycloak.demo-gcp.oesinc.dev"
+    # Internal URL for server-to-server communication (e.g., token validation)
+    internalUrl: "http://opendso-keycloak-svc:8080"
+    # Keycloak realm and client IDs
+    realm: "oes"
+    clientIds:
+      ui: "gms"
+      api: "gms"
+
+  # Frontend application environment URLs (browser-accessible)
+  environment:
+    apiUrl: "https://api.demo-gcp.oesinc.dev"
+    natsUrl: "wss://nats.demo-gcp.oesinc.dev"
+
+ingress:
+  enabled: true
+  className: "nginx"
+
+  # Use LoadBalancer for local development (MetalLB/minikube tunnel required)
+  serviceType: LoadBalancer
+
+  # Local domain - requires /etc/hosts entry or *.nip.io
+  domain: "demo-gcp.oesinc.dev"
+
+  # LoadBalancer configuration (standard ports)
+  ports:
+    http: 80
+    https: 443
+
+  # Nginx ingress annotations for buffer sizing
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+
+  tls:
+    enabled: true
+    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+
+    # Don't use cert-manager for local dev
+    certManager:
+      enabled: false
+
+# Keycloak subchart config
+keycloak:
+  service:
+    type: ClusterIP
+  config:
+    hostnameStrict: "false"
+
+  # Development resources - balanced for testing
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Reduce resource requests for local development
+# Override specific services if needed
+gms-api:
+  replicaCount: 1
+  # Increased timeouts for development/debugging
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+mongodb:
+  persistence:
+    deleteOnUpgrade: true  # Fresh database on every upgrade (dev only)
+  initdb:
+    createConfigMap: false  # Parent chart provides the ConfigMap
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+nats:
+  tls:
+    enabled: true
+  nodePort:
+    enabled: false
+  websocketNodePort:
+    enabled: false
+    port: 30009
+  authCallout:
+    enabled: false  # Enabled only via values-nats-auth-generated.yaml
+
+nats-auth-svc:
+  jwks: {}

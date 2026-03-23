@@ -1,0 +1,12 @@
+{
+  "title": "Algorithm App",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "title": "Enabled",
+      "type": "boolean",
+      "value": false
+    }
+  }
+}
+

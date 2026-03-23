@@ -1,0 +1,37 @@
+nats:
+  connection_url: nats://{{ .Release.Name }}-nats-service:4222
+  creds: ''
+  auth: NIL
+devices:
+- mrid: fd32c1f5-7cb1-4fa4-b578-0e5ac023c47f
+  workflow: RegulatorWorkflow
+- mrid: cae018bb-c751-49f2-ab7e-c9ecfc674b68
+  workflow: RegulatorWorkflow
+- mrid: bd20d8a6-21ad-4aa3-a494-649af8039ffe
+  workflow: RegulatorWorkflow
+workflows:
+- name: RegulatorWorkflow
+  steps:  
+  - name: LockDevice
+    condition: Always      
+    checks:     
+      - RegulatorStatusProfile.mapping.regulatorStatus.regulatorEventAndStatusANCR.PointStatus.voltageSetPointEnabled.stVal,0
+    actions:      
+      - RegulatorDiscreteControlProfile.mapping.regulatorDiscreteControl.regulatorControlATCC.DirMode.value,1          
+  - name: UnlockDevice
+    condition: None    
+    actions:
+      - RegulatorDiscreteControlProfile.mapping.regulatorDiscreteControl.regulatorControlATCC.DirMode.value,5
+  - name: RaiseTap
+    condition: DependsOn
+    depends_on: LockDevice    
+    actions:
+      - RegulatorDiscreteControlProfile.mapping.regulatorDiscreteControl.regulatorControlATCC.TapOpR.phs3.ctlVal,1          
+  - name: LowerTap
+    condition: DependsOn
+    depends_on: LockDevice
+    actions:
+      - RegulatorDiscreteControlProfile.mapping.regulatorDiscreteControl.regulatorControlATCC.TapOpL.phs3.ctlVal,1
+          
+
+

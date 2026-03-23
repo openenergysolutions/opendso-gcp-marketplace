@@ -1,0 +1,37 @@
+replicaCount: 1
+
+global:
+  images: {}
+  imageRegistry: ""
+  imagePullSecrets: []
+  keycloak:
+    internalUrl: ""
+    realm: "oes"
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+# Name of the Kubernetes Secret containing the NATS NKey files:
+#   account.nk, user.nk, xkey.xk
+natsKeysSecret: "nats-auth-keys"
+
+# JWKS configuration
+jwks:
+  # Override the auto-computed JWKS URL (keycloak.internalUrl/realms/<realm>/protocol/openid-connect/certs)
+  url: ""
+  cacheTTL: 3600
+  refreshUnknownKID: true
+  timeout: 10
+  insecureTLS: false
+
+resources:
+  limits:
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

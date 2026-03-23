@@ -1,0 +1,14 @@
+nats:
+  servers:
+    - "nats://{{ .Release.Name }}-nats-service:4222"
+  tls:
+    enabled: false
+logging:
+  level: "info"
+database:
+  {{- $citus := include "opendso.citusDb.settings" . | fromYaml }}
+  host: {{ $citus.host | quote }}
+  port: {{ $citus.port }}
+  name: {{ $citus.name | quote }}
+  user: {{ $citus.user | quote }}
+  password: {{ $citus.password | quote }}

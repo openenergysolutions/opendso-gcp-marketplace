@@ -1,0 +1,59 @@
+replicaCount: 1
+
+image:
+  repository: oesinc/topology-genesis
+  pullPolicy: IfNotPresent
+  tag: "c53cf381"
+
+imagePullSecrets:
+  - name: regcred
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 100
+  fsGroup: 101
+
+securityContext: {}
+
+env:
+  PLATFORM_NATS_SERVICE: opendso-nats-service
+
+args:
+  - "-c"
+  - "/resources/cim.xml"
+  - "-e"
+  - "/resources/cimex.config"
+  - "--db"
+  - "/output/cim.db"
+
+configMap:
+  name: topology-genesis-configs
+
+persistence:
+  enabled: true
+  storageClass: ""  # Uses global.storageClass if empty
+  accessMode: ReadWriteOnce
+  size: 100M
+  mountPath: /output
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

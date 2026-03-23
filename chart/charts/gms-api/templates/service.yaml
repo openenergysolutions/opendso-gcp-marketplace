@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gms-api.fullname" . }}
+  labels:
+    {{- include "gms-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPort }}
+      protocol: TCP
+      name: api
+  selector:
+    {{- include "gms-api.selectorLabels" . | nindent 4 }}

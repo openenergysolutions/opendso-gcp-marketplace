@@ -1,0 +1,315 @@
+{
+  "var": {
+    "title": "DER Management",
+    "desc": "OES",
+    "options": [
+      {
+        "type": "regions",
+        "multiple": false
+      }
+    ],
+    "get": {
+      "endpoint": "/config/der.json",
+      "protocol": "http"
+    },
+    "save": [
+      {
+        "endpoint": "opendso.{{regionID}}.dermgmt.settings.set",
+        "protocol": "nats",
+        "type": "publish",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabledDer"
+          },
+          {
+            "label": "vars",
+            "value": "varValue"
+          },
+          {
+            "label": "batteryCharge",
+            "value": "batteryCharge"
+          },
+          {
+            "label": "batteryLowNeutral",
+            "value": "batteryLowNeutral"
+          },
+          {
+            "label": "batteryHighNeutral",
+            "value": "batteryHighNeutral"
+          },
+          {
+            "label": "batteryDischarge",
+            "value": "batteryDischarge"
+          }
+        ]
+      }
+    ],
+    "onLoad": [
+      {
+        "endpoint": "opendso.{{regionID}}.dermgmt.settings",
+        "protocol": "nats",
+        "type": "listen",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabledDer"
+          },
+          {
+            "label": "vars",
+            "value": "varValue"
+          },
+          {
+            "label": "batteryCharge",
+            "value": "batteryCharge"
+          },
+          {
+            "label": "batteryLowNeutral",
+            "value": "batteryLowNeutral"
+          },
+          {
+            "label": "batteryHighNeutral",
+            "value": "batteryHighNeutral"
+          },
+          {
+            "label": "batteryDischarge",
+            "value": "batteryDischarge"
+          }
+        ]
+      },
+      {
+        "endpoint": "opendso.{{regionID}}.dermgmt.settings.get",
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ]
+  },
+  "cvr": {
+    "title": "CVR",
+    "desc": "OES",
+    "options": [
+      {
+        "type": "regions",
+        "multiple": false
+      }
+    ],
+    "get": {
+      "endpoint": "/config/cvr.json",
+      "protocol": "http"
+    },
+    "save": [
+      {
+        "endpoint": "opendso.{{regionID}}.cvr.setstate",
+        "payload": [
+          {
+            "label": "enabledApp",
+            "value": "enabledApp"
+          },
+          {
+            "label": "reductionLevel",
+            "value": "reductionLevel"
+          },
+          {
+            "label": "repeatSequence",
+            "value": "repeatSequence"
+          },
+          {
+            "label": "startHour",
+            "value": "startHour"
+          },
+          {
+            "label": "startMin",
+            "value": "startMin"
+          },
+          {
+            "label": "endHour",
+            "value": "endHour"
+          },
+          {
+            "label": "endMin",
+            "value": "endMin"
+          }
+        ],
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ],
+    "onLoad": [
+      {
+        "endpoint": "opendso.{{regionID}}.cvr.state",
+        "protocol": "nats",
+        "type": "listen",
+        "payload": [
+          {
+            "label": "enabledApp",
+            "value": "enabledApp"
+          },
+          {
+            "label": "reductionLevel",
+            "value": "reductionLevel"
+          },
+          {
+            "label": "repeatSequence",
+            "value": "repeatSequence"
+          },
+          {
+            "label": "startHour",
+            "value": "startHour"
+          },
+          {
+            "label": "startMin",
+            "value": "startMin"
+          },
+          {
+            "label": "endHour",
+            "value": "endHour"
+          },
+          {
+            "label": "endMin",
+            "value": "endMin"
+          }
+        ]
+      },
+      {
+        "endpoint": "opendso.{{regionID}}.cvr.getstate",
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ]
+  },
+  "algo-ucf-bgan": {
+    "title": "Algorithm - UCF",
+    "desc": "POS",
+    "options": [
+      {
+        "type": "regions",
+        "multiple": false
+      }
+    ],
+    "get": {
+      "endpoint": "/config/algorithm.json",
+      "protocol": "http"
+    },
+    "save": [
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.ucf-bgan.state",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabled"
+          }
+        ],
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ],
+    "onLoad": [
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.ucf-bgan.state",
+        "protocol": "nats",
+        "type": "listen",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabled"
+          }
+        ]
+      },
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.ucf-bgan.state",
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ]
+  },
+  "algo-vt-ca": {
+    "title": "Algorithm - VT",
+    "desc": "POS",
+    "options": [
+      {
+        "type": "regions",
+        "multiple": false
+      }
+    ],
+    "get": {
+      "endpoint": "/config/algorithm.json",
+      "protocol": "http"
+    },
+    "save": [
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.vt-ca.state",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabled"
+          }
+        ],
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ],
+    "onLoad": [
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.vt-ca.state",
+        "protocol": "nats",
+        "type": "listen",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabled"
+          }
+        ]
+      },
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.vt-ca.state",
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ]
+  },
+  "algo-ucf-vi": {
+    "title": "Algorithm - Voltage Interference",
+    "desc": "POS",
+    "options": [
+      {
+        "type": "regions",
+        "multiple": false
+      }
+    ],
+    "get": {
+      "endpoint": "/config/algorithm.json",
+      "protocol": "http"
+    },
+    "save": [
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.ucf-vi.state",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabled"
+          }
+        ],
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ],
+    "onLoad": [
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.ucf-vi.state",
+        "protocol": "nats",
+        "type": "listen",
+        "payload": [
+          {
+            "label": "enabled",
+            "value": "enabled"
+          }
+        ]
+      },
+      {
+        "endpoint": "opendso.{{regionID}}.algorithm.ucf-vi.state",
+        "protocol": "nats",
+        "type": "publish"
+      }
+    ]
+  }
+}

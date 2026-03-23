@@ -1,0 +1,97 @@
+# Default values for opendso-apps-db
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# PostgreSQL configuration
+auth:
+  username: essuser
+  password: esspassword
+  database: ess_tester
+  existingSecret: ""
+  usernameKey: username
+  passwordKey: password
+  databaseKey: database
+
+# External database configuration (BYO)
+externalDatabase:
+  enabled: false
+  host: ""
+  port: 5432
+  database: ""
+  username: ""
+  password: ""
+  existingSecret: ""
+  usernameKey: username
+  passwordKey: password
+  databaseKey: database
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""  # Uses global.storageClass if empty
+  size: 5Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5432
+
+# Init scripts configuration
+initdb:
+  enabled: true
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Pod configuration
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health check configuration
+healthcheck:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+# Health probes
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - pg_isready
+      - -U
+      - essuser
+      - -d
+      - ess_tester
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - pg_isready
+      - -U
+      - essuser
+      - -d
+      - ess_tester
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

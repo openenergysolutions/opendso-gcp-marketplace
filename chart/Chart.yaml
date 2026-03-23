@@ -1,0 +1,190 @@
+apiVersion: v2
+name: opendso
+description: OpenDSO - Umbrella Helm Chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - opendso
+  - electric-vehicle
+  - openfmb
+  - der
+  - microgrid
+  - distribution-system
+  - grid-edge
+  - energy-management
+home: https://github.com/openenergysolutions/opendso-helm-charts
+maintainers:
+  - name: OpenDSO Team
+    email: info@openenergysolutions.com
+
+dependencies:
+  # Infrastructure Services
+  - name: nats
+    version: 0.1.0
+    repository: "file://charts/nats"
+    condition: global.nats.enabled
+  - name: keycloak
+    version: 0.1.0
+    repository: "file://charts/keycloak"
+    condition: global.keycloak.enabled
+
+  # Monitoring & Observability
+  - name: grafana
+    version: "10.5.14"
+    repository: "https://grafana.github.io/helm-charts"
+    condition: global.grafana.enabled
+
+  # Database Services
+  - name: mongodb
+    version: 0.1.0
+    repository: "file://charts/mongodb"
+    condition: global.mongodb.enabled
+  - name: citus-db
+    version: 0.1.0
+    repository: "file://charts/citus-db"
+    condition: global.citus-db.enabled
+  - name: keycloak-db
+    version: 0.1.0
+    repository: "file://charts/keycloak-db"
+    condition: global.keycloak-db.enabled
+
+  # Core Services
+  - name: historian-svc
+    version: 0.1.0
+    repository: "file://charts/historian-svc"
+    condition: global.historian-svc.enabled
+  - name: gms-api
+    version: 0.1.0
+    repository: "file://charts/gms-api"
+    condition: global.gms-api.enabled
+  - name: openfmb-event-service
+    version: 0.1.0
+    repository: "file://charts/openfmb-event-service"
+    condition: global.openfmb-event-service.enabled
+
+  # Topology Services
+  - name: topology-genesis
+    version: 0.1.0
+    repository: "file://charts/topology-genesis"
+    condition: global.topology-genesis.enabled
+  - name: topology-nodes
+    version: 0.1.0
+    repository: "file://charts/topology-nodes"
+    condition: global.topology-nodes.enabled
+
+  - name: der-dispatch-app
+    version: 0.1.0
+    repository: "file://charts/der-dispatch-app"
+    condition: global.der-dispatch-app.enabled
+  - name: der-dispatch-svc
+    version: 0.1.0
+    repository: "file://charts/der-dispatch-svc"
+    condition: global.der-dispatch-svc.enabled
+
+  # Frontend Applications
+  - name: genesis-node-app
+    version: 0.1.0
+    repository: "file://charts/genesis-node-app"
+    condition: global.genesis-node-app.enabled
+  - name: data-viewer-app
+    version: 0.1.0
+    repository: "file://charts/data-viewer-app"
+    condition: global.data-viewer-app.enabled
+  - name: event-viewer-app
+    version: 0.1.0
+    repository: "file://charts/event-viewer-app"
+    condition: global.event-viewer-app.enabled
+  - name: gis-app
+    version: 0.1.0
+    repository: "file://charts/gis-app"
+    condition: global.gis-app.enabled
+  - name: historian-app
+    version: 0.1.0
+    repository: "file://charts/historian-app"
+    condition: global.historian-app.enabled
+  - name: inspector-app
+    version: 0.1.0
+    repository: "file://charts/inspector-app"
+    condition: global.inspector-app.enabled
+  - name: inventory-app
+    version: 0.1.0
+    repository: "file://charts/inventory-app"
+    condition: global.inventory-app.enabled
+  - name: one-line-app
+    version: 0.1.0
+    repository: "file://charts/one-line-app"
+    condition: global.one-line-app.enabled
+  - name: opendso-docs-app
+    version: 0.1.0
+    repository: "file://charts/opendso-docs-app"
+    condition: global.opendso-docs-app.enabled
+  - name: openfmb-event-creator-app
+    version: 0.1.0
+    repository: "file://charts/openfmb-event-creator-app"
+    condition: global.openfmb-event-creator-app.enabled
+  - name: schedule-dispatch-app
+    version: 0.1.0
+    repository: "file://charts/schedule-dispatch-app"
+    condition: global.schedule-dispatch-app.enabled
+
+  # ESS Applications
+  - name: ess-manager-svc
+    version: 0.1.0
+    repository: "file://charts/ess-manager-svc"
+    condition: global.ess-manager-svc.enabled
+  - name: ess-tester-svc
+    version: 0.1.0
+    repository: "file://charts/ess-tester-svc"
+    condition: global.ess-tester-svc.enabled
+  - name: asset-health-svc
+    version: 0.1.0
+    repository: "file://charts/asset-health-svc"
+    condition: global.asset-health-svc.enabled
+  - name: asset-health-sim-svc
+    version: 0.1.0
+    repository: "file://charts/asset-health-sim-svc"
+    condition: global.asset-health-sim-svc.enabled
+
+  # Additional Services
+  - name: cvr-svc
+    version: 0.1.0
+    repository: "file://charts/cvr-svc"
+    condition: global.cvr-svc.enabled
+  - name: ess-manager-app
+    version: 0.1.0
+    repository: "file://charts/ess-manager-app"
+    condition: global.ess-manager-app.enabled
+  - name: ess-tester-app
+    version: 0.1.0
+    repository: "file://charts/ess-tester-app"
+    condition: global.ess-tester-app.enabled
+  - name: omegadss-svc
+    version: 0.1.0
+    repository: "file://charts/omegadss-svc"
+    condition: global.omegadss-svc.enabled
+  - name: cvr-openfmb-services-svc
+    version: 0.1.0
+    repository: "file://charts/cvr-openfmb-services-svc"
+    condition: global.cvr-openfmb-services-svc.enabled
+  - name: cvr-genetic-algorithm-svc
+    version: 0.1.0
+    repository: "file://charts/cvr-genetic-algorithm-svc"
+    condition: global.cvr-genetic-algorithm-svc.enabled
+  - name: opendso-apps-db
+    version: 0.1.0
+    repository: "file://charts/opendso-apps-db"
+    condition: global.opendso-apps-db.enabled
+  - name: ess-manager-redis
+    version: 0.1.0
+    repository: "file://charts/ess-manager-redis"
+    condition: global.ess-manager-redis.enabled
+  - name: rpcdss-svc
+    version: 0.1.0
+    repository: "file://charts/rpcdss-svc"
+    condition: global.rpcdss-svc.enabled
+  - name: nats-auth-svc
+    version: 0.1.0
+    repository: "file://charts/nats-auth-svc"
+    condition: global.nats-auth-svc.enabled
+

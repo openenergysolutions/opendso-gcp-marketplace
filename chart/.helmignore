@@ -1,0 +1,12 @@
+# Patterns to ignore when building packages
+
+# Version control
+.git/
+.gitignore
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store

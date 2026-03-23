@@ -1,0 +1,9 @@
+apiVersion: v2
+name: nats-auth-svc
+description: NATS Auth Service for OpenDSO — validates JWT tokens via Keycloak JWKS and issues NATS user JWTs
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: OpenDSO Team
+    email: info@openenergysolutions.com

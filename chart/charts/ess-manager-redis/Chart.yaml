@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ess-manager-redis
+description: Redis cache for ESS Manager
+type: application
+version: 0.1.0
+appVersion: "7.0"
+maintainers:
+  - name: OpenDSO Team
+    email: info@openenergysolutions.com

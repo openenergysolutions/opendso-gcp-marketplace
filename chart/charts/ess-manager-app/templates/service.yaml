@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ess-manager-app.fullname" . }}
+  labels:
+    {{- include "ess-manager-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPort }}
+      protocol: TCP
+      name: web
+  selector:
+    {{- include "ess-manager-app.selectorLabels" . | nindent 4 }}

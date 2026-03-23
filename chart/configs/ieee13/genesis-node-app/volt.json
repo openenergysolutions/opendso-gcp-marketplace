@@ -1,0 +1,38 @@
+{
+  "title": "Volt App",
+  "type": "object",
+  "properties": {
+    "enabledVolt": {
+      "title": "App State",
+      "type": "boolean",
+      "value": false
+    },
+    "voltSettingsHeader": {
+      "type":"header",
+      "title":"Settings"
+    },
+    "voltMode": {
+      "type": "radio",
+      "title": "Volt App Mode",
+      "required": true,
+      "value": {
+        "options": [
+        {
+          "label": "CVR",
+          "value": "CVR"
+        },
+        {
+          "label": "Setpoint",
+          "value": "Setpoint"
+        }
+        ]
+      }
+    },
+    "voltSetpoint": {
+      "type": "text",
+      "title": "Setpoint Value",
+      "required": true,
+      "value": "120"
+    }
+  }
+}

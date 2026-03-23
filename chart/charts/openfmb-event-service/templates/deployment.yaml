@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "openfmb-event-service.fullname" . }}
+  labels:
+    {{- include "openfmb-event-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "openfmb-event-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "openfmb-event-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "openfmb-event-service.image" (dict "imageRoot" .Values.global.images.openfmbEventService "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.openfmbEventService.pullPolicy }}
+          {{- if or .Values.args (dig "nats-auth-svc" "enabled" false .Values.global) }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+            {{- if dig "nats-auth-svc" "enabled" false .Values.global }}
+            - "--nats-auth"
+            {{- end }}
+          {{- end }}
+          env:
+            - name: PLATFORM_NATS_SERVICE
+              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+            {{- range $key, $value := .Values.env }}
+            {{- if ne $key "PLATFORM_NATS_SERVICE" }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ printf "%s-openfmb-event-service-keycloak-env" .Release.Name }}
+                optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /resources
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "openfmb-event-service.fullname" . }}-config
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "openfmb-event-service.fullname" . }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

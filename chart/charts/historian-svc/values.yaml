@@ -1,0 +1,117 @@
+replicaCount: 1
+
+historian:
+  image:
+    repository: oesinc/historian
+    pullPolicy: IfNotPresent
+    tag: "93488998"
+  args: ["--grpc", "0.0.0.0:50051"]
+  port: 50051
+
+envoy:
+  image:
+    repository: envoyproxy/envoy
+    pullPolicy: IfNotPresent
+    tag: "v1.17.0"
+  grpcPort: 5051
+  adminPort: 9901
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+imagePullSecrets:
+  - name: regcred
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: false
+  runAsUser: 100
+  fsGroup: 101
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 50051
+
+env:
+  PLATFORM_NATS_SERVICE: opendso-nats-service
+  PGHOST: opendso-citus-db
+
+# Service configuration
+config:
+  nats:
+    server: "nats://opendso-nats-service:4222"
+    tls:
+      enabled: false
+      certFile: "/certs/client-cert.pem"
+      keyFile: "/certs/client-key.pem"
+      caFile: "/certs/ca.pem"
+  logging:
+    level: "info"
+  # Database configuration is managed by parent chart via opendso.citusDb.settings helper
+  # See opendso/templates/_helpers.tpl and opendso/templates/site-configmaps.yaml
+
+# Historian settings (for historian.json config)
+historianSettings:
+  resource: "/home/resource/config.yml"
+  retention: 7200
+  maintenance: 3600
+  partition: 1800
+  vacuum: 8000
+  insert: 10
+  timeout: 5
+  retry: 3
+  enabled: true
+  log: false
+  trace: false
+
+tls:
+  enabled: true
+  certSecret: server-cert
+  keySecret: server-key
+  rootCaSecret: root-ca
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health probes
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: 50051
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: 50051
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

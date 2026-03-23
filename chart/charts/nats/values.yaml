@@ -1,0 +1,80 @@
+replicaCount: 1
+
+image:
+  repository: nats
+  pullPolicy: IfNotPresent
+  tag: "2.9.9"
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  clientPort: 4222
+  monitorPort: 8222
+  routingPort: 6222
+  websocketPort: 9222
+  mqttPort: 1883
+
+nodePort:
+  enabled: true
+  port: 30007
+
+# WebSocket NodePort for browser access
+websocketNodePort:
+  enabled: true
+  port: 30009
+
+tls:
+  enabled: true
+  # Default: <release-name>-tls-secret (overridden by deploy scripts via --set nats.tls.secretName)
+  secretName: opendso-tls-secret
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# NATS auth callout configuration (populated by setup-prerequisites.sh)
+authCallout:
+  enabled: false
+  issuer: ""    # account.nk public key  (A...)
+  authUser: ""  # user.nk public key     (U...)
+  xkey: ""      # xkey.xk public key     (X...)
+
+# Health probes
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: 4222
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: 4222
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3

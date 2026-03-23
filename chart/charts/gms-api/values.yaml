@@ -1,0 +1,117 @@
+# Global values inherited from parent chart
+# These provide defaults; parent chart values take precedence
+global:
+  keycloak:
+    url: ""
+    internalUrl: "http://opendso-keycloak-svc:8080"
+    realm: "oes"
+    clientIds:
+      ui: "gms"
+      api: "gms"
+
+replicaCount: 1
+
+image:
+  repository: oesinc/gms-api
+  pullPolicy: IfNotPresent
+  tag: "c6ab8cc0"
+
+imagePullSecrets:
+  - name: regcred
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8000
+
+containerPort: 8000
+
+# Service configuration
+config:
+  server:
+    port: 8000
+    host: "0.0.0.0"
+  mongodb:
+    uri: "mongodb://opendso-mongodb:27017"
+    dbName: "settings_api"
+    username: "SettingsAPIUser"
+    password: "quietwhale62"
+    # Create a Secret for MongoDB credentials (recommended for production)
+    createSecret: false
+    # Use an existing Secret for MongoDB credentials
+    existingSecret: ""
+    usernameKey: "mongodb-username"
+    passwordKey: "mongodb-password"
+  nats:
+    url: "nats://opendso-nats-service:4222"
+  tls:
+    enabled: true
+    certFile: "/home/node/app/certs/server-cert.pem"
+    keyFile: "/home/node/app/certs/server-key.pem"
+  logging:
+    level: "info"
+
+tls:
+  enabled: true
+  certSecret: server-cert
+  keySecret: server-key
+
+persistence:
+  enabled: false
+  storageClass: nfs-csi
+  accessMode: ReadWriteOnce
+  size: 100M
+  mountPath: /home/node/app/logger
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Health probes
+# Note: gms-api has a known startup issue where it may fail to listen on port 8000
+# The startup probe gives it multiple chances to start correctly
+startupProbe:
+  enabled: true
+  tcpSocket:
+    port: 8000
+  initialDelaySeconds: 0
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 12        # 12 * 5 = 60 seconds total to start
+
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: 8000
+  initialDelaySeconds: 0       # Startup probe handles initial delay
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3          # Restart faster if it stops responding
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: 8000
+  initialDelaySeconds: 0       # Startup probe handles initial delay
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3

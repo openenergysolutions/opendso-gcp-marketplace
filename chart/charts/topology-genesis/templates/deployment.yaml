@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "topology-genesis.fullname" . }}
+  labels:
+    {{- include "topology-genesis.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "topology-genesis.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "topology-genesis.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "topology-genesis.image" (dict "imageRoot" .Values.global.images.topologyGenesis "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.topologyGenesis.pullPolicy }}
+          env:
+            - name: PLATFORM_NATS_SERVICE
+              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+            {{- range $key, $value := .Values.env }}
+            {{- if ne $key "PLATFORM_NATS_SERVICE" }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ printf "%s-topology-genesis-keycloak-env" .Release.Name }}
+                optional: true
+          {{- if or .Values.args (dig "nats-auth-svc" "enabled" false .Values.global) }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+            {{- if dig "nats-auth-svc" "enabled" false .Values.global }}
+            - "--nats-auth"
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: topology-genesis-resources
+              mountPath: /resources
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+      volumes:
+        - name: topology-genesis-resources
+          configMap:
+            name: {{ .Values.siteConfigMap | default (printf "%s-topology-genesis-site-config" .Release.Name) }}
+            items:
+              - key: cim.xml
+                path: cim.xml
+              - key: cimex.config
+                path: cimex.config
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "topology-genesis.fullname" . }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

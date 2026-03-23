@@ -1,0 +1,224 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gms-api.fullname" . }}
+  labels:
+    {{- include "gms-api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gms-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gms-api.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gms-api.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: wait-for-mongodb-data
+        image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) | quote }}
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for MongoDB authsettings document..."
+          until mongosh "mongodb://{{ .Values.config.mongodb.username }}:{{ .Values.config.mongodb.password }}@{{ .Release.Name }}-mongodb:27017/settings_api{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" \
+            --quiet \
+            {{- if (index .Values.global "mongodb").tls.enabled }}
+            --tlsCAFile /etc/mongodb/tls/ca.crt \
+            {{- end }}
+            --eval "db.authsettings.findOne({ environmentId: 'default' })" | grep -q "environmentId"; do
+            echo "authsettings document not ready yet, waiting..."
+            sleep 3
+          done
+          echo "authsettings document found! Proceeding with startup."
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        {{- if (index .Values.global "mongodb").tls.enabled }}
+        volumeMounts:
+        - name: mongodb-tls
+          mountPath: /etc/mongodb/tls
+          readOnly: true
+        {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.gmsApi "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.gmsApi.pullPolicy }}
+          env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
+            {{- if .Values.config.mongodb.existingSecret }}
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.mongodb.existingSecret }}
+                  key: {{ .Values.config.mongodb.usernameKey | default "mongodb-username" }}
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.mongodb.existingSecret }}
+                  key: {{ .Values.config.mongodb.passwordKey | default "mongodb-password" }}
+            {{- else if .Values.config.mongodb.createSecret }}
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gms-api.fullname" . }}-mongodb
+                  key: mongodb-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gms-api.fullname" . }}-mongodb
+                  key: mongodb-password
+            {{- else }}
+            - name: MONGODB_USERNAME
+              value: {{ .Values.config.mongodb.username | quote }}
+            - name: MONGODB_PASSWORD
+              value: {{ .Values.config.mongodb.password | quote }}
+            {{- end }}
+          ports:
+            - name: api
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: env
+              mountPath: /home/node/app/dist/pre-start/env
+              readOnly: true
+            {{- if .Values.tls.enabled }}
+            - name: cert-file
+              mountPath: /home/node/app/certs/server-cert.pem
+              subPath: server-cert.pem
+              readOnly: true
+            - name: key-file
+              mountPath: /home/node/app/certs/server-key.pem
+              subPath: server-key.pem
+              readOnly: true
+            {{- end }}
+            - name: logger
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- if (index .Values.global "mongodb").tls.enabled }}
+            - name: mongodb-tls
+              mountPath: /etc/mongodb/tls
+              readOnly: true
+            {{- end }}
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+
+          {{- if .Values.startupProbe.enabled }}
+          startupProbe:
+            {{- if .Values.startupProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.startupProbe.httpGet.path }}
+              port: {{ .Values.startupProbe.httpGet.port }}
+              scheme: {{ .Values.startupProbe.httpGet.scheme | default "HTTP" }}
+            {{- else if .Values.startupProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.startupProbe.tcpSocket.port }}
+            {{- else if .Values.startupProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.startupProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- if .Values.livenessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+              scheme: {{ .Values.livenessProbe.httpGet.scheme | default "HTTP" }}
+            {{- else if .Values.livenessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.tcpSocket.port }}
+            {{- else if .Values.livenessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.livenessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- if .Values.readinessProbe.httpGet }}
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+              scheme: {{ .Values.readinessProbe.httpGet.scheme | default "HTTP" }}
+            {{- else if .Values.readinessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.tcpSocket.port }}
+            {{- else if .Values.readinessProbe.exec }}
+            exec:
+              command:
+                {{- toYaml .Values.readinessProbe.exec.command | nindent 16 }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+      volumes:
+        - name: env
+          configMap:
+            name: {{ include "gms-api.fullname" . }}-config
+        {{- if .Values.tls.enabled }}
+        - name: cert-file
+          secret:
+            secretName: {{ .Values.tls.certSecret }}
+        - name: key-file
+          secret:
+            secretName: {{ .Values.tls.keySecret }}
+        {{- end }}
+        {{- if .Values.persistence.enabled }}
+        - name: logger
+          persistentVolumeClaim:
+            claimName: {{ include "gms-api.fullname" . }}
+        {{- else }}
+        - name: logger
+          emptyDir: {}
+        {{- end }}
+        {{- if (index .Values.global "mongodb").tls.enabled }}
+        - name: mongodb-tls
+          secret:
+            secretName: {{ .Release.Name }}-mongodb-tls
+            defaultMode: 0444
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

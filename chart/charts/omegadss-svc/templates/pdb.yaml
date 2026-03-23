@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "omegadss-svc.fullname" . }}
+  labels:
+    {{- include "omegadss-svc.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "omegadss-svc.selectorLabels" . | nindent 6 }}

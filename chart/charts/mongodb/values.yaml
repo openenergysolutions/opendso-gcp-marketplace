@@ -1,0 +1,84 @@
+# Default values for mongodb
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# MongoDB configuration
+auth:
+  rootUsername: admin
+  rootPassword: password
+  database: settings_api
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""  # Uses global.storageClass if empty
+  dataSize: 10Gi
+  logSize: 1Gi
+  # WARNING: Setting this to true will DELETE MongoDB PVCs on every helm upgrade
+  # Only use in development environments where you want a fresh database
+  deleteOnUpgrade: false
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 27017
+
+# TLS/SSL configuration
+tls:
+  enabled: true
+  # Existing secret created by scripts/lib/create-certs.sh
+  # Secret must contain: mongodb.pem (combined cert+key) and ca.crt
+  # Run: CREATE_K8S_SECRETS=true ./scripts/lib/create-certs.sh
+  existingSecret: "opendso-mongodb-tls"  # Default: <release-name>-mongodb-tls (overridden by deploy scripts)
+  # TLS mode: disabled, allowTLS, preferTLS, requireTLS
+  mode: preferTLS
+  # Allow connections without TLS (useful during migration)
+  allowConnectionsWithoutTLS: true
+
+# Resource limits
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Pod configuration
+podAnnotations: {}
+podSecurityContext:
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999
+securityContext:
+  runAsNonRoot: true
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Init DB configuration
+initdb:
+  enabled: true
+  # Set to false when parent chart provides the ConfigMap (default)
+  createConfigMap: false
+  database: "settings_api"
+  username: "gms-api"
+  password: "gms-api"
+
+# Health probes
+# Note: When TLS is enabled, probes automatically use --tls and --tlsCAFile flags
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3

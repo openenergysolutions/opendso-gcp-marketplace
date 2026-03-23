@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "omegadss-svc.fullname" . }}
+  labels:
+    {{- include "omegadss-svc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "omegadss-svc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "omegadss-svc.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "omegadss-svc.image" (dict "imageRoot" .Values.global.images.omegadssSvc "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.omegadssSvc.pullPolicy }}
+          args:
+            - "-c"
+            - "/tmp/dss/config/omegadss.json"
+          env:
+            - name: PLATFORM_NODE_IP
+              value: {{ printf "nats://%s-nats-service:4222" .Release.Name | quote }}
+            - name: RPCDSS_NODE_IP
+              value: {{ printf "http://%s-rpcdss-svc:50049" .Release.Name | quote }}
+            {{- range $key, $value := .Values.env }}
+            {{- if not (has $key (list "PLATFORM_NODE_IP" "RPCDSS_NODE_IP")) }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ printf "%s-omegadss-svc-keycloak-env" .Release.Name }}
+                optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /tmp/dss/config
+          resources:
+            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.siteConfigMap | default (printf "%s-omegadss-site-config" .Release.Name) }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

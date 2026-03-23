@@ -1,0 +1,83 @@
+oes-app:
+  log_level: info
+  log_file_enabled: false
+  log_file: ess-manager.log
+nats:
+  connection_url: nats://{{ .Release.Name }}-nats-service:4222
+  creds: ''
+  auth: 'NIL'
+app_settings:
+  enabled: true
+  app_name: "ess-manager"
+  app_version: "0.1.0"
+  app_id: 74c879a1-d42e-4043-926d-4063eefcde5f
+  region: #290347ae-a0a6-4036-8d0c-0b45bd052376
+  process_interval_ms: 1000
+  storage_url: redis://{{ .Release.Name }}-ess-manager-redis:6379
+#units: []
+units:
+  - mrid: 3bda2cb0-6e39-40ca-84de-d58b99e7e40e
+    system_stats:
+      rated_energy_kwh: 200
+
+#     output:
+#       mrid: 3bda2cb0-6e39-40ca-84de-d58b99e7e40e
+#       rate_case_option1: ContinuousWatts
+#       rate_case_option2: ContinuousVar
+#       grey_space: PriorityRecharge
+#     ess_data:
+#       mrid: 3bda2cb0-6e39-40ca-84de-d58b99e7e40e
+#     dispatch_miso:
+#       mrid: 3bda2cb0-6e39-40ca-84de-d58b99e7e40e
+#     so_control_settings:
+#       mrid: 3bda2cb0-6e39-40ca-84de-d58b99e7e40e
+#     system_stats:
+#       rated_charge_power: 500
+#       rated_discharge_power: 500
+#     rate_case_option_values:
+#       reactive_dispatch_value: 17.6
+#       real_dispatch_value: 85.1
+#     guard_rails: []   
+default_guard_rails:
+  - name: Max Power Setpoint Default
+    criteria: PowerSetpoint
+    max: 1000
+  - name: SocGuardRail
+    criteria: SoC
+    min: 15
+    max: 85
+  - name: Ramp up Default
+    criteria: RampRate
+    max: 10
+    min: 1
+  - name: Recharge Power
+    criteria: RechargePower
+    max: -9000
+    min: -1
+default_algorithm_settings:
+  - cont_watt_setpoint: 55
+    cont_watt_rampup_rate: 0.2
+    cont_watt_rampdown_rate: 0.3
+    priority_recharge_ideal_soc: 81
+    priority_recharge_gain: 12.0
+    priority_recharge_min_recharge_power: -5.0
+    priority_recharge_max_recharge_power: -800.0
+    priority_recharge_stdby_power_losses: 21.0
+    solar_smoothing_batt_rampup_rate: 1.5
+    solar_smoothing_batt_rampdown_rate: 1.5
+    solar_smoothing_der_rampup_rate: 1.5
+    solar_smoothing_der_rampdown_rate: 1.5
+    volt_watt_setpoint: 111.0
+    volt_watt_gain: 11.0
+    volt_watt_deadband: 15.0
+    volt_watt_filter_time: 1.0
+    cont_var_setpoint: 22.0
+    cont_var_rampup_rate: 1.2
+    cont_var_rampdown_rate: 1.3
+    volt_var_setpoint: 11.0
+    volt_var_gain: 1.0
+    volt_var_deadband: 5.0
+    volt_var_filter_time: 1.0
+
+
+   

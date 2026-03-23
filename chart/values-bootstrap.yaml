@@ -1,0 +1,70 @@
+# Bootstrap phase — disables all application services during initial deployment.
+# Used by deploy scripts on a fresh install before Keycloak clients are provisioned.
+# Infrastructure (nats, nats-auth-svc, keycloak, mongodb, citus-db) stays enabled
+# via the base values file; this file only disables app-layer services.
+global:
+  # Backend services
+  historian-svc:
+    enabled: false
+  gms-api:
+    enabled: false
+  openfmb-event-service:
+    enabled: false
+  topology-genesis:
+    enabled: false
+  topology-nodes:
+    enabled: false
+  der-dispatch-svc:
+    enabled: false
+  ess-manager-svc:
+    enabled: false
+  ess-tester-svc:
+    enabled: false
+  asset-health-svc:
+    enabled: false
+  asset-health-sim-svc:
+    enabled: false
+  cvr-svc:
+    enabled: false
+  cvr-genetic-algorithm-svc:
+    enabled: false
+  cvr-openfmb-services-svc:
+    enabled: false
+  omegadss-svc:
+    enabled: false
+  rpcdss-svc:
+    enabled: false
+  # Frontend apps
+  der-dispatch-app:
+    enabled: false
+  genesis-node-app:
+    enabled: false
+  data-viewer-app:
+    enabled: false
+  event-viewer-app:
+    enabled: false
+  gis-app:
+    enabled: false
+  historian-app:
+    enabled: false
+  inspector-app:
+    enabled: false
+  inventory-app:
+    enabled: false
+  one-line-app:
+    enabled: false
+  opendso-docs-app:
+    enabled: false
+  openfmb-event-creator-app:
+    enabled: false
+  schedule-dispatch-app:
+    enabled: false
+  ess-manager-app:
+    enabled: false
+  ess-tester-app:
+    enabled: false
+  # App dependencies
+  opendso-apps-db:
+    enabled: false
+  ess-manager-redis:
+    enabled: false

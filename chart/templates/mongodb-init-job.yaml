@@ -1,0 +1,95 @@
+{{- if (index .Values.global "mongodb").enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-mongodb-init
+  labels:
+    app.kubernetes.io/name: mongodb-init
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  backoffLimit: 5
+  ttlSecondsAfterFinished: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongodb-init
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      - name: wait-for-mongodb
+        image: {{ include "opendso.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) }}
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for MongoDB to be ready..."
+          until mongosh --host {{ .Release.Name }}-mongodb --port 27017 \
+            {{- if (index .Values.global "mongodb").tls.enabled }}
+            --tls --tlsCAFile /etc/mongodb/tls/ca.crt --tlsAllowInvalidCertificates \
+            {{- end }}
+            --eval "db.adminCommand('ping')" --quiet > /dev/null 2>&1; do
+            echo "MongoDB not ready yet, waiting..."
+            sleep 3
+          done
+          echo "MongoDB is ready!"
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        {{- if (index .Values.global "mongodb").tls.enabled }}
+        volumeMounts:
+        - name: tls-certs
+          mountPath: /etc/mongodb/tls
+          readOnly: true
+        {{- end }}
+      containers:
+      - name: mongodb-init
+        image: {{ include "opendso.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) }}
+        command:
+        - mongosh
+        - --host
+        - {{ .Release.Name }}-mongodb
+        - --port
+        - "27017"
+        {{- if (index .Values.global "mongodb").tls.enabled }}
+        - --tls
+        - --tlsCAFile
+        - /etc/mongodb/tls/ca.crt
+        - --tlsAllowInvalidCertificates
+        {{- end }}
+        - /scripts/mongo-init.js
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: init-script
+          mountPath: /scripts
+        {{- if (index .Values.global "mongodb").tls.enabled }}
+        - name: tls-certs
+          mountPath: /etc/mongodb/tls
+          readOnly: true
+        {{- end }}
+      volumes:
+      - name: init-script
+        configMap:
+          name: {{ .Release.Name }}-mongodb-init
+      {{- if (index .Values.global "mongodb").tls.enabled }}
+      - name: tls-certs
+        secret:
+          secretName: {{ .Release.Name }}-mongodb-tls
+          defaultMode: 0444
+      {{- end }}
+{{- end }}

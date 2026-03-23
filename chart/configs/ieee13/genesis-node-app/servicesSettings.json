@@ -1,0 +1,15 @@
+{
+    "historianState": {
+        "title": "Historian State",
+        "desc": "OES",
+        "options":["devices"],
+        "get": {
+            "endpoint": "/config/historianState.json",
+            "protocol": "http"
+        },
+        "save": {
+            "endpoint": "opendso.{{regionID}}.historian.{{deviceID}}.enable",
+            "protocol": "nats"
+        } 
+    }
+}
