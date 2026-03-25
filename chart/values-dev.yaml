@@ -109,6 +109,14 @@ gms-api:
       cpu: 250m
       memory: 256Mi
 
+# Topology Nodes — license validation env vars
+# LICENSE_KEY and LICENSE_API_KEY are injected via the opendso-license K8s Secret (envFrom).
+topology-nodes:
+  env:
+    PLATFORM_NATS_SERVICE: opendso-nats-service
+    PLATFORM_NATS_PORT: "4222"
+    LICENSE_API_URL: "https://license-api.demo-gcp.oesinc.dev"
+
 mongodb:
   persistence:
     deleteOnUpgrade: true  # Fresh database on every upgrade (dev only)

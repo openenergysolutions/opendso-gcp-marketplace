@@ -48,9 +48,6 @@ spec:
             {{- end }}
           envFrom:
             - secretRef:
-                name: {{ printf "%s-opendso-license" .Release.Name }}
-                optional: true
-            - secretRef:
                 name: {{ printf "%s-topology-nodes-keycloak-env" .Release.Name }}
                 optional: true
           volumeMounts:

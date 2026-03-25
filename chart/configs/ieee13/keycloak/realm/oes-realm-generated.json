@@ -1355,7 +1355,7 @@
       "description": "topology-genesis service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "be36c94e-c431-48e4-acc8-b36efaac67c2",
+      "secret": "7a2a182c-734a-4c5f-86b3-9154dafe668e",
       "redirectUris": [
         "/*"
       ],
@@ -1403,7 +1403,7 @@
       "description": "topology-nodes service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "8507b43e-749d-4fb8-a2eb-d21d465d9eb1",
+      "secret": "0e6f4a1b-33a2-4f10-bab5-bef508528961",
       "redirectUris": [
         "/*"
       ],
@@ -1451,7 +1451,7 @@
       "description": "openfmb-event-service service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "eb49d360-fbcb-4d63-b9bb-9089d88adf9c",
+      "secret": "053f5de3-ba4d-4346-8b6f-3c4d9fbebb2e",
       "redirectUris": [
         "/*"
       ],
@@ -1499,7 +1499,7 @@
       "description": "omegadss-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "a3212482-630f-4da7-89a3-51dd142249a6",
+      "secret": "65be86e9-8bc7-4df5-936e-6b780faa0c38",
       "redirectUris": [
         "/*"
       ],
@@ -1547,7 +1547,7 @@
       "description": "gms-api service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "8a66fc32-82b4-4894-b963-adbd85da2a50",
+      "secret": "c530af05-5b4e-4559-afc6-bd7d2c02f644",
       "redirectUris": [
         "/*"
       ],
@@ -1595,7 +1595,7 @@
       "description": "ess-manager-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "71ef4f02-fc99-4ab3-85e9-7789b3ead814",
+      "secret": "a4d50277-6275-4ac8-884f-99dc5df66900",
       "redirectUris": [
         "/*"
       ],
@@ -1643,7 +1643,7 @@
       "description": "historian-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "33418f18-2b73-45ff-90c7-8b94feaacd97",
+      "secret": "8aca5061-a953-4ac7-a1f4-ee984239fea1",
       "redirectUris": [
         "/*"
       ],
@@ -1691,7 +1691,7 @@
       "description": "ess-tester-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "67a7a900-75b2-4fc6-8fc6-2130bbbab770",
+      "secret": "fa2ab967-9214-4697-a956-460651f7f1cc",
       "redirectUris": [
         "/*"
       ],
@@ -1739,7 +1739,7 @@
       "description": "cvr-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "4c1c211a-69f9-4c63-866d-0d8a1fbcbe50",
+      "secret": "bdf4eac1-9a14-412e-bdf1-b61b52f66c61",
       "redirectUris": [
         "/*"
       ],
@@ -1787,7 +1787,7 @@
       "description": "der-dispatch-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "8e82e049-db15-4413-9d11-0d1f1c3d66b8",
+      "secret": "2fe0eb83-4c4d-443b-bd28-aa00ee741b3a",
       "redirectUris": [
         "/*"
       ],
@@ -1835,7 +1835,7 @@
       "description": "cvr-openfmb-services-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "974b892f-3c64-4767-82d9-23c3595543b7",
+      "secret": "a925f5eb-b67e-4ea6-843e-e0336537e57e",
       "redirectUris": [
         "/*"
       ],
@@ -1883,7 +1883,7 @@
       "description": "openfmb-adapter service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "ad2ef20d-8016-41a6-a66e-4e74f410640c",
+      "secret": "491cc350-6371-45f0-9cdb-2d3fbe5ae652",
       "redirectUris": [
         "/*"
       ],
@@ -1931,7 +1931,7 @@
       "description": "asset-health-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "aad101b2-1989-477f-a0c1-c1265f5f099b",
+      "secret": "05fccd6f-8318-459e-ac15-0c2e928987c0",
       "redirectUris": [
         "/*"
       ],
@@ -1979,7 +1979,7 @@
       "description": "asset-health-sim-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "ca57881b-055e-4921-a70a-25a7bd2a7e77",
+      "secret": "97e4dcf5-c4d8-45aa-8d92-4aebf2bbe8ea",
       "redirectUris": [
         "/*"
       ],
@@ -2027,7 +2027,7 @@
       "description": "rpcdss-svc service account for NATS auth",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "0b1e76e2-fcca-4da5-99d7-ff163bfcee8c",
+      "secret": "4960c88b-2276-4be0-9d40-6c3f97ceeea0",
       "redirectUris": [
         "/*"
       ],

@@ -33,9 +33,8 @@ spec:
           image: {{ include "mongodb.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.mongodb.pullPolicy }}
           {{- if .Values.tls.enabled }}
-          command:
+          args:
             - mongod
-            - --bind_ip_all
             - --tlsMode
             - {{ .Values.tls.mode }}
             - --tlsCertificateKeyFile

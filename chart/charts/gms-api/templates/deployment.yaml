@@ -38,9 +38,6 @@ spec:
           echo "Waiting for MongoDB authsettings document..."
           until mongosh "mongodb://{{ .Values.config.mongodb.username }}:{{ .Values.config.mongodb.password }}@{{ .Release.Name }}-mongodb:27017/settings_api{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" \
             --quiet \
-            {{- if (index .Values.global "mongodb").tls.enabled }}
-            --tlsCAFile /etc/mongodb/tls/ca.crt \
-            {{- end }}
             --eval "db.authsettings.findOne({ environmentId: 'default' })" | grep -q "environmentId"; do
             echo "authsettings document not ready yet, waiting..."
             sleep 3
@@ -67,7 +64,8 @@ spec:
           imagePullPolicy: {{ .Values.global.images.gmsApi.pullPolicy }}
           env:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
-              value: "0"            
+              value: "0" 
+            # we need this value, DO NOT CHANGE IT
             - name: DOCKER_API
               value: "http://127.0.0.1:2376"            
             {{- if .Values.config.mongodb.existingSecret }}

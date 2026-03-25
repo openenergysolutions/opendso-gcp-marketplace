@@ -5,7 +5,6 @@ metadata:
   name: {{ include "mongodb.fullname" . }}-tls-manager
   labels:
     {{- include "mongodb.labels" . | nindent 4 }}
-  annotations:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]

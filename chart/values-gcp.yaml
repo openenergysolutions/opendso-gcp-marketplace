@@ -237,7 +237,7 @@ topology-nodes:
   env:
     PLATFORM_NATS_SERVICE: opendso-nats-service
     PLATFORM_NATS_PORT: "4222"
-    LICENSE_API_URL: "https://api.opendso.com"
+    LICENSE_API_URL: "https://license-api.demo-gcp.oesinc.dev"
 
 # NATS (Message Bus)
 nats:
