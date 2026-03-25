@@ -55,18 +55,16 @@ spec:
       - name: mongodb-init
         image: {{ include "opendso.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) }}
         command:
-        - mongosh
-        - --host
-        - {{ .Release.Name }}-mongodb
-        - --port
-        - "27017"
-        {{- if (index .Values.global "mongodb").tls.enabled }}
-        - --tls
-        - --tlsCAFile
-        - /etc/mongodb/tls/ca.crt
-        - --tlsAllowInvalidCertificates
-        {{- end }}
-        - /scripts/mongo-init.js
+        - sh
+        - -c
+        - |
+          mongosh "mongodb://{{ .Values.mongodb.auth.rootUsername | default "admin" }}:${MONGODB_ROOT_PASSWORD}@{{ .Release.Name }}-mongodb:27017/admin{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" /scripts/mongo-init.js
+        env:
+        - name: MONGODB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-mongodb-secret
+              key: root-password
         resources:
           limits:
             cpu: 1000m

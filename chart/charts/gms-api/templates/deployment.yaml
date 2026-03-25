@@ -67,7 +67,9 @@ spec:
           imagePullPolicy: {{ .Values.global.images.gmsApi.pullPolicy }}
           env:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
-              value: "0"
+              value: "0"            
+            - name: DOCKER_API
+              value: "http://127.0.0.1:2376"            
             {{- if .Values.config.mongodb.existingSecret }}
             - name: MONGODB_USERNAME
               valueFrom:

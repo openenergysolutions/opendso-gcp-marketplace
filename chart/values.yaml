@@ -9,8 +9,7 @@ global:
   site: ieee13
   # Container registry settings
   imageRegistry: ""
-  imagePullSecrets:
-    - name: regsecret
+  imagePullSecrets: []
   # Storage settings
   storageClass: standard # Use "standard" for local/minikube
   # Common labels
@@ -107,10 +106,10 @@ global:
   keycloak:
     # External URL for browser-based authentication
     # Set by deploy scripts: https://keycloak.<domain>
-    url: "https://keycloak.demo-gcp.oesinc.dev"  # default; overridden by --set global.keycloak.url
+    url: "https://keycloak.demo-gcp.oesinc.dev" # default; overridden by --set global.keycloak.url
     # Internal URL for service-to-service communication
     # Set by deploy scripts: http://<release-name>-keycloak-svc:8080
-    internalUrl: "http://opendso-keycloak-svc:8080"  # default for release name "opendso"
+    internalUrl: "http://opendso-keycloak-svc:8080" # default for release name "opendso"
     # Keycloak realm name
     realm: "oes"
     # Client IDs for different services
@@ -155,199 +154,199 @@ global:
       repository: nats
       tag: "2.12.5"
       pullPolicy: IfNotPresent
-      digest: "sha256:6d12af36c7d6a6f597e7aa1cab9fbaee6d82598f4775231a446d658a61e4655b" # sha256:xxx - when set, overrides tag
+      digest: "" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
       tag: "24.0"
       pullPolicy: IfNotPresent
-      digest: "sha256:e9e6b246be4efee5810511fc6b8c936decda8646b77185b85bf633c21bc68b21"
+      digest: ""
     envoy:
       repository: envoyproxy/envoy
       tag: "v1.17.0"
       pullPolicy: IfNotPresent
-      digest: "sha256:750008950dece8be0f5afd93aa9507892cc7afc27020a1479098fd1569881678"
+      digest: "" # sha256:xxx - when set, overrides tag
     # Database images
     mongodb:
       repository: mongodb/mongodb-community-server
       tag: "7.0.2-ubi8"
       pullPolicy: IfNotPresent
-      digest: "sha256:0a05651332edcb61924140b7c9878bc82500fa7cd6d6b95048f0cba7518eb805"
+      digest: "" # sha256:xxx - when set, overrides tag
     citusDb:
       repository: citusdata/citus
       tag: "12.1.2-alpine"
       pullPolicy: IfNotPresent
-      digest: "sha256:5c0062c5feda67bdf0a027d087732ef111259cac116c371c49595ac4a8b94470"
+      digest: "" # sha256:xxx - when set, overrides tag
     keycloakDb:
       repository: postgres
       tag: "17.0-alpine3.20"
       pullPolicy: IfNotPresent
-      digest: ""
+      digest: "" # sha256:xxx - when set, overrides tag
     appsDb:
       repository: timescale/timescaledb
       tag: "latest-pg16"
       pullPolicy: IfNotPresent
-      digest: "sha256:f8a0c7b3c7b759b33cbc242d0e989b56df4bf68b65743b967c1d24688abf8403"
+      digest: "" # sha256:xxx - when set, overrides tag
     # Core Services
     historianSvc:
       repository: historian
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:673c2a6ab8a7b19b5b803d42fd10f7c9ecdf435be42c4dda79d098546572a536"
+      digest: "" # sha256:xxx - when set, overrides tag
     gmsApi:
       repository: gms-api
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:bb86bfd498d11b3b5291add310d53f6c1c708bc0fd8446381a4cf7bb72b1dbd7"
+      digest: "" # sha256:xxx - when set, overrides tag
     openfmbEventService:
       repository: openfmb-event-service
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:ba9abc3155bf93dac50fa93e1c23acd67c2671daa36fe3ece07c431b60cd74ea"
+      digest: "" # sha256:xxx - when set, overrides tag
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "pre-ods-39de39d2"
+      tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:672e13095b986c9df4ec7d994e75a5b40f273a49ec701671ff2274d172480ace"
+      digest: "" # sha256:xxx - when set, overrides tag
     topologyNodes:
       repository: topology-nodes
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:71e854de86e6c6d034836a35aa6d73680e7f5c9ddb4ceb8c1f4846c753fa5faf"
+      digest: "" # sha256:xxx - when set, overrides tag
     derDispatchApp:
       repository: der-dispatch-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:08c8486fb97bd9827ffa8cc44729e35e95ab1017963b642ce0f103e713bfa933"
+      digest: "" # sha256:xxx - when set, overrides tag
     derDispatchSvc:
       repository: der-dispatch
-      tag: "78226199"
+      tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:8c4cd467ad2357599b64b7d2740ad19df8f8b8144142ddead5d41a2e68e11647"
+      digest: "" # sha256:xxx - when set, overrides tag
     # Frontend Applications
     genesisNodeApp:
       repository: genesis-node-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:2b0633179f310300b3992a8e30c94b09498447aa6de457a0ac1c0c41319df2f2"
+      digest: "" # sha256:xxx - when set, overrides tag
     dataViewerApp:
       repository: data-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d666b2c2470e7af76b72f6f4a99b167c66b98dced277ebe777c77a21ce0bfdc6"
+      digest: "" # sha256:xxx - when set, overrides tag
     scheduleDispatchApp:
       repository: edo-adr-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:891f575f1b365a811f6103332c9ac15eef74a84a114ca3722ae006f893f38534"
+      digest: "" # sha256:xxx - when set, overrides tag
     eventViewerApp:
       repository: event-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:499852dc525de3c6a0db7cde038dd9fe5d357879a6fddbe3cffd930b828e410d"
+      digest: "" # sha256:xxx - when set, overrides tag
     gisApp:
       repository: gis-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:3c2e8b966008d21c1c74967bdcf3e6dc631cc3462dc83eddefbef090a1039647"
+      digest: "" # sha256:xxx - when set, overrides tag
     historianApp:
       repository: historian-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:41e953cd361669d1b29c17523b0c67ddf698325a0501a8a52a6c41c46aa598c3"
+      digest: "" # sha256:xxx - when set, overrides tag
     inspectorApp:
       repository: inspector-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:72372d469310db29bbf4c261dea62721b3a1daf1053b9ea28730b4b87c505e17"
+      digest: "" # sha256:xxx - when set, overrides tag
     inventoryApp:
       repository: inventory-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:a9e78eefc019453fed50d1b05a5ee5cf45a701b38f2dc3496baccddb06f57005"
+      digest: "" # sha256:xxx - when set, overrides tag
     oneLineApp:
       repository: one-line-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:8b39eb5a72f48b9e6bf96700564ce1f7303db074da4bc15ba88bb0a9195fde9e"
+      digest: "" # sha256:xxx - when set, overrides tag
     opendsoDocsApp:
       repository: opendso-docs
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:8ae50e865ab82c351a1de20c87002a458581f12247e03fed4caee2cc665367ed"
+      digest: "" # sha256:xxx - when set, overrides tag
     openfmbEventCreatorApp:
       repository: openfmb-event-creator-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:cd75ce1a82b2addba6b1fd8a46dc496b41af3a36c9301c0159578eaed21acb9e"
+      digest: "" # sha256:xxx - when set, overrides tag
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:575f57c3b4866327a207df4e3069685c72fecb7cc19229f87a0ef92a06bce52b"
+      digest: "" # sha256:xxx - when set, overrides tag
     essManagerApp:
       repository: device-details-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d43fc4ec13241284a7c1b948e6e13fa5b290f53668751673faaa0c60c0bd49b3"
+      digest: "" # sha256:xxx - when set, overrides tag
     essTesterSvc:
       repository: ess-tester
-      tag: "b8ce64a3"
+      tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:45e6d226721cbe663ff650aed688da32e0c9952530b5701063dc61e875f61d4a"
+      digest: "" # sha256:xxx - when set, overrides tag
     essTesterApp:
       repository: batt-testing-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:c661a41c2bb8d55f93ac94598981cf1c2f29f3b4832389b6cb9fea2bc6eb34a2"
+      digest: "" # sha256:xxx - when set, overrides tag
     assetHealthSvc:
       repository: ahs
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:9683258e005e46646d05b5d2c35cc4ab9766c2db95c270c96871c38cc78ce0aa"
+      digest: "" # sha256:xxx - when set, overrides tag
     assetHealthSimSvc:
       repository: ahs-sim
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:c491df813b2590a17bbbb81eeb92927c21f51146fd4eb2466685ebf387951ad1"
+      digest: "" # sha256:xxx - when set, overrides tag
     essManagerRedis:
       repository: redis
       tag: "7.0"
       pullPolicy: IfNotPresent
-      digest: "sha256:89c859c034b2b7641227e68b052a8a3ac0292f1c5dd9d7b8e18659ff8967ef1d"
+      digest: "" # sha256:xxx - when set, overrides tag
     # CVR Applications
     cvrSvc:
       repository: cvr
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:97ee339b39de60d9674c09e02c4fac1da5485c35c2cc742a08bc797921b7b1be"
+      digest: "" # sha256:xxx - when set, overrides tag
     cvrGeneticAlgorithmSvc:
       repository: genetic-cvr
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:f5abffc4a6772edc72bb26d0cdd58473a6e459e0b544e063b9085f9758ef26c6"
+      digest: "" # sha256:xxx - when set, overrides tag
     cvrOpenfmbServicesSvc:
       repository: openfmb-services
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:311e14e9606c835e16e369a9fe4b98dcc3778b9bdfda4b38d3e09d818b23a402"
+      digest: "" # sha256:xxx - when set, overrides tag
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
       tag: "2c8e8a04"
       pullPolicy: IfNotPresent
-      digest: "sha256:c955a6082223b554e998ea24533ed8c6469a3b42f793c74375cd80d20db6a3bc"
+      digest: "" # sha256:xxx - when set, overrides tag
     rpcdssSvc:
       repository: rpcdss
       tag: "3d3b0e15"
       pullPolicy: IfNotPresent
-      digest: "sha256:39548abee9d4b6d2dbd005c8f8857138d5a8e94cd56276748bfaa1b951b61926"
+      digest: "" # sha256:xxx - when set, overrides tag
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "local"
+      tag: "679a94b4"
       pullPolicy: IfNotPresent
-      digest: "sha256:326ac3048b4cb6cdf67c78ec2212b47fbe9b02e0d66d7133e21ddd865c161770"
+      digest: "" # sha256:xxx - when set, overrides tag
   # =============================================================================
   # Component Enable/Disable
   # =============================================================================
@@ -554,7 +553,7 @@ ingress:
   # TLS configuration
   tls:
     enabled: true
-    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: opendso-tls-secret # Default: <release-name>-tls-secret (overridden by deploy scripts)
     # cert-manager integration (optional, for automatic Let's Encrypt certificates)
     certManager:
       enabled: false # Set to true for automatic certificates in production
@@ -570,10 +569,10 @@ ingress:
 keycloak:
   config:
     # Hostname configuration - uses ingress domain
-    hostname: "keycloak.demo-gcp.oesinc.dev" # Will be set to ingress.domain with keycloak subdomain
+    hostname: ""  # Empty: Keycloak derives hostname dynamically via proxy=edge + hostname-strict=false
     # Port configuration - computed from ingress settings
-    hostnamePort: "443" # Will be set to ingress HTTPS port
-    hostnameStrict: "true" # Force Keycloak to always use configured hostname (prevents internal URLs in responses)
+    hostnamePort: "443"
+    hostnameStrict: "false"
     hostnameStrictHttps: "false"
 # NATS Messaging Server
 nats:
@@ -585,15 +584,15 @@ nats:
 # Grafana - Monitoring & Dashboards
 # =============================================================================
 grafana:
-  # Admin credentials - using Kubernetes secret
-  # Secret is created by parent chart with name: {{ .Release.Name }}-grafana-credentials
-  # IMPORTANT: If using a custom release name, override with:
-  #   --set grafana.admin.existingSecret=<your-release-name>-grafana-credentials
-  admin:
-    existingSecret: opendso-grafana-credentials  # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
-    userKey: admin-user
-    passwordKey: admin-password
-  # Admin user configuration (for reference, actual credentials in secret)
+  # Use namespace-scoped Role/RoleBinding instead of ClusterRole/ClusterRoleBinding.
+  # The deployer SA has only namespace-scoped permissions; a namespaced role also
+  # provides the sidecar (grafana-sc-datasources) with the list-secrets permission it needs.
+  rbac:
+    create: true
+    namespaced: true
+  # Admin credentials — Grafana uses adminUser/adminPassword directly by default.
+  # In production (deploy.sh), this is overridden with:
+  #   --set grafana.admin.existingSecret=<release-name>-grafana-credentials
   adminUser: admin
   adminPassword: admin
   # Persistence
@@ -620,12 +619,14 @@ grafana:
   envValueFrom:
     CITUS_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials  # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: opendso-grafana-credentials
         key: citus-password
+        optional: true
     OPENDSO_APPS_DB_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials  # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: opendso-grafana-credentials
         key: opendso-apps-db-password
+        optional: true
   # Data sources are provisioned via grafana-datasources.yaml template (uses .Release.Name)
   sidecar:
     datasources:

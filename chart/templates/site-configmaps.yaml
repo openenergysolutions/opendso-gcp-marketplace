@@ -72,7 +72,9 @@ data:
 {{- end }}
 
 # Topology Genesis ConfigMap
-{{- if (index .Values.global "topology-genesis").enabled }}
+# Skipped when global.topology-genesis.externalConfigMap=true (ConfigMap pre-created via
+# kubectl apply --server-side to avoid the 262KB Kubernetes annotation limit).
+{{- if and (index .Values.global "topology-genesis").enabled (not (dig "topology-genesis" "externalConfigMap" false .Values.global)) }}
 ---
 apiVersion: v1
 kind: ConfigMap

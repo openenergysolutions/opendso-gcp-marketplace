@@ -10,269 +10,35 @@ x-google-marketplace:
   # ---------------------------------------------------------------------------
   # Image declarations
   #
-  # OES images share a single registry prefix (global.imageRegistry).
-  # GCP Marketplace will substitute this with the marketplace-hosted registry
-  # and rewrite all image references accordingly.
+  # All images share a single registry prefix (global.imageRegistry).
+  # Image paths in values.yaml are relative to the registry:
+  #   OES images:     gms-api, historian, ...
+  #   Third-party:    citusdata/citus, mongodb/mongodb-community-server, ...
   #
-  # Third-party images (nats, keycloak, mongodb, postgres, redis, envoy, citus,
-  # timescaledb) must be mirrored into the marketplace Artifact Registry before
-  # publishing. Their repository values in values.yaml will need updating once
-  # mirrored.
+  # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
-  images:
-    # Primary OES registry — all OES service images share this prefix
-    "":
-      properties:
-        global.imageRegistry:
-          type: REGISTRY
-
-    # Core services
-    gms-api:
-      properties:
-        global.images.gmsApi.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.gmsApi.tag:
-          type: TAG
-    historian-svc:
-      properties:
-        global.images.historianSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.historianSvc.tag:
-          type: TAG
-    openfmb-event-service:
-      properties:
-        global.images.openfmbEventService.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.openfmbEventService.tag:
-          type: TAG
-    nats-auth-service:
-      properties:
-        global.images.natsAuthSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.natsAuthSvc.tag:
-          type: TAG
-
-    # Topology services
-    topology-genesis:
-      properties:
-        global.images.topologyGenesis.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.topologyGenesis.tag:
-          type: TAG
-    topology-nodes:
-      properties:
-        global.images.topologyNodes.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.topologyNodes.tag:
-          type: TAG
-
-    # DER dispatch
-    der-dispatch-svc:
-      properties:
-        global.images.derDispatchSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.derDispatchSvc.tag:
-          type: TAG
-
-    # CVR services
-    cvr-svc:
-      properties:
-        global.images.cvrSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrSvc.tag:
-          type: TAG
-    cvr-genetic-algorithm-svc:
-      properties:
-        global.images.cvrGeneticAlgorithmSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrGeneticAlgorithmSvc.tag:
-          type: TAG
-    cvr-openfmb-services-svc:
-      properties:
-        global.images.cvrOpenfmbServicesSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrOpenfmbServicesSvc.tag:
-          type: TAG
-
-    # ESS services
-    ess-manager-svc:
-      properties:
-        global.images.essManagerSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.essManagerSvc.tag:
-          type: TAG
-    ess-tester-svc:
-      properties:
-        global.images.essTesterSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.essTesterSvc.tag:
-          type: TAG
-
-    # Asset health services
-    asset-health-svc:
-      properties:
-        global.images.assetHealthSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.assetHealthSvc.tag:
-          type: TAG
-    asset-health-sim-svc:
-      properties:
-        global.images.assetHealthSimSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.assetHealthSimSvc.tag:
-          type: TAG
-
-    # Simulation services
-    omegadss-svc:
-      properties:
-        global.images.omegadssSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.omegadssSvc.tag:
-          type: TAG
-    rpcdss-svc:
-      properties:
-        global.images.rpcdssSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.rpcdssSvc.tag:
-          type: TAG
-
-    # Frontend applications
-    der-dispatch-app:
-      properties:
-        global.images.derDispatchApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.derDispatchApp.tag:
-          type: TAG
-    genesis-node-app:
-      properties:
-        global.images.genesisNodeApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.genesisNodeApp.tag:
-          type: TAG
-    data-viewer-app:
-      properties:
-        global.images.dataViewerApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.dataViewerApp.tag:
-          type: TAG
-    schedule-dispatch-app:
-      properties:
-        global.images.scheduleDispatchApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.scheduleDispatchApp.tag:
-          type: TAG
-    event-viewer-app:
-      properties:
-        global.images.eventViewerApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.eventViewerApp.tag:
-          type: TAG
-    gis-app:
-      properties:
-        global.images.gisApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.gisApp.tag:
-          type: TAG
-    historian-app:
-      properties:
-        global.images.historianApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.historianApp.tag:
-          type: TAG
-    inspector-app:
-      properties:
-        global.images.inspectorApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.inspectorApp.tag:
-          type: TAG
-    inventory-app:
-      properties:
-        global.images.inventoryApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.inventoryApp.tag:
-          type: TAG
-    one-line-app:
-      properties:
-        global.images.oneLineApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.oneLineApp.tag:
-          type: TAG
-    opendso-docs-app:
-      properties:
-        global.images.opendsoDocsApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.opendsoDocsApp.tag:
-          type: TAG
-    openfmb-event-creator-app:
-      properties:
-        global.images.openfmbEventCreatorApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.openfmbEventCreatorApp.tag:
-          type: TAG
-    ess-manager-app:
-      properties:
-        global.images.essManagerApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.essManagerApp.tag:
-          type: TAG
-    ess-tester-app:
-      properties:
-        global.images.essTesterApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.essTesterApp.tag:
-          type: TAG
-
-    # Third-party images (must be mirrored to marketplace registry before publishing)
-    nats:
-      properties:
-        global.images.nats.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.nats.tag:
-          type: TAG
-    keycloak:
-      properties:
-        global.images.keycloak.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.keycloak.tag:
-          type: TAG
-    envoy:
-      properties:
-        global.images.envoy.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.envoy.tag:
-          type: TAG
-    mongodb:
-      properties:
-        global.images.mongodb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.mongodb.tag:
-          type: TAG
-    citus-db:
-      properties:
-        global.images.citusDb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.citusDb.tag:
-          type: TAG
-    keycloak-db:
-      properties:
-        global.images.keycloakDb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.keycloakDb.tag:
-          type: TAG
-    opendso-apps-db:
-      properties:
-        global.images.appsDb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.appsDb.tag:
-          type: TAG
-    ess-manager-redis:
-      properties:
-        global.images.essManagerRedis.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.essManagerRedis.tag:
-          type: TAG
+  images: {}
 
 properties:
+  # ---------------------------------------------------------------------------
+  # Required: Application instance name (injected by GKE Marketplace)
+  # ---------------------------------------------------------------------------
+  name:
+    type: string
+    x-google-marketplace:
+      type: NAME
+
+  # ---------------------------------------------------------------------------
+  # Image registry prefix
+  # ---------------------------------------------------------------------------
+  global.imageRegistry:
+    type: string
+    title: Image Registry
+    description: >
+      Artifact Registry prefix for all images,
+      e.g. us-central1-docker.pkg.dev/my-project/oesinc
+    default: ""
+  
   # ---------------------------------------------------------------------------
   # Required: Kubernetes namespace (injected by GKE Marketplace)
   # ---------------------------------------------------------------------------
@@ -289,6 +55,15 @@ properties:
     title: OpenDSO License Key
     description: >
       Your OpenDSO license key obtained from OES.
+      Required to activate the application.
+    x-google-marketplace:
+      type: MASKED_FIELD
+
+  installation.key:
+    type: string
+    title: OpenDSO Installation Key
+    description: >
+      Your OpenDSO installation key obtained from OES.
       Required to activate the application.
     x-google-marketplace:
       type: MASKED_FIELD
@@ -374,6 +149,7 @@ properties:
 required:
   - namespace
   - license.key
+  - installation.key
   - global.domain
   - keycloak.config.adminPassword
   - mongodb.auth.rootPassword

@@ -71,6 +71,12 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
   helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace
   ```
 
+- Application CRD (`app.k8s.io/v1beta1`) installed — required by the GCP Marketplace deployer and `mpdev` tooling:
+
+  ```bash
+  kubectl apply -f "https://raw.githubusercontent.com/kubernetes-sigs/application/master/config/crd/bases/app.k8s.io_applications.yaml"
+  ```
+
 ### DNS & TLS
 
 - Wildcard DNS `*.yourdomain.com` pointing to the nginx LoadBalancer IP:
@@ -112,6 +118,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 |---|---|
 | GKE cluster creation | You (before installing) |
 | nginx ingress controller | You (before installing) |
+| Application CRD (app.k8s.io) | You (before installing) |
 | cert-manager / TLS certificates | You (before installing) |
 | DNS configuration | You (before installing) |
 | Image pull authentication | GKE node service account / Workload Identity |

@@ -21,6 +21,8 @@ data:
         cert_file: "/nats/certs/server-cert.pem"
         key_file: "/nats/certs/server-key.pem"
       }
+      {{- else }}
+      no_tls: true
       {{- end }}
       handshake_timeout: "10s"
     }

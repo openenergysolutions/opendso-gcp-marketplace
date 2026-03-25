@@ -40,19 +40,7 @@ static_resources:
                   - name: envoy.filters.http.grpc_web
                   - name: envoy.filters.http.cors
                   - name: envoy.filters.http.router
-          transport_socket:
-            name: envoy.transport_sockets.tls
-            # yamllint disable-line
-            typed_config:
-              # yamllint disable-line
-              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
-              common_tls_context:
-                # validation_context:
-                #   trusted_ca:
-                #     filename: /certs/rootCA.pem
-                tls_certificates:
-                  - certificate_chain: {filename: "/certs/server-cert.pem"}
-                    private_key: {filename: "/certs/server-key.pem"}
+          # No TLS — nginx ingress terminates TLS externally; Envoy handles plain HTTP/gRPC internally
   clusters:
     - name: historian_service
       connect_timeout: 0.25s

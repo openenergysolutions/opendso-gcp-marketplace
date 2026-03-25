@@ -19,7 +19,7 @@ global:
   # pd-ssd recommended for production workloads
   storageClass: "standard-rwo"
 
-  imageRegistry: "us-east1-docker.pkg.dev/opendso-dev/oesinc"
+  imageRegistry: ""  # Set via global.imageRegistry parameter or --set at deploy time
 
   # Image pull secrets
   imagePullSecrets:
@@ -56,6 +56,12 @@ global:
       allowConnectionsWithoutTLS: true
 
   citus-db:
+    enabled: true
+
+  # topology-genesis: cim.xml is 367KB — exceeds the 262KB Kubernetes annotation limit
+  # when using kubectl apply (client-side). The deployer pre-creates this ConfigMap via
+  # kubectl apply --server-side and sets externalConfigMap=true so Helm skips creating it.
+  topology-genesis:
     enabled: true
 
 # ============================================================================
@@ -189,6 +195,17 @@ keycloak:
 gms-api:
   replicaCount: 1  # High availability
 
+  tls:
+    enabled: false
+
+  config:
+    # GKE uses containerd — no Docker socket at /var/run/docker.sock.
+    # Set DOCKER_API to a local address so gms-api initializes without crashing.
+    # Orchestration API calls will fail gracefully at runtime (no node containers to show).
+    dockerApi: "http://127.0.0.1:2376"
+    tls:
+      enabled: false
+
   # Health probe configuration
   livenessProbe:
     initialDelaySeconds: 180
@@ -213,6 +230,14 @@ gms-api:
     enabled: false  # Set to true if you need persistent logs
     # storageClass: standard-rwo  # Uses global.storageClass
     size: 1Gi
+
+# Topology Nodes — license validation env vars
+# LICENSE_KEY and LICENSE_API_KEY are injected via the opendso-license K8s Secret (envFrom).
+topology-nodes:
+  env:
+    PLATFORM_NATS_SERVICE: opendso-nats-service
+    PLATFORM_NATS_PORT: "4222"
+    LICENSE_API_URL: "https://api.opendso.com"
 
 # NATS (Message Bus)
 nats:

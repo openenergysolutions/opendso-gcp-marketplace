@@ -9,8 +9,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl unzip && \
     chmod +x /usr/local/bin/nk && \
     rm /tmp/nkeys.zip
 
-# Copy Helm chart, schema, and custom deploy script
-COPY chart /data/chart
+# Package chart in the format the deployer_helm runtime expects:
+#   /data/chart/chart.tar.gz  — tarball with chart/ at the top level
+# The runtime extracts chart.tar.gz to /data/extracted/chart/ and runs helm against
+# /data/extracted/chart/chart (see create_manifests.sh: helm template "$NAME" "$chart/chart").
+# Because our tarball has chart/ at the top level, the actual chart path is:
+#   /data/extracted/chart/chart/{Chart.yaml,values.yaml,configs/,...}
+COPY chart /tmp/build/chart
+RUN mkdir -p /data/chart \
+    && tar -czf /data/chart/chart.tar.gz -C /tmp/build chart \
+    && rm -rf /tmp/build
+
 COPY schema.yaml /data/schema.yaml
-COPY deployer/deploy.sh /data/deploy.sh
-RUN chmod +x /data/deploy.sh
+
+# Override default deploy script with custom NKey + Keycloak injection logic
+COPY deployer/deploy.sh /bin/deploy.sh
+RUN chmod +x /bin/deploy.sh

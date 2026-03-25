@@ -37,17 +37,41 @@
 
 set -euo pipefail
 
+# Resolve NAME/NAMESPACE from the Marketplace config (injected via /data/values.yaml).
+# The deployer_helm base image sets these in its own deploy.sh; we must do it ourselves.
+APP_INSTANCE_NAME="$(/bin/print_config.py --xtype NAME --values_mode raw)"
+NAMESPACE="$(/bin/print_config.py --xtype NAMESPACE --values_mode raw)"
+NAME="$APP_INSTANCE_NAME"
+export APP_INSTANCE_NAME NAMESPACE NAME
+
+# Fail-safe: mark the Application as Failed on any unexpected exit.
+handle_failure() {
+  code=$?
+  patch_assembly_phase.sh --status="Failed" || true
+  exit $code
+}
+trap "handle_failure" EXIT
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  OpenDSO GCP Marketplace Deployer"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-CHART_DIR="/data/chart"
-USER_VALUES="${USER_VALUES:-/data/user/values.yaml}"
+# Extract chart from tarball (deployer_helm base image does this in create_manifests.sh;
+# since we bypass that, we do it here before calling helm upgrade).
+mkdir -p /data/extracted/chart
+tar -xzf /data/chart/chart.tar.gz -C /data/extracted/chart
+
+CHART_DIR="/data/extracted/chart/chart"
+
+# Generate user values in nested YAML format for helm -f.
+USER_VALUES=$(mktemp /tmp/user-values.XXXXXX.yaml)
+/bin/print_config.py --output=yaml --values_mode raw > "$USER_VALUES"
+
 NATS_AUTH_VALUES=$(mktemp /tmp/nats-auth-values.XXXXXX.yaml)
 NATS_KEYS_SECRET="${APP_INSTANCE_NAME}-nats-auth-keys"
 
-# Derive domain from user values for computed --set flags
+# Derive domain and imageRegistry from user values for computed --set flags
 DOMAIN=$(python3 -c "
 import sys, yaml
 with open('${USER_VALUES}') as f:
@@ -55,14 +79,52 @@ with open('${USER_VALUES}') as f:
 print(v.get('global', {}).get('domain', ''))
 " 2>/dev/null || echo "")
 
+IMAGE_REGISTRY=$(python3 -c "
+import sys, yaml
+with open('${USER_VALUES}') as f:
+    v = yaml.safe_load(f)
+print(v.get('global', {}).get('imageRegistry', ''))
+" 2>/dev/null || echo "")
+
+# Extract license keys from user values (stored in a K8s Secret, never in Helm values)
+LICENSE_KEY=$(python3 -c "
+import sys, yaml
+with open('${USER_VALUES}') as f:
+    v = yaml.safe_load(f)
+print(v.get('license', {}).get('key', ''))
+" 2>/dev/null || echo "")
+
+INSTALLATION_KEY=$(python3 -c "
+import sys, yaml
+with open('${USER_VALUES}') as f:
+    v = yaml.safe_load(f)
+print(v.get('installation', {}).get('key', ''))
+" 2>/dev/null || echo "")
+
+# Cluster ID for license environment name (kube-system namespace UID is unique per cluster)
+CLUSTER_ID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}' 2>/dev/null || echo "unknown")
+
 # ---------------------------------------------------------------------------
-# 1. Generate NATS NKeys
+# 1. Generate NATS NKeys (reuse existing on re-runs to avoid NATS reconfiguration)
 # ---------------------------------------------------------------------------
 echo "[1/3] Generating NATS NKeys..."
 
-ACCOUNT_SEED=$(nk -gen account)
-USER_SEED=$(nk -gen user)
-XKEY_SEED=$(nk -gen curve)
+# Reuse existing seeds if the secret already exists so NATS and nats-auth-svc
+# continue to use the same keys across deployer re-runs.
+if kubectl get secret "$NATS_KEYS_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
+    echo "  Reusing existing NKeys from secret '$NATS_KEYS_SECRET'..."
+    ACCOUNT_SEED=$(kubectl get secret "$NATS_KEYS_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.account\.nk}' | base64 -d)
+    USER_SEED=$(kubectl get secret "$NATS_KEYS_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.user\.nk}' | base64 -d)
+    XKEY_SEED=$(kubectl get secret "$NATS_KEYS_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.xkey\.xk}' | base64 -d)
+else
+    echo "  Generating fresh NKeys..."
+    ACCOUNT_SEED=$(nk -gen account)
+    USER_SEED=$(nk -gen user)
+    XKEY_SEED=$(nk -gen curve)
+fi
 
 ACCOUNT_PUB=$(echo "$ACCOUNT_SEED" | nk -inkey /dev/stdin -pubout)
 USER_PUB=$(echo "$USER_SEED"       | nk -inkey /dev/stdin -pubout)
@@ -102,10 +164,66 @@ nats:
 global:
   nats-auth-svc:
     enabled: true
+  # GCP Marketplace: node SA has Artifact Registry reader access — no pull secret needed
+  imagePullSecrets: []
+  # topology-genesis ConfigMap is pre-created via kubectl --server-side in step 3a
+  # (cim.xml is 367KB — exceeds the 262KB Kubernetes annotation limit for client-side apply).
+  # Setting externalConfigMap=true tells the Helm template to skip creating it.
+  topology-genesis:
+    externalConfigMap: true
 
 nats-auth-svc:
   natsKeysSecret: "${NATS_KEYS_SECRET}"
 EOF
+
+# Resolve site name (used by both step 3a and 3b below)
+SITE=$(python3 -c "
+import sys, yaml
+with open('${USER_VALUES}') as f:
+    v = yaml.safe_load(f)
+print(v.get('global', {}).get('site', 'ieee13'))
+" 2>/dev/null || echo "ieee13")
+
+# ---------------------------------------------------------------------------
+# 3a. Pre-create topology-genesis ConfigMap via server-side apply
+#
+# cim.xml is 367KB — larger than the 262KB hard limit Kubernetes enforces on
+# annotation values. kubectl apply (client-side) stores the entire resource as
+# the last-applied-configuration annotation, so it fails. Server-side apply
+# (--server-side) does not store that annotation; it uses field managers instead.
+#
+# The Helm template skips creating this ConfigMap when
+# global.topology-genesis.externalConfigMap=true (see site-configmaps.yaml).
+# ---------------------------------------------------------------------------
+echo ""
+echo "[3a/3] Pre-creating topology-genesis ConfigMap (server-side apply)..."
+
+kubectl create configmap "${APP_INSTANCE_NAME}-topology-genesis-site-config" \
+    --namespace="$NAMESPACE" \
+    --from-file=cim.xml="${CHART_DIR}/configs/${SITE}/topology-genesis/cim.xml" \
+    --from-file=cimex.config="${CHART_DIR}/configs/${SITE}/topology-genesis/cimex.config" \
+    --dry-run=client -o yaml \
+  | kubectl apply --server-side --field-manager=deployer -f -
+
+echo "  ConfigMap '${APP_INSTANCE_NAME}-topology-genesis-site-config' applied."
+
+# ---------------------------------------------------------------------------
+# 3a-2. Create OpenDSO license secret
+#
+# Stores the license key and installation key (api_key) as a Kubernetes Secret.
+# topology-nodes mounts this via envFrom to get LICENSE_KEY and LICENSE_API_KEY.
+# ---------------------------------------------------------------------------
+LICENSE_SECRET="${APP_INSTANCE_NAME}-opendso-license"
+
+kubectl create secret generic "$LICENSE_SECRET" \
+    --namespace="$NAMESPACE" \
+    --from-literal=LICENSE_KEY="${LICENSE_KEY}" \
+    --from-literal=LICENSE_API_KEY="${INSTALLATION_KEY}" \
+    --from-literal=LICENSE_ENVIRONMENT_NAME="${CLUSTER_ID}" \
+    --dry-run=client -o yaml \
+  | kubectl apply -f -
+
+echo "  Secret '${LICENSE_SECRET}' applied."
 
 # ---------------------------------------------------------------------------
 # 3b. Inject Keycloak client secrets into realm JSON and create K8s secrets
@@ -118,18 +236,16 @@ EOF
 echo ""
 echo "[3b/3] Injecting Keycloak client secrets..."
 
-SITE=$(python3 -c "
-import sys, yaml
-with open('${USER_VALUES}') as f:
-    v = yaml.safe_load(f)
-print(v.get('global', {}).get('site', 'ieee13'))
-" 2>/dev/null || echo "ieee13")
-
-REALM_FILE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm.json"
+# Helm prefers oes-realm-generated.json over oes-realm.json (see site-configmaps.yaml).
+# Copy the source (with REPLACE_SECRET_* placeholders) to the generated path so that
+# Python writes real UUIDs there and Helm picks up the right file.
+REALM_SOURCE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm.json"
+REALM_FILE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm-generated.json"
+cp "${REALM_SOURCE}" "${REALM_FILE}"
 KC_CLUSTER_URL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080/realms/oes"
 
 python3 - "${REALM_FILE}" "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_CLUSTER_URL}" << 'PYEOF'
-import json, uuid, subprocess, sys, re
+import base64, uuid, subprocess, sys, re
 
 realm_file, release_name, namespace, kc_url = sys.argv[1:]
 
@@ -138,7 +254,21 @@ with open(realm_file) as f:
 
 # Find all REPLACE_SECRET_<client-id> placeholders
 placeholders = re.findall(r'REPLACE_SECRET_([\w-]+)', content)
-secrets = {name: str(uuid.uuid4()) for name in dict.fromkeys(placeholders)}
+
+# Reuse existing K8s secret values on re-runs so Keycloak's imported realm stays
+# consistent. On first install no secrets exist, so new UUIDs are generated.
+secrets = {}
+for name in dict.fromkeys(placeholders):
+    secret_name = f"{release_name}-{name}-keycloak-env"
+    result = subprocess.run(
+        ["kubectl", "get", "secret", secret_name, "--namespace", namespace,
+         "-o", "jsonpath={.data.KEYCLOAK_CLIENT_SECRET}"],
+        capture_output=True, text=True,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        secrets[name] = base64.b64decode(result.stdout.strip()).decode()
+    else:
+        secrets[name] = str(uuid.uuid4())
 
 # Replace placeholders with generated UUIDs
 for name, secret in secrets.items():
@@ -191,6 +321,28 @@ PYEOF
 echo ""
 echo "[3/3] Running helm upgrade --install..."
 
+# Delete any existing Jobs from this release before upgrading.
+# Kubernetes Jobs have immutable specs; Helm cannot patch them on upgrade.
+# The mongodb-init job runs once on first install and is idempotent.
+kubectl delete jobs \
+    "${APP_INSTANCE_NAME}-mongodb-init" \
+    -n "$NAMESPACE" \
+    --ignore-not-found 2>/dev/null || true
+
+# Adopt any Application resource pre-created by mpdev into Helm management.
+# mpdev install creates the Application before the deployer job runs, without
+# Helm ownership labels. Without adoption, helm upgrade --install fails with
+# "invalid ownership metadata" on the Application resource.
+kubectl annotate application.app.k8s.io "$APP_INSTANCE_NAME" \
+    -n "$NAMESPACE" \
+    "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
+    "meta.helm.sh/release-namespace=${NAMESPACE}" \
+    --overwrite 2>/dev/null || true
+kubectl label application.app.k8s.io "$APP_INSTANCE_NAME" \
+    -n "$NAMESPACE" \
+    "app.kubernetes.io/managed-by=Helm" \
+    --overwrite 2>/dev/null || true
+
 helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --namespace "$NAMESPACE" \
     --wait \
@@ -201,17 +353,27 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set global.keycloak.internalUrl="http://${APP_INSTANCE_NAME}-keycloak-svc:8080" \
     --set global.environment.apiUrl="https://api.${DOMAIN}" \
     --set global.keycloak.url="https://keycloak.${DOMAIN}" \
-    --set keycloak.config.hostname="keycloak.${DOMAIN}" \
     --set ingress.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
-    --set mongodb.tls.existingSecret="${APP_INSTANCE_NAME}-mongodb-tls" \
+    --set mongodb.tls.enabled=false \
+    --set global.mongodb.tls.enabled=false \
+    --set keycloak.tls.enabled=false \
+    --set keycloak.config.httpsEnabled=false \
+    --set keycloak.config.hostnameStrict=false \
+    --set keycloak.config.hostnameStrictHttps=false \
+    --set historian-svc.tls.enabled=false \
+    --set nats.tls.enabled=false \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
-    --set global.gcpMarketplace=true
+    --set global.gcpMarketplace=true \
+    ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
+
+patch_assembly_phase.sh --status="Success"
+trap - EXIT
 
 echo ""
 echo "OpenDSO deployed successfully as release '$APP_INSTANCE_NAME'."
 
-# Clean up temp file
-rm -f "$NATS_AUTH_VALUES"
+# Clean up temp files
+rm -f "$NATS_AUTH_VALUES" "$USER_VALUES"
