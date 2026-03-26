@@ -50,10 +50,7 @@ global:
   mongodb:
     enabled: true
     tls:
-      enabled: true
-      existingSecret: "opendso-mongodb-tls"  # Default: <release-name>-mongodb-tls (overridden by deploy scripts)
-      mode: preferTLS
-      allowConnectionsWithoutTLS: true
+      enabled: false
 
   citus-db:
     enabled: true
@@ -90,11 +87,10 @@ mongodb:
       cpu: 1000m
       memory: 2Gi
 
-  tls:
-    enabled: true
-    existingSecret: "opendso-mongodb-tls"
-    mode: preferTLS  # Change to "requireTLS" after migration
-    allowConnectionsWithoutTLS: true
+  # MongoDB TLS disabled — internal ClusterIP traffic only
+  # tls:
+  #   enabled: true
+  #   existingSecret: "<release-name>-mongodb-tls"
 
   # External MongoDB configuration (if using managed service)
   # Uncomment and configure if enabled: false

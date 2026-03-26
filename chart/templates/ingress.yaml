@@ -13,10 +13,13 @@ metadata:
     app.kubernetes.io/name: opendso-ingress
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
+    {{- if .Values.ingress.tls.certManager.enabled }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.tls.certManager.issuerName | quote }}
+    {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -24,6 +27,11 @@ spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
     - secretName: {{ .Values.ingress.tls.secretName }}
+      {{- if .Values.ingress.tls.certManager.enabled }}
+      hosts:
+        - {{ $domain | quote }}
+        - "*.{{ $domain }}"
+      {{- end }}
   {{- end }}
   rules:    
     # Genesis Node App (root app)
@@ -51,6 +59,20 @@ spec:
                   number: 8081
     {{- end }}    
 
+    # GMS API (REST API)
+    {{- if (index .Values.global "gms-api").enabled }}
+    - host: api.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-gms-api
+                port:
+                  number: 8000
+    {{- end }}
+
     # Keycloak Authentication
     {{- if .Values.global.keycloak.enabled }}
     - host: keycloak.{{ $domain }}
@@ -63,7 +85,7 @@ spec:
                 name: {{ .Release.Name }}-keycloak-svc
                 port:
                   number: 8080
-    {{- end }}    
+    {{- end }}
 
     # GIS App
     {{- if (index .Values.global "gis-app").enabled }}

@@ -80,6 +80,8 @@ spec:
               value: {{ .Values.config.hostnameStrict | quote }}
             - name: KC_HOSTNAME_STRICT_HTTPS
               value: {{ .Values.config.hostnameStrictHttps | quote }}
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              value: {{ .Values.config.hostnameBackchannelDynamic | quote }}
             {{- if .Values.config.httpsEnabled }}
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: {{ .Values.config.httpsCertFile | quote }}

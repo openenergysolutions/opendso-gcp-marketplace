@@ -49,9 +49,9 @@ config:
   hostname: ""  # defaults to keycloak.<global.domain> via template
   hostnameStrict: "true"
   hostnameStrictHttps: "false"
-  hostnameBackchannelDynamic: "false"
+  hostnameBackchannelDynamic: "true"
   hostnamePort: "443"
-  httpsEnabled: true
+  httpsEnabled: false  # proxy=edge: nginx terminates TLS, Keycloak serves HTTP only
   httpsCertFile: "/opt/keycloak/conf/server.crt.pem"
   httpsKeyFile: "/opt/keycloak/conf/server.key.pem"
   importRealm: true  # Set to true to import realm files on startup

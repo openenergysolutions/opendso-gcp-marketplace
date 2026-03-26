@@ -242,7 +242,7 @@ echo "[3b/3] Injecting Keycloak client secrets..."
 REALM_SOURCE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm.json"
 REALM_FILE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm-generated.json"
 cp "${REALM_SOURCE}" "${REALM_FILE}"
-KC_CLUSTER_URL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080/realms/oes"
+KC_CLUSTER_URL="https://keycloak.${DOMAIN}/realms/oes"
 
 python3 - "${REALM_FILE}" "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_CLUSTER_URL}" << 'PYEOF'
 import base64, uuid, subprocess, sys, re
@@ -283,14 +283,18 @@ print(f"  Patched {len(secrets)} client secrets in realm JSON")
 errors = 0
 for name, secret in secrets.items():
     secret_name = f"{release_name}-{name}-keycloak-env"
-    render = subprocess.run([
+    cmd = [
         "kubectl", "create", "secret", "generic", secret_name,
         "--namespace", namespace,
         f"--from-literal=KEYCLOAK_URL={kc_url}",
         f"--from-literal=KEYCLOAK_CLIENT_ID={name}",
         f"--from-literal=KEYCLOAK_CLIENT_SECRET={secret}",
-        "--dry-run=client", "-o", "yaml",
-    ], capture_output=True, text=True)
+    ]
+    # topology-genesis binary has a typo: KEYCLOAD_CLIENT_ID (missing 'A')
+    if name == "topology-genesis":
+        cmd.append(f"--from-literal=KEYCLOAD_CLIENT_ID={name}")
+    cmd += ["--dry-run=client", "-o", "yaml"]
+    render = subprocess.run(cmd, capture_output=True, text=True)
     if render.returncode != 0:
         print(f"  WARNING: render failed for {secret_name}: {render.stderr}", file=sys.stderr)
         errors += 1

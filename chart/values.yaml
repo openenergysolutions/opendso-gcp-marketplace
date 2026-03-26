@@ -107,10 +107,10 @@ global:
   keycloak:
     # External URL for browser-based authentication
     # Set by deploy scripts: https://keycloak.<domain>
-    url: "https://keycloak.demo-gcp.oesinc.dev"  # default; overridden by --set global.keycloak.url
+    url: "https://keycloak.demo-gcp.oesinc.dev" # default; overridden by --set global.keycloak.url
     # Internal URL for service-to-service communication
     # Set by deploy scripts: http://<release-name>-keycloak-svc:8080
-    internalUrl: "http://opendso-keycloak-svc:8080"  # default for release name "opendso"
+    internalUrl: "http://opendso-keycloak-svc:8080" # default for release name "opendso"
     # Keycloak realm name
     realm: "oes"
     # Client IDs for different services
@@ -184,9 +184,9 @@ global:
       digest: ""
     appsDb:
       repository: timescale/timescaledb
-      tag: "latest-pg16"
+      tag: "2.26.0-pg16"
       pullPolicy: IfNotPresent
-      digest: "sha256:f8a0c7b3c7b759b33cbc242d0e989b56df4bf68b65743b967c1d24688abf8403"
+      digest: "sha256:898b884159a49c77d08a508155eb42df3421dc1297c91512a8ee8ac0be76e05f"
     # Core Services
     historianSvc:
       repository: historian
@@ -197,7 +197,7 @@ global:
       repository: gms-api
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:bb86bfd498d11b3b5291add310d53f6c1c708bc0fd8446381a4cf7bb72b1dbd7"
+      digest: "sha256:88f1c0110729dce8c6606b8ed3b4670d4dfd9f6509cd87a9ad48c36d33db230f"
     openfmbEventService:
       repository: openfmb-event-service
       tag: "latest"
@@ -229,47 +229,47 @@ global:
       repository: genesis-node-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:2b0633179f310300b3992a8e30c94b09498447aa6de457a0ac1c0c41319df2f2"
+      digest: "sha256:720cf77506368f924c67e7411d630c521b65ed9fdf174af9bc01ef71948ca089"
     dataViewerApp:
       repository: data-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d666b2c2470e7af76b72f6f4a99b167c66b98dced277ebe777c77a21ce0bfdc6"
+      digest: "sha256:69cfcbac6bc0b1732497835f48373d5090a581fcfdbc533256f17a84dd3580e5"
     scheduleDispatchApp:
       repository: edo-adr-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:891f575f1b365a811f6103332c9ac15eef74a84a114ca3722ae006f893f38534"
+      digest: "sha256:a1c3422c68372f9912823d49803202c30d3a620da761d66bbebbcfa525626633"
     eventViewerApp:
       repository: event-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:499852dc525de3c6a0db7cde038dd9fe5d357879a6fddbe3cffd930b828e410d"
+      digest: "sha256:aa636f78b19e00e42835eb19bc81e964966f29fd2baee83bf6e8d1d2088e96e8"
     gisApp:
       repository: gis-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:3c2e8b966008d21c1c74967bdcf3e6dc631cc3462dc83eddefbef090a1039647"
+      digest: "sha256:ec901f417fbba0408a07444832d31a53f3616e464516e78388f49bba83952429"
     historianApp:
       repository: historian-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:41e953cd361669d1b29c17523b0c67ddf698325a0501a8a52a6c41c46aa598c3"
+      digest: "sha256:eb41714a99ea775ccb0bae614c4594187c95f64f1382f4ad0b0f804d00667e84"
     inspectorApp:
       repository: inspector-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:72372d469310db29bbf4c261dea62721b3a1daf1053b9ea28730b4b87c505e17"
+      digest: "sha256:d73e2ce9dd80b63b2f33ca64b5a1e47bc3f02182e3c24c0f1643a1f3cf2c48ce"
     inventoryApp:
       repository: inventory-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:a9e78eefc019453fed50d1b05a5ee5cf45a701b38f2dc3496baccddb06f57005"
+      digest: "sha256:9b1b0b88220cfdee386976f2d8b68adac94f6a0fcac79b92d808bc732696d3df"
     oneLineApp:
       repository: one-line-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:8b39eb5a72f48b9e6bf96700564ce1f7303db074da4bc15ba88bb0a9195fde9e"
+      digest: "sha256:9d77fa13f435a54fe9098188b703e6cc369888420f51c256363833011ee8f287"
     opendsoDocsApp:
       repository: opendso-docs
       tag: "latest"
@@ -279,13 +279,13 @@ global:
       repository: openfmb-event-creator-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:cd75ce1a82b2addba6b1fd8a46dc496b41af3a36c9301c0159578eaed21acb9e"
+      digest: "sha256:a0d6ea2518785f2c116224d320c5011bc84847ebb2de42eafb0563e0b07497a6"
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:575f57c3b4866327a207df4e3069685c72fecb7cc19229f87a0ef92a06bce52b"
+      digest: "sha256:aae52b21bf7b1eb2018858001aa86af48f5f1787b4467a7db2444d06dd513f31"
     essManagerApp:
       repository: device-details-app
       tag: "latest"
@@ -300,7 +300,7 @@ global:
       repository: batt-testing-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:c661a41c2bb8d55f93ac94598981cf1c2f29f3b4832389b6cb9fea2bc6eb34a2"
+      digest: "sha256:971e4b84ddd0df40a3ee8b340f580b52b34360a71c8a667dbf25db28e8d74671"
     assetHealthSvc:
       repository: ahs
       tag: "latest"
@@ -345,9 +345,9 @@ global:
       digest: "sha256:39548abee9d4b6d2dbd005c8f8857138d5a8e94cd56276748bfaa1b951b61926"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "local"
+      tag: "679a94b4"
       pullPolicy: IfNotPresent
-      digest: "sha256:326ac3048b4cb6cdf67c78ec2212b47fbe9b02e0d66d7133e21ddd865c161770"
+      digest: "sha256:3b3d80ea21c08d8ae925d180de19f84ec0774d372b504ffa5b4717d2f05086fa"
   # =============================================================================
   # Component Enable/Disable
   # =============================================================================
@@ -366,12 +366,7 @@ global:
   mongodb:
     enabled: true
     tls:
-      enabled: true
-      # Auto-generate self-signed certificates (recommended for development)
-      # For production, set existingSecret with proper certificates
-      existingSecret: ""
-      mode: preferTLS # Options: disabled, allowTLS, preferTLS, requireTLS
-      allowConnectionsWithoutTLS: true
+      enabled: false
   citus-db:
     enabled: true
   keycloak-db:
@@ -554,7 +549,7 @@ ingress:
   # TLS configuration
   tls:
     enabled: true
-    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: opendso-tls-secret # Default: <release-name>-tls-secret (overridden by deploy scripts)
     # cert-manager integration (optional, for automatic Let's Encrypt certificates)
     certManager:
       enabled: false # Set to true for automatic certificates in production
@@ -590,7 +585,7 @@ grafana:
   # IMPORTANT: If using a custom release name, override with:
   #   --set grafana.admin.existingSecret=<your-release-name>-grafana-credentials
   admin:
-    existingSecret: opendso-grafana-credentials  # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
+    existingSecret: opendso-grafana-credentials # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
   # Admin user configuration (for reference, actual credentials in secret)
@@ -620,11 +615,11 @@ grafana:
   envValueFrom:
     CITUS_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials  # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: opendso-grafana-credentials # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: citus-password
     OPENDSO_APPS_DB_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials  # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: opendso-grafana-credentials # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: opendso-apps-db-password
   # Data sources are provisioned via grafana-datasources.yaml template (uses .Release.Name)
   sidecar:
