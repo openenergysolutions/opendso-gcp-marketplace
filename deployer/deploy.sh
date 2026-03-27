@@ -242,12 +242,13 @@ echo "[3b/3] Injecting Keycloak client secrets..."
 REALM_SOURCE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm.json"
 REALM_FILE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm-generated.json"
 cp "${REALM_SOURCE}" "${REALM_FILE}"
-KC_CLUSTER_URL="https://keycloak.${DOMAIN}/realms/oes"
+KC_EXTERNAL_URL="https://keycloak.${DOMAIN}/realms/oes"
+KC_INTERNAL_URL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080/realms/oes"
 
-python3 - "${REALM_FILE}" "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_CLUSTER_URL}" << 'PYEOF'
+python3 - "${REALM_FILE}" "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_INTERNAL_URL}" "${KC_EXTERNAL_URL}" << 'PYEOF'
 import base64, uuid, subprocess, sys, re
 
-realm_file, release_name, namespace, kc_url = sys.argv[1:]
+realm_file, release_name, namespace, kc_internal_url, kc_external_url = sys.argv[1:]
 
 with open(realm_file) as f:
     content = f.read()
@@ -286,7 +287,11 @@ for name, secret in secrets.items():
     cmd = [
         "kubectl", "create", "secret", "generic", secret_name,
         "--namespace", namespace,
-        f"--from-literal=KEYCLOAK_URL={kc_url}",
+        # Many services use KEYCLOAK_URL as the expected OIDC issuer, so this
+        # must match the issuer Keycloak advertises in discovery.
+        f"--from-literal=KEYCLOAK_URL={kc_external_url}",
+        f"--from-literal=KEYCLOAK_INTERNAL_URL={kc_internal_url}",
+        f"--from-literal=KEYCLOAK_EXTERNAL_URL={kc_external_url}",
         f"--from-literal=KEYCLOAK_CLIENT_ID={name}",
         f"--from-literal=KEYCLOAK_CLIENT_SECRET={secret}",
     ]
@@ -372,6 +377,142 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.gcpMarketplace=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
+
+# ---------------------------------------------------------------------------
+# 5. Sync Keycloak client secrets via Admin REST API
+#
+# Keycloak only imports the realm JSON when starting with an EMPTY database.
+# On upgrades or restarts with an existing PVC, realm data (including client
+# secrets) is kept from the original import — even if the ConfigMap changed.
+#
+# This step pushes the *-keycloak-env K8s secret values to Keycloak via the
+# Admin API so client secrets are always in sync regardless of deploy history.
+# Errors here are non-fatal (logged as WARNINGs); a fresh cluster where Keycloak
+# just imported the realm for the first time is already in sync.
+# ---------------------------------------------------------------------------
+echo ""
+echo "[4/4] Syncing Keycloak client secrets via Admin API..."
+
+KC_ADMIN_PASSWORD=$(python3 -c "
+import yaml
+with open('${USER_VALUES}') as f:
+    v = yaml.safe_load(f) or {}
+print(v.get('keycloak.config.adminPassword') or v.get('keycloak', {}).get('config', {}).get('adminPassword', 'admin'))
+" 2>/dev/null || echo "admin")
+
+KC_INTERNAL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080"
+
+python3 - "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_INTERNAL}" "${KC_ADMIN_PASSWORD}" << 'PYEOF'
+import base64, json, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+
+release_name, namespace, kc_base, admin_password = sys.argv[1:]
+realm = "oes"
+
+# Discover *-keycloak-env secrets created by step 3b for this release
+result = subprocess.run(
+    ["kubectl", "get", "secrets", "-n", namespace,
+     "-o", "jsonpath={.items[*].metadata.name}"],
+    capture_output=True, text=True,
+)
+all_names = result.stdout.split() if result.returncode == 0 else []
+prefix, suffix = f"{release_name}-", "-keycloak-env"
+client_secrets = {}
+for s in all_names:
+    if s.startswith(prefix) and s.endswith(suffix):
+        client_name = s[len(prefix):-len(suffix)]
+        r = subprocess.run(
+            ["kubectl", "get", "secret", s, "-n", namespace,
+             "-o", "jsonpath={.data.KEYCLOAK_CLIENT_SECRET}"],
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            client_secrets[client_name] = base64.b64decode(r.stdout.strip()).decode()
+
+if not client_secrets:
+    print("  No keycloak-env secrets found, skipping sync")
+    sys.exit(0)
+
+print(f"  Found {len(client_secrets)} client secret(s) to sync")
+
+# Obtain an admin token (retry up to 60s — Keycloak may need a moment post-start)
+def get_token():
+    data = urllib.parse.urlencode({
+        "client_id": "admin-cli",
+        "username": "admin",
+        "password": admin_password,
+        "grant_type": "password",
+    }).encode()
+    req = urllib.request.Request(
+        f"{kc_base}/realms/master/protocol/openid-connect/token",
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read())["access_token"]
+
+token = None
+for attempt in range(12):
+    try:
+        token = get_token()
+        break
+    except Exception as e:
+        if attempt < 11:
+            print(f"  Keycloak Admin API not ready yet, retrying... ({e})")
+            time.sleep(5)
+        else:
+            print(f"  WARNING: could not reach Keycloak Admin API: {e}", file=sys.stderr)
+            sys.exit(0)
+
+auth_header = {"Authorization": f"Bearer {token}"}
+
+# List all clients in the oes realm
+req = urllib.request.Request(
+    f"{kc_base}/admin/realms/{realm}/clients?max=200",
+    headers=auth_header,
+    method="GET",
+)
+try:
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        kc_clients = json.loads(resp.read())
+except Exception as e:
+    print(f"  WARNING: could not list Keycloak clients: {e}", file=sys.stderr)
+    sys.exit(0)
+
+kc_id_map = {c["clientId"]: c["id"] for c in kc_clients}
+
+updated, errors = 0, 0
+for client_name, secret in client_secrets.items():
+    if client_name not in kc_id_map:
+        print(f"  WARNING: client '{client_name}' not found in realm '{realm}'", file=sys.stderr)
+        errors += 1
+        continue
+    kc_id = kc_id_map[client_name]
+    try:
+        # Fetch full client config to avoid clobbering other settings
+        req = urllib.request.Request(
+            f"{kc_base}/admin/realms/{realm}/clients/{kc_id}",
+            headers=auth_header,
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            client_cfg = json.loads(resp.read())
+        client_cfg["secret"] = secret
+        req = urllib.request.Request(
+            f"{kc_base}/admin/realms/{realm}/clients/{kc_id}",
+            data=json.dumps(client_cfg).encode(),
+            headers={**auth_header, "Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()  # 204 No Content
+        updated += 1
+    except Exception as e:
+        print(f"  WARNING: failed to update client '{client_name}': {e}", file=sys.stderr)
+        errors += 1
+
+print(f"  Synced {updated} client secret(s){f' — {errors} error(s), check output above' if errors else ''}")
+PYEOF
 
 patch_assembly_phase.sh --status="Success"
 trap - EXIT

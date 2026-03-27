@@ -206,9 +206,9 @@ global:
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "pre-ods-39de39d2"
+      tag: "pre-ods-883ab50f"
       pullPolicy: IfNotPresent
-      digest: "sha256:672e13095b986c9df4ec7d994e75a5b40f273a49ec701671ff2274d172480ace"
+      digest: "sha256:b7192fc6335ad7cd10dc377dba1914a6bcca056e5bd74a18d35eedc8f164641c"
     topologyNodes:
       repository: topology-nodes
       tag: "latest"
@@ -283,9 +283,9 @@ global:
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
-      tag: "latest"
+      tag: "local"
       pullPolicy: IfNotPresent
-      digest: "sha256:aae52b21bf7b1eb2018858001aa86af48f5f1787b4467a7db2444d06dd513f31"
+      digest: "sha256:7bad85ec78b565354d656ad186abfe55e1987ef4673d89b6e254cd9eddd609df"
     essManagerApp:
       repository: device-details-app
       tag: "latest"
@@ -293,9 +293,9 @@ global:
       digest: "sha256:d43fc4ec13241284a7c1b948e6e13fa5b290f53668751673faaa0c60c0bd49b3"
     essTesterSvc:
       repository: ess-tester
-      tag: "b8ce64a3"
+      tag: "local"
       pullPolicy: IfNotPresent
-      digest: "sha256:45e6d226721cbe663ff650aed688da32e0c9952530b5701063dc61e875f61d4a"
+      digest: "sha256:e128418a090d3d48df35a782f67c000410c56ee74c9c2f63f62597cbddacfd7c"
     essTesterApp:
       repository: batt-testing-app
       tag: "latest"

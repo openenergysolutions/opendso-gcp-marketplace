@@ -23,8 +23,7 @@ envoy:
       cpu: 100m
       memory: 64Mi
 
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""

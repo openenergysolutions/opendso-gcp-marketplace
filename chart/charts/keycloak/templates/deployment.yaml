@@ -57,9 +57,9 @@ spec:
           {{- $hostnamePort := .Values.config.hostnamePort | default "" }}
           env:
             - name: KEYCLOAK_ADMIN
-              value: {{ .Values.admin.username | quote }}
+              value: {{ .Values.config.adminUser | default .Values.admin.username | quote }}
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: {{ .Values.admin.password | quote }}
+              value: {{ .Values.config.adminPassword | default .Values.admin.password | quote }}
             - name: KC_PROXY
               value: {{ .Values.proxy | quote }}
             {{- if $hostname }}

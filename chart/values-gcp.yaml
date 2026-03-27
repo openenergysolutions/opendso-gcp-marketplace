@@ -487,6 +487,11 @@ ingress:
 
 # Grafana (Monitoring/Dashboards)
 grafana:
+  # Use namespace-scoped Role instead of ClusterRole/ClusterRoleBinding.
+  # The GCP Marketplace deployer SA only has namespace-scoped permissions.
+  rbac:
+    namespaced: true
+
   persistence:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass

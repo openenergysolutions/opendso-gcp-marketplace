@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "openfmb-event-service.labels" . | nindent 4 }}
 data:
-  config.yml: |
+  config.yaml: |
     nats:
       servers:
         - {{ printf "nats://%s-nats-service:4222" .Release.Name | quote }}

@@ -25,3 +25,9 @@ COPY schema.yaml /data/schema.yaml
 # Override default deploy script with custom NKey + Keycloak injection logic
 COPY deployer/deploy.sh /bin/deploy.sh
 RUN chmod +x /bin/deploy.sh
+
+# Override deploy_with_tests.sh (used by mpdev verify) to use our deploy.sh
+# instead of the standard create_manifests.sh + kubectl apply flow, which
+# ignores values-gcp.yaml and cannot handle large ConfigMaps (>262KB annotations).
+COPY deployer/deploy_with_tests.sh /bin/deploy_with_tests.sh
+RUN chmod +x /bin/deploy_with_tests.sh

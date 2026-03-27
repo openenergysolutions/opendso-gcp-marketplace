@@ -24,6 +24,19 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-keycloak
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak OIDC discovery endpoint..."
+              until wget -q -O /dev/null http://{{ .Release.Name }}-keycloak-svc:8080/realms/oes/.well-known/openid-configuration; do
+                echo "Keycloak not ready yet, retrying in 5s..."
+                sleep 5
+              done
+              echo "Keycloak is ready"
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
