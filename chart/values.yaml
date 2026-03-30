@@ -12,7 +12,7 @@ global:
   imagePullSecrets:
     - name: regsecret
   # Storage settings
-  storageClass: standard # Use "standard" for local/minikube
+  storageClass: standard
   # Common labels
   commonLabels: {}
   # Common annotations
@@ -33,7 +33,7 @@ global:
   # Override individual service resources as needed
   resourceProfile: default
   resourceProfiles:
-    minimal: # For local development (Minikube, Kind)
+    minimal:
       databases:
         requests:
           cpu: 100m
@@ -538,8 +538,6 @@ ingress:
   # Base domain for all services, for example: opendso.example.com
   domain: ""
   # Service type for ingress controller
-  # LoadBalancer: Production/cloud (automatic external IP, standard ports 80/443)
-  # NodePort: Development/local (custom ports)
   serviceType: LoadBalancer
   # Port configuration
   # Only used when serviceType is NodePort
@@ -587,9 +585,8 @@ keycloak:
     hostnameStrictHttps: "false"
 # NATS Messaging Server
 nats:
-  # WebSocket NodePort for browser access (development/local environments)
   websocketNodePort:
-    enabled: false # Set to true in values-dev.yaml for local development
+    enabled: false
     port: 30009
 # =============================================================================
 # Grafana - Monitoring & Dashboards

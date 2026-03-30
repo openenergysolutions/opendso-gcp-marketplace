@@ -27,7 +27,7 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 8080
   nodePort:
     http: 30080

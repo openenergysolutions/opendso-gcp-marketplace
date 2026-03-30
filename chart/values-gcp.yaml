@@ -41,8 +41,7 @@ global:
       ui: "gms"
       api: "gms"
 
-  # TLS configuration for demo/POC
-  # Using self-signed certificates from scripts/lib/create-certs.sh
+  # TLS secret containing the ingress certificate
   tls:
     existingSecret: "opendso-tls"  # Created by create-certs.sh
 
