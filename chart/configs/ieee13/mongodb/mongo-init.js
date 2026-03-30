@@ -26,8 +26,8 @@ try {
 // create a user for the settings_api database
 try {
   db.createUser({
-    user: "SettingsAPIUser",
-    pwd: "quietwhale62",
+    user: {{ required "mongodb.auth.username is required for MongoDB initialization" .Values.mongodb.auth.username | quote }},
+    pwd: {{ required "mongodb.auth.password is required for MongoDB initialization" .Values.mongodb.auth.password | quote }},
     roles: [
       {
         role: "readWrite",
@@ -39,7 +39,7 @@ try {
   if (e.code !== 51003) { // User already exists error code
     throw e;
   }
-  print("User 'SettingsAPIUser' already exists");
+  print("MongoDB application user already exists");
 }
 
 // Create AuthSettings document for gms-api

@@ -15,7 +15,7 @@ Returns YAML with host, port, name, user, password.
 {{- $nameOverride := dig "opendso-apps-db" "fullnameOverride" "" $vals -}}
 {{- $port := dig "opendso-apps-db" "service" "port" 5432 $vals -}}
 {{- $user := dig "opendso-apps-db" "auth" "username" "essuser" $vals -}}
-{{- $pass := dig "opendso-apps-db" "auth" "password" "esspassword" $vals -}}
+{{- $pass := dig "opendso-apps-db" "auth" "password" "" $vals -}}
 {{- $db := dig "opendso-apps-db" "auth" "database" "ess_tester" $vals -}}
 {{- $host := "" -}}
 {{- if $nameOverride -}}
@@ -66,7 +66,7 @@ Returns YAML with host, port, name, user, password.
 {{- $nameOverride := dig "citus-db" "fullnameOverride" "" $vals -}}
 {{- $port := dig "citus-db" "service" "port" 5432 $vals -}}
 {{- $user := dig "citus-db" "auth" "username" "citususer" $vals -}}
-{{- $pass := dig "citus-db" "auth" "password" "cituspassword" $vals -}}
+{{- $pass := dig "citus-db" "auth" "password" "" $vals -}}
 {{- $db := dig "citus-db" "auth" "database" "ofmb_db" $vals -}}
 {{- $host := "" -}}
 {{- if $nameOverride -}}

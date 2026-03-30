@@ -7,7 +7,7 @@ fullnameOverride: ""
 # PostgreSQL configuration
 auth:
   username: keycloak
-  password: password
+  password: ""
   database: keycloak
 
 # Persistence configuration

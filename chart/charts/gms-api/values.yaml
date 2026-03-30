@@ -44,8 +44,8 @@ config:
   mongodb:
     uri: "mongodb://opendso-mongodb:27017"
     dbName: "settings_api"
-    username: "SettingsAPIUser"
-    password: "quietwhale62"
+    username: ""
+    password: ""
     # Create a Secret for MongoDB credentials (recommended for production)
     createSecret: false
     # Use an existing Secret for MongoDB credentials

@@ -70,6 +70,8 @@ USER_VALUES=$(mktemp /tmp/user-values.XXXXXX.yaml)
 
 NATS_AUTH_VALUES=$(mktemp /tmp/nats-auth-values.XXXXXX.yaml)
 NATS_KEYS_SECRET="${APP_INSTANCE_NAME}-nats-auth-keys"
+APPS_DB_SECRET="${APP_INSTANCE_NAME}-opendso-apps-db-secret"
+CITUS_DB_SECRET="${APP_INSTANCE_NAME}-citus-db-secret"
 
 # Derive domain and imageRegistry from user values for computed --set flags
 DOMAIN=$(python3 -c "
@@ -149,6 +151,21 @@ kubectl create secret generic "$NATS_KEYS_SECRET" \
 
 echo "  Secret '$NATS_KEYS_SECRET' applied."
 
+# Reuse existing internal DB passwords on re-runs; generate once on first install.
+if kubectl get secret "$APPS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
+    OPENDSO_APPS_DB_PASSWORD=$(kubectl get secret "$APPS_DB_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.password}' | base64 -d)
+else
+    OPENDSO_APPS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+fi
+
+if kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
+    CITUS_DB_PASSWORD=$(kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.password}' | base64 -d)
+else
+    CITUS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+fi
+
 # ---------------------------------------------------------------------------
 # 3. Write temporary Helm values overlay with derived public keys
 # ---------------------------------------------------------------------------
@@ -174,6 +191,14 @@ global:
 
 nats-auth-svc:
   natsKeysSecret: "${NATS_KEYS_SECRET}"
+
+opendso-apps-db:
+  auth:
+    password: "${OPENDSO_APPS_DB_PASSWORD}"
+
+citus-db:
+  auth:
+    password: "${CITUS_DB_PASSWORD}"
 EOF
 
 # Resolve site name (used by both step 3a and 3b below)
@@ -363,14 +388,8 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set global.keycloak.url="https://keycloak.${DOMAIN}" \
     --set ingress.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
-    --set mongodb.tls.enabled=false \
-    --set global.mongodb.tls.enabled=false \
-    --set keycloak.tls.enabled=false \
-    --set keycloak.config.httpsEnabled=false \
     --set keycloak.config.hostnameStrict=false \
     --set keycloak.config.hostnameStrictHttps=false \
-    --set historian-svc.tls.enabled=false \
-    --set nats.tls.enabled=false \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \

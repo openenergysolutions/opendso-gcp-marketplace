@@ -7,7 +7,7 @@ fullnameOverride: ""
 # PostgreSQL configuration
 auth:
   username: essuser
-  password: esspassword
+  password: ""
   database: ess_tester
   existingSecret: ""
   usernameKey: username

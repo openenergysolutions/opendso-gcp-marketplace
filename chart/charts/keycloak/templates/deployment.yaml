@@ -59,7 +59,7 @@ spec:
             - name: KEYCLOAK_ADMIN
               value: {{ .Values.config.adminUser | default .Values.admin.username | quote }}
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: {{ .Values.config.adminPassword | default .Values.admin.password | quote }}
+              value: {{ required "keycloak admin password is required; set keycloak.config.adminPassword" (.Values.config.adminPassword | default .Values.admin.password) | quote }}
             - name: KC_PROXY
               value: {{ .Values.proxy | quote }}
             {{- if $hostname }}

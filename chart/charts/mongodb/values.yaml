@@ -7,7 +7,7 @@ fullnameOverride: ""
 # MongoDB configuration
 auth:
   rootUsername: admin
-  rootPassword: password
+  rootPassword: ""
   database: settings_api
 
 # Persistence configuration
@@ -63,7 +63,7 @@ initdb:
   createConfigMap: false
   database: "settings_api"
   username: "gms-api"
-  password: "gms-api"
+  password: ""
 
 # Health probes
 # Note: When TLS is enabled, probes automatically use --tls and --tlsCAFile flags

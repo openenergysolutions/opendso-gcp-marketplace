@@ -37,7 +37,7 @@ containerPort: 8080
 
 admin:
   username: admin
-  password: admin
+  password: ""
 
 proxy: edge
 
@@ -62,7 +62,7 @@ config:
     port: 5432
     name: "keycloak"
     username: "keycloak"
-    password: "keycloak"
+    password: ""
   logLevel: "INFO"
 
 tls:

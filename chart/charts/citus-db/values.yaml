@@ -7,7 +7,7 @@ fullnameOverride: ""
 # PostgreSQL configuration
 auth:
   username: citususer
-  password: cituspassword
+  password: ""
   database: ofmb_db
   existingSecret: ""
   usernameKey: username

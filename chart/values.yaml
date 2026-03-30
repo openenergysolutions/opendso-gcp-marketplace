@@ -445,7 +445,7 @@ global:
 opendso-apps-db:
   auth:
     username: essuser
-    password: esspassword
+    password: ""
     database: ess_tester
     existingSecret: ""
     usernameKey: username
@@ -469,7 +469,7 @@ opendso-apps-db:
 citus-db:
   auth:
     username: citususer
-    password: cituspassword
+    password: ""
     database: ofmb_db
     existingSecret: ""
     usernameKey: username
@@ -590,7 +590,7 @@ grafana:
     passwordKey: admin-password
   # Admin user configuration (for reference, actual credentials in secret)
   adminUser: admin
-  adminPassword: admin
+  adminPassword: ""
   # Persistence
   persistence:
     enabled: true
