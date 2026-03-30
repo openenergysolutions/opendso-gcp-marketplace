@@ -98,10 +98,7 @@ data:
 {{- if and $httpsPort (ne $httpsPort "443") }}
 {{- $hostSuffix = printf ":%s" $httpsPort }}
 {{- end }}
-{{- $keycloakUrl := .Values.global.keycloak.url }}
-{{- if not $keycloakUrl }}
-{{- $keycloakUrl = printf "https://keycloak.%s%s" $domain $hostSuffix }}
-{{- end }}
+{{- $keycloakUrl := include "opendso.keycloakUrl" . }}
 ---
 apiVersion: v1
 kind: ConfigMap

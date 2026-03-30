@@ -25,7 +25,7 @@ podSecurityContext:
 securityContext: {}
 
 env:
-  PLATFORM_NATS_SERVICE: opendso-nats-service
+  PLATFORM_NATS_SERVICE: ""
 
 args:
   - "-c"
@@ -34,7 +34,7 @@ args:
 # Service configuration
 config:
   nats:
-    server: "nats://opendso-nats-service:4222"
+    server: ""
     tls:
       enabled: false
       certFile: "/certs/client-cert.pem"

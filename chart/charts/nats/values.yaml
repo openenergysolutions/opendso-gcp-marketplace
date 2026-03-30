@@ -38,8 +38,8 @@ websocketNodePort:
 
 tls:
   enabled: true
-  # Default: <release-name>-tls-secret (overridden by deploy scripts via --set nats.tls.secretName)
-  secretName: opendso-tls-secret
+  # Default: <release-name>-tls-secret when unset
+  secretName: ""
 
 resources:
   limits:

@@ -3,7 +3,7 @@
 global:
   keycloak:
     url: ""
-    internalUrl: "http://opendso-keycloak-svc:8080"
+    internalUrl: ""
     realm: "oes"
     clientIds:
       ui: "gms"
@@ -53,7 +53,7 @@ config:
     usernameKey: "mongodb-username"
     passwordKey: "mongodb-password"
   nats:
-    url: "nats://opendso-nats-service:4222"
+    url: ""
   tls:
     enabled: true
     certFile: "/home/node/app/certs/server-cert.pem"

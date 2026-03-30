@@ -24,12 +24,12 @@ An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 42 
 helm dependency update
 
 # 2. Create namespace
-kubectl create namespace opendso
+kubectl create namespace <namespace>
 
 # 3. Create required secrets (see Security section below)
 
 # 4. Install
-helm install opendso . -n opendso
+helm install <release-name> . -n <namespace>
 ```
 
 ## Chart Structure
@@ -99,7 +99,7 @@ global:
   domain: your-domain.example.com          # Base domain for ingress
 
   # Kubernetes configuration
-  namespace: opendso
+  namespace: ""                  # leave unset; Helm release namespace is used
   storageClass: standard
   imageRegistry: ""              # Global registry override
   imagePullSecrets:
@@ -249,28 +249,28 @@ kubectl create secret docker-registry regsecret \
   --docker-server=your-registry.io \
   --docker-username=user \
   --docker-password=pass \
-  -n opendso
+  -n <namespace>
 ```
 
 ### Creating Secrets Manually
 
 ```bash
 # Grafana credentials
-kubectl create secret generic opendso-grafana-credentials \
+kubectl create secret generic <release-name>-grafana-credentials \
   --from-literal=admin-user=admin \
   --from-literal=admin-password='secure-password' \
   --from-literal=citus-password='cituspassword' \
   --from-literal=mongodb-password='mongopassword' \
   --from-literal=opendso-apps-db-password='esspassword' \
-  -n opendso
+  -n <namespace>
 
 # TLS certificate (using mkcert)
 mkcert -install
 mkcert "*.your-domain.example.com" your-domain.example.com
-kubectl create secret tls opendso-tls-secret \
+kubectl create secret tls <release-name>-tls-secret \
   --cert=_wildcard.your-domain.example.com.pem \
   --key=_wildcard.your-domain.example.com-key.pem \
-  -n opendso
+  -n <namespace>
 ```
 
 ## Parameterized Release Names
@@ -300,7 +300,6 @@ helm install production . \
 ```bash
 --set grafana.admin.existingSecret=<release-name>-grafana-credentials
 --set grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials
---set grafana.envValueFrom.MONGODB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials
 --set grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials
 ```
 
@@ -361,30 +360,30 @@ Full configuration with all 42 services available.
 helm dependency update
 
 # Upgrade release
-helm upgrade opendso . \
+helm upgrade <release-name> . \
   -f values.yaml \
-  -n opendso
+  -n <namespace>
 
 # Or with custom values
-helm upgrade opendso . \
+helm upgrade <release-name> . \
   --set global.domain=opendso.yourdomain.com \
-  -n opendso
+  -n <namespace>
 ```
 
 ## Uninstalling
 
 ```bash
 # Uninstall release
-helm uninstall opendso -n opendso
+helm uninstall <release-name> -n <namespace>
 
 # Clean up PVCs (optional)
-kubectl delete pvc -l app.kubernetes.io/instance=opendso -n opendso
+kubectl delete pvc -l app.kubernetes.io/instance=<release-name> -n <namespace>
 
 # Clean up secrets
-kubectl delete secret opendso-grafana-credentials opendso-tls-secret root-ca regsecret -n opendso
+kubectl delete secret <release-name>-grafana-credentials <release-name>-tls-secret root-ca regsecret -n <namespace>
 
 # Delete namespace
-kubectl delete namespace opendso
+kubectl delete namespace <namespace>
 ```
 
 ## Development
@@ -399,15 +398,15 @@ helm lint .
 
 ```bash
 # Render all templates
-helm template opendso .
+helm template <release-name> .
 
 # Render specific template
-helm template opendso . \
+helm template <release-name> . \
   -s charts/grafana/templates/deployment.yaml \
   --show-only charts/grafana/templates/deployment.yaml
 
 # Debug mode
-helm template opendso . --debug
+helm template <release-name> . --debug
 ```
 
 ### Dependency Management
@@ -427,7 +426,7 @@ helm dependency list
 
 ```bash
 # Dry-run install
-helm install opendso . --dry-run --debug -n opendso
+helm install <release-name> . --dry-run --debug -n <namespace>
 ```
 
 ## Troubleshooting
@@ -438,7 +437,7 @@ helm install opendso . --dry-run --debug -n opendso
 
 ```bash
 # Check for insufficient resources
-kubectl describe pod -l app.kubernetes.io/name=grafana -n opendso
+kubectl describe pod -l app.kubernetes.io/name=grafana -n <namespace>
 
 # Common: CPU/memory limits too high
 # Solution: Adjust in values or delete old pods
@@ -448,7 +447,7 @@ kubectl describe pod -l app.kubernetes.io/name=grafana -n opendso
 
 ```bash
 # Check secrets exist
-kubectl get secrets -n opendso
+kubectl get secrets -n <namespace>
 
 # Recreate secrets manually (see Security and Secrets section above)
 ```
@@ -467,15 +466,15 @@ env:
 
 ```bash
 # Check image pull secret
-kubectl get secret regsecret -n opendso -o yaml
+kubectl get secret regsecret -n <namespace> -o yaml
 
 # Recreate if needed
-kubectl delete secret regsecret -n opendso
+kubectl delete secret regsecret -n <namespace>
 kubectl create secret docker-registry regsecret \
   --docker-server=registry.io \
   --docker-username=user \
   --docker-password=pass \
-  -n opendso
+  -n <namespace>
 ```
 
 **5. Helm dependency issues**
@@ -490,28 +489,28 @@ helm dependency update
 
 ```bash
 # Get all resources
-kubectl get all -n opendso
+kubectl get all -n <namespace>
 
 # Check pod status
-kubectl get pods -n opendso -o wide
+kubectl get pods -n <namespace> -o wide
 
 # View pod logs
-kubectl logs -l app.kubernetes.io/name=grafana -n opendso
+kubectl logs -l app.kubernetes.io/name=grafana -n <namespace>
 
 # Check events
-kubectl get events -n opendso --sort-by='.lastTimestamp'
+kubectl get events -n <namespace> --sort-by='.lastTimestamp'
 
 # Describe problematic pod
-kubectl describe pod <pod-name> -n opendso
+kubectl describe pod <pod-name> -n <namespace>
 
 # Check ingress
-kubectl get ingress -n opendso
-kubectl describe ingress opendso-ingress -n opendso
+kubectl get ingress -n <namespace>
+kubectl describe ingress <release-name>-ingress -n <namespace>
 
 # Test service connectivity
-kubectl run -it --rm debug --image=busybox --restart=Never -n opendso -- sh
+kubectl run -it --rm debug --image=busybox --restart=Never -n <namespace> -- sh
 # Inside pod:
-# wget -O- http://opendso-grafana:80
+# wget -O- http://<release-name>-grafana:80
 ```
 
 ## Chart Publishing
@@ -554,7 +553,7 @@ grafana:
         # Historian DB (Citus)
         - name: Historian DB
           type: postgres
-          url: opendso-citus-db:5432
+          url: <release-name>-citus-db:5432
           database: ofmb_db
           user: citususer
           secureJsonData:
@@ -563,7 +562,7 @@ grafana:
         # OpenDSO Apps DB - ESS Tester
         - name: OpenDSO Apps DB
           type: postgres
-          url: opendso-opendso-apps-db:5432
+          url: <release-name>-opendso-apps-db:5432
           database: ess_tester
           user: essuser
           secureJsonData:
@@ -572,7 +571,7 @@ grafana:
         # Assets DB - Asset Health (TimescaleDB)
         - name: Assets DB
           type: postgres
-          url: opendso-opendso-apps-db:5432
+          url: <release-name>-opendso-apps-db:5432
           database: assets
           user: essuser
           secureJsonData:
@@ -607,7 +606,7 @@ helm install site2 . \
 Override resources per service:
 
 ```bash
-helm install opendso . \
+helm install <release-name> . \
   --set grafana.resources.requests.memory=512Mi \
   --set grafana.resources.limits.memory=1Gi
 ```

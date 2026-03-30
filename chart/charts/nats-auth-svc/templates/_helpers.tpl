@@ -71,7 +71,7 @@ Usage: {{ include "nats-auth-svc.image" (dict "imageRoot" .Values.global.images.
 Compute the Keycloak realm URL — used as the OIDC issuer for discovery.
 */}}
 {{- define "nats-auth-svc.realmUrl" -}}
-{{- printf "%s/realms/%s" .Values.global.keycloak.internalUrl .Values.global.keycloak.realm -}}
+{{- printf "%s/realms/%s" (include "opendso.keycloakInternalUrl" .) .Values.global.keycloak.realm -}}
 {{- end }}
 
 {{/*

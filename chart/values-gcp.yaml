@@ -35,7 +35,7 @@ global:
   # Keycloak configuration
   keycloak:
     url: ""
-    internalUrl: "http://opendso-keycloak-svc:8080"
+    internalUrl: ""
     realm: "oes"
     clientIds:
       ui: "gms"
@@ -231,7 +231,7 @@ gms-api:
 # LICENSE_KEY and LICENSE_API_KEY are injected via the opendso-license K8s Secret (envFrom).
 topology-nodes:
   env:
-    PLATFORM_NATS_SERVICE: opendso-nats-service
+    PLATFORM_NATS_SERVICE: ""
     PLATFORM_NATS_PORT: "4222"
     LICENSE_API_URL: ""
 
@@ -239,7 +239,7 @@ topology-nodes:
 nats:
   tls:
     enabled: true
-    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: ""  # Defaults to <release-name>-tls-secret when unset
   authCallout:
     enabled: false  # Enabled only via values-nats-auth-generated.yaml
 

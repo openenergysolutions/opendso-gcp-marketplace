@@ -8,7 +8,7 @@ siteConfigMap: ""
 
 env:
   REFRESH_SEC: "1"
-  PLATFORM_NODE_IP: "nats://opendso-nats-service:4222"  # overridden in template: nats://<release-name>-nats-service:4222
+  PLATFORM_NODE_IP: ""  # overridden in template: nats://<release-name>-nats-service:4222
   RPCDSS_NODE_IP: "http://opendso-rpcdss-svc:50049"    # overridden in template: http://<release-name>-rpcdss-svc:50049
   PUBLISH_UNCHANGED_DATA: "true"
 

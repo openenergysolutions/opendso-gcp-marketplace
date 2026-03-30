@@ -206,10 +206,14 @@ Compute the base URL for accessing services
 Returns format: https://domain:port or https://domain (for standard ports)
 */}}
 {{- define "opendso.baseUrl" -}}
-{{- $domain := .Values.ingress.domain -}}
-{{- $serviceType := .Values.ingress.serviceType -}}
-{{- $httpsPort := .Values.ingress.ports.https -}}
-{{- if eq $serviceType "LoadBalancer" -}}
+{{- $ingress := .Values.ingress | default dict -}}
+{{- $ports := get $ingress "ports" | default dict -}}
+{{- $domain := .Values.global.domain | default (get $ingress "domain") -}}
+{{- $serviceType := get $ingress "serviceType" | default "LoadBalancer" -}}
+{{- $httpsPort := get $ports "https" | default 443 -}}
+{{- if not $domain -}}
+{{- "" -}}
+{{- else if eq $serviceType "LoadBalancer" -}}
 https://{{ $domain }}
 {{- else if eq $serviceType "NodePort" -}}
 {{- if and $httpsPort (ne (toString $httpsPort) "443") -}}
@@ -235,6 +239,18 @@ Uses global.keycloak.url if set, otherwise computes from ingress settings
 {{- end }}
 
 {{/*
+Compute the internal Keycloak URL
+Uses global.keycloak.internalUrl if set, otherwise computes a release-scoped service URL
+*/}}
+{{- define "opendso.keycloakInternalUrl" -}}
+{{- if .Values.global.keycloak.internalUrl -}}
+{{- .Values.global.keycloak.internalUrl -}}
+{{- else -}}
+{{- printf "http://%s-keycloak-svc:8080" .Release.Name -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Compute CORS allow-origin list
 Creates a comma-separated list of all service URLs
 */}}
@@ -243,64 +259,112 @@ Creates a comma-separated list of all service URLs
 {{- $serviceType := .Values.ingress.serviceType -}}
 {{- $httpsPort := .Values.ingress.ports.https -}}
 {{- $origins := list -}}
-{{- $formatOrigin := "" -}}
 {{- if and $httpsPort (ne (toString $httpsPort) "443") (ne $serviceType "LoadBalancer") -}}
-{{- $formatOrigin = "https://%s.%s:%s" -}}
 {{- $origins = append $origins (printf "https://%s:%s" $domain (toString $httpsPort)) -}}
-{{- else -}}
-{{- $formatOrigin = "https://%s.%s" -}}
-{{- $origins = append $origins (printf "https://%s" $domain) -}}
-{{- end -}}
 {{- if (index .Values.global "genesis-node-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "gms" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "gms" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if .Values.global.keycloak.enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "keycloak" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "keycloak" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "gis-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "gis" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "gis" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "one-line-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "oneline" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "oneline" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "event-viewer-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "eventviewer" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "eventviewer" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "inventory-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "inventory" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "inventory" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "openfmb-event-creator-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "openfmbeventcreator" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "openfmbeventcreator" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "data-viewer-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "dataviewer" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "dataviewer" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "inspector-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "openfmb" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "openfmb" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "der-dispatch-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "derdispatch" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "derdispatch" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "ess-manager-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "device" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "device" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "ess-tester-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "esstesting" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "esstesting" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "historian-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "historian" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "historian" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "schedule-dispatch-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "scheduledispatch" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "scheduledispatch" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "opendso-docs-app").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "docs" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "docs" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "grafana").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "grafana" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "grafana" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- if (index .Values.global "gms-api").enabled -}}
-{{- $origins = append $origins (printf $formatOrigin "api" $domain (toString $httpsPort)) -}}
+{{- $origins = append $origins (printf "https://%s.%s:%s" "api" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- else -}}
+{{- $origins = append $origins (printf "https://%s" $domain) -}}
+{{- if (index .Values.global "genesis-node-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "gms" $domain) -}}
+{{- end -}}
+{{- if .Values.global.keycloak.enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "keycloak" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "gis-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "gis" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "one-line-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "oneline" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "event-viewer-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "eventviewer" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "inventory-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "inventory" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "openfmb-event-creator-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "openfmbeventcreator" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "data-viewer-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "dataviewer" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "inspector-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "openfmb" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "der-dispatch-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "derdispatch" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "ess-manager-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "device" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "ess-tester-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "esstesting" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "historian-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "historian" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "schedule-dispatch-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "scheduledispatch" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "opendso-docs-app").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "docs" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "grafana").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "grafana" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "gms-api").enabled -}}
+{{- $origins = append $origins (printf "https://%s.%s" "api" $domain) -}}
+{{- end -}}
 {{- end -}}
 {{- join ", " $origins -}}
 {{- end }}

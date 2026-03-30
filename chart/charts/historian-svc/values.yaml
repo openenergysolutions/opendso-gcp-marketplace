@@ -47,13 +47,13 @@ service:
   port: 50051
 
 env:
-  PLATFORM_NATS_SERVICE: opendso-nats-service
+  PLATFORM_NATS_SERVICE: ""
   PGHOST: opendso-citus-db
 
 # Service configuration
 config:
   nats:
-    server: "nats://opendso-nats-service:4222"
+    server: ""
     tls:
       enabled: false
       certFile: "/certs/client-cert.pem"

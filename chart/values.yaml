@@ -4,7 +4,7 @@
 
 global:
   # Global settings shared across all subcharts
-  namespace: opendso
+  namespace: ""
   # Site configuration - determines which config files to use
   site: ieee13
   # Container registry settings
@@ -110,7 +110,7 @@ global:
     url: "" # default; computed from the configured ingress domain when unset
     # Internal URL for service-to-service communication
     # Set by deploy scripts: http://<release-name>-keycloak-svc:8080
-    internalUrl: "http://opendso-keycloak-svc:8080" # default for release name "opendso"
+    internalUrl: "" # computed as http://<release>-keycloak-svc:8080 when unset
     # Keycloak realm name
     realm: "oes"
     # Client IDs for different services
@@ -124,9 +124,9 @@ global:
   # These must be externally accessible (not internal Kubernetes services)
   environment:
     # API URL for backend services (externally accessible)
-    apiUrl: "https://opendso-gms-api:8000" # Override in values-dev.yaml for external access
+    apiUrl: "" # set via overlay or deployer
     # NATS WebSocket URL for real-time messaging (externally accessible)
-    natsUrl: "wss://opendso-nats-service-ws:9222" # Override in values-dev.yaml for external access
+    natsUrl: "" # set via overlay or deployer
     # Google Analytics configuration
     googleTagId: "GTM-B7JGQS2"
     googleTagEnv: "&gtm_auth=NaiPwz5U_xGuF4hoZ7yHUw&gtm_preview=env-5&gtm_cookies_win=x"
@@ -564,7 +564,7 @@ ingress:
   # TLS configuration
   tls:
     enabled: true
-    secretName: opendso-tls-secret # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: "" # Defaults to <release-name>-tls-secret when unset
     # cert-manager integration (optional, for automatic Let's Encrypt certificates)
     certManager:
       enabled: false # Set to true for automatic certificates in production
@@ -600,7 +600,7 @@ grafana:
   # IMPORTANT: If using a custom release name, override with:
   #   --set grafana.admin.existingSecret=<your-release-name>-grafana-credentials
   admin:
-    existingSecret: opendso-grafana-credentials # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
+    existingSecret: "" # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
   # Admin user configuration (for reference, actual credentials in secret)
@@ -630,11 +630,11 @@ grafana:
   envValueFrom:
     CITUS_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: "" # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: citus-password
     OPENDSO_APPS_DB_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: "" # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: opendso-apps-db-password
   # Data sources are provisioned via grafana-datasources.yaml template (uses .Release.Name)
   sidecar:

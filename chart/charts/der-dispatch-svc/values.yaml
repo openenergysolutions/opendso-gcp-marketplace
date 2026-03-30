@@ -40,7 +40,7 @@ service:
 env:
   # NOTE: PLATFORM_NODE_IP is templated in deployment.yaml as {{ .Release.Name }}-nats-service
   # This value is for documentation only and is overridden by the template
-  PLATFORM_NODE_IP: opendso-nats-service
+  PLATFORM_NODE_IP: ""
   PLATFORM_NATS_PORT: "4222"
   RUST_BACKTRACE: "1"
   # Database environment variables are managed by opendso.citusDb.settings helper
