@@ -354,7 +354,6 @@ kubectl label application.app.k8s.io "$APP_INSTANCE_NAME" \
 
 helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --namespace "$NAMESPACE" \
-    --wait \
     --timeout 15m \
     -f "$CHART_DIR/values-gcp.yaml" \
     -f "$USER_VALUES" \
@@ -377,6 +376,16 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.gcpMarketplace=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
+
+# mpdev pre-creates the Application resource before Helm runs. Even after Helm
+# ownership adoption, the live Application may keep the minimal Marketplace
+# spec and omit .spec.descriptor.version, which causes patch_assembly_phase.sh
+# to fail the install with "Application's version 'null' does not match...".
+# Force the published app version onto the live resource after Helm completes.
+kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
+    -n "$NAMESPACE" \
+    --type merge \
+    --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null
 
 # ---------------------------------------------------------------------------
 # 5. Sync Keycloak client secrets via Admin REST API

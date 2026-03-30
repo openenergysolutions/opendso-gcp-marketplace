@@ -18,7 +18,7 @@ A single Helm release installs the full OpenDSO stack into your GKE cluster:
 | **Databases** | MongoDB, Citus (PostgreSQL), TimescaleDB |
 | **Core Services** | GMS API, Historian, OpenFMB Event Service, NATS Auth |
 | **Topology** | Topology Genesis, Topology Nodes |
-| **Grid Applications** | CVR, DER Dispatch, ESS Manager, Asset Health |
+| **Grid Applications** | DER Dispatch, ESS Manager, ESS Tester, Asset Health |
 | **Frontend Apps** | One-Line, GIS, Historian, Inspector, Inventory, Data Viewer, and more |
 
 After deployment, the following endpoints are available at your configured domain:
@@ -40,8 +40,10 @@ After deployment, the following endpoints are available at your configured domai
 3. Select your GKE cluster and namespace
 4. Fill in the required parameters:
    - **Domain Name** — base domain (e.g. `opendso.example.com`). DNS must point to your cluster's LoadBalancer IP.
+   - **OpenDSO License Key** — obtained from OES; required to activate the application.
+   - **OpenDSO Installation Key** — obtained from OES; required to activate the application.
    - **Keycloak Admin Password**
-   - **MongoDB Passwords**
+   - **MongoDB Root Password** and **MongoDB App Password**
    - **Grafana Admin Password**
    - **Resource Profile** — `minimal`, `default`, or `production`
 5. Click **Deploy**
@@ -52,7 +54,7 @@ The deployer will:
 - Generate per-service Keycloak client secrets and pre-populate the realm
 - Create all `*-keycloak-env` Kubernetes secrets before services start
 - Deploy all services via Helm in a single pass (no post-install step required)
-- Verify health before marking the installation complete
+- Wait for all pods to reach Ready state (`helm --wait`) before marking the installation complete
 
 ---
 
@@ -138,10 +140,13 @@ opendso-gcp-marketplace/
 │   ├── templates/          # Parent chart templates
 │   └── configs/            # Site-specific configuration (ieee13)
 ├── deployer/
-│   ├── Dockerfile          # Custom deployer image (extends deployer_helm)
-│   └── deploy.sh           # NKey generation + Keycloak secret injection + helm install
+│   ├── Dockerfile              # Custom deployer image (extends deployer_helm)
+│   ├── deploy.sh               # NKey generation + Keycloak secret injection + helm install
+│   └── deploy_with_tests.sh    # Wraps deploy.sh + runs verify.sh (used by mpdev verify)
 ├── scripts/
-│   └── verify.sh           # Post-deploy health checks
+│   ├── verify.sh               # Post-deploy health checks (called by deploy_with_tests.sh)
+│   ├── mpdev.sh                # Helper to run mpdev verify locally
+│   └── provision-test-env.sh   # Provisions a local test cluster environment
 ├── schema.yaml             # GCP Marketplace UI schema (parameters + images)
 └── README.md               # This file
 ```
@@ -171,25 +176,6 @@ mpdev install \
   --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
   --parameters='{"APP_INSTANCE_NAME":"opendso-test","NAMESPACE":"test","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","grafana.adminPassword":"secret"}'
 ```
-
----
-
-## Keeping the Chart in Sync
-
-The `chart/` directory is kept in sync with the upstream
-[opendso-helm-charts](https://github.com/openenergysolutions/opendso-helm-charts) `opendso/` directory.
-Run the following to pull in upstream changes:
-
-```bash
-rsync -av --delete \
-  ../opendso-helm-charts/opendso/ \
-  chart/ \
-  --exclude='values-nats-auth-generated.yaml' \
-  --exclude='configs/*/nats-auth-svc/keys/' \
-  --exclude='configs/*/keycloak/realm/oes-realm-generated.json'
-```
-
-After syncing, review `schema.yaml` to ensure any new images are declared in the `images` section.
 
 ---
 

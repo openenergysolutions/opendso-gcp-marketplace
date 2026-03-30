@@ -190,9 +190,9 @@ global:
     # Core Services
     historianSvc:
       repository: historian
-      tag: "latest"
+      tag: "local"
       pullPolicy: IfNotPresent
-      digest: "sha256:673c2a6ab8a7b19b5b803d42fd10f7c9ecdf435be42c4dda79d098546572a536"
+      digest: "sha256:bb6fdeed69fc8e06058e14fc55e3a651bc24326c40638fef971d49478f657be1"
     gmsApi:
       repository: gms-api
       tag: "latest"
@@ -206,14 +206,14 @@ global:
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "pre-ods-883ab50f"
+      tag: "local"
       pullPolicy: IfNotPresent
-      digest: "sha256:b7192fc6335ad7cd10dc377dba1914a6bcca056e5bd74a18d35eedc8f164641c"
+      digest: "sha256:6dd2faaebe059dd424992ec2773b80223940840288739ba51b95a31b16372c1b"
     topologyNodes:
       repository: topology-nodes
-      tag: "latest"
+      tag: "local"
       pullPolicy: IfNotPresent
-      digest: "sha256:71e854de86e6c6d034836a35aa6d73680e7f5c9ddb4ceb8c1f4846c753fa5faf"
+      digest: "sha256:eb5be75658b0462d9e282eb70d168cc924be3e9105943df045dc8faf7d314672"
     derDispatchApp:
       repository: der-dispatch-app
       tag: "latest"
@@ -373,11 +373,11 @@ global:
     enabled: false
   # Core Services
   historian-svc:
-    enabled: true
+    enabled: false
   gms-api:
     enabled: true
   openfmb-event-service:
-    enabled: true
+    enabled: false
   # Topology Services
   topology-genesis:
     enabled: true
