@@ -18,9 +18,6 @@ spec:
       labels:
         {{- include "gms-api.selectorLabels" . | nindent 8 }}
     spec:
-      {{- $vals := .Values | toYaml | fromYaml -}}
-      {{- $mongoUsername := .Values.config.mongodb.username | default (dig "mongodb" "auth" "username" "" $vals) -}}
-      {{- $mongoPassword := .Values.config.mongodb.password | default (dig "mongodb" "auth" "password" "" $vals) -}}
       {{- if .Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
@@ -69,11 +66,22 @@ spec:
             secretKeyRef:
               name: {{ include "gms-api.fullname" . }}-mongodb
               key: mongodb-password
+        {{- else if and (dig "mongodb" "enabled" false .Values.global) (not .Values.config.mongodb.username) (not .Values.config.mongodb.password) }}
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+              key: mongodb-username
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+              key: mongodb-password
         {{- else }}
         - name: MONGODB_USERNAME
-          value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or mongodb.auth.username" $mongoUsername | quote }}
+          value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or config.mongodb.existingSecret" .Values.config.mongodb.username | quote }}
         - name: MONGODB_PASSWORD
-          value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or mongodb.auth.password" $mongoPassword | quote }}
+          value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or config.mongodb.existingSecret" .Values.config.mongodb.password | quote }}
         {{- end }}
         resources:
           limits:
@@ -120,11 +128,22 @@ spec:
                 secretKeyRef:
                   name: {{ include "gms-api.fullname" . }}-mongodb
                   key: mongodb-password
+            {{- else if and (dig "mongodb" "enabled" false .Values.global) (not .Values.config.mongodb.username) (not .Values.config.mongodb.password) }}
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+                  key: mongodb-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+                  key: mongodb-password
             {{- else }}
             - name: MONGODB_USERNAME
-              value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or mongodb.auth.username" $mongoUsername | quote }}
+              value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or config.mongodb.existingSecret" .Values.config.mongodb.username | quote }}
             - name: MONGODB_PASSWORD
-              value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or mongodb.auth.password" $mongoPassword | quote }}
+              value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or config.mongodb.existingSecret" .Values.config.mongodb.password | quote }}
             {{- end }}
           ports:
             - name: api

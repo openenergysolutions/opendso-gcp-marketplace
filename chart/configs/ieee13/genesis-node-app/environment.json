@@ -1,8 +1,8 @@
 {
   "api": {
-    "uri": "https://api.demo-gcp.oesinc.dev/api"
+    "uri": "https://api.__BASE_DOMAIN__/api"
   },
-  "keycloakUrl": "https://keycloak.demo-gcp.oesinc.dev",
+  "keycloakUrl": "https://keycloak.__BASE_DOMAIN__",
   "keycloakRealm": "oes",
   "keycloakClientId": "gms",
   "googleTagId": "GTM-B7JGQS2",

@@ -116,8 +116,8 @@ Returns YAML with host, port, name, user, password.
 {{- $external := dig "mongodb" "externalDatabase" "enabled" false $vals -}}
 {{- $nameOverride := dig "mongodb" "fullnameOverride" "" $vals -}}
 {{- $port := dig "mongodb" "service" "port" 27017 $vals -}}
-{{- $user := dig "mongodb" "auth" "rootUsername" "admin" $vals -}}
-{{- $pass := dig "mongodb" "auth" "rootPassword" "password" $vals -}}
+{{- $user := dig "mongodb" "auth" "rootUsername" "root" $vals -}}
+{{- $pass := dig "mongodb" "auth" "rootPassword" "" $vals -}}
 {{- $db := dig "mongodb" "auth" "database" "settings_api" $vals -}}
 {{- $host := "" -}}
 {{- if $nameOverride -}}
@@ -239,23 +239,68 @@ Compute CORS allow-origin list
 Creates a comma-separated list of all service URLs
 */}}
 {{- define "opendso.corsOrigins" -}}
-{{- $baseUrl := include "opendso.baseUrl" . -}}
-{{- $services := list "demo-gcp.oesinc.dev" "genesis.demo-gcp.oesinc.dev" "keycloak.demo-gcp.oesinc.dev" "gis.demo-gcp.oesinc.dev" "events.demo-gcp.oesinc.dev" "inventory.demo-gcp.oesinc.dev" "event-creator.demo-gcp.oesinc.dev" "data-viewer.demo-gcp.oesinc.dev" "der-dispatch.demo-gcp.oesinc.dev" "ess-manager.demo-gcp.oesinc.dev" "api.demo-gcp.oesinc.dev" -}}
-{{- $domain := .Values.ingress.domain -}}
+{{- $domain := .Values.global.domain | default .Values.ingress.domain -}}
 {{- $serviceType := .Values.ingress.serviceType -}}
 {{- $httpsPort := .Values.ingress.ports.https -}}
 {{- $origins := list -}}
-{{- range $services -}}
-  {{- $subdomain := . -}}
-  {{- if eq $serviceType "LoadBalancer" -}}
-    {{- $origins = append $origins (printf "https://%s" $subdomain) -}}
-  {{- else -}}
-    {{- if and $httpsPort (ne (toString $httpsPort) "443") -}}
-      {{- $origins = append $origins (printf "https://%s:%s" $subdomain (toString $httpsPort)) -}}
-    {{- else -}}
-      {{- $origins = append $origins (printf "https://%s" $subdomain) -}}
-    {{- end -}}
-  {{- end -}}
+{{- $formatOrigin := "" -}}
+{{- if and $httpsPort (ne (toString $httpsPort) "443") (ne $serviceType "LoadBalancer") -}}
+{{- $formatOrigin = "https://%s.%s:%s" -}}
+{{- $origins = append $origins (printf "https://%s:%s" $domain (toString $httpsPort)) -}}
+{{- else -}}
+{{- $formatOrigin = "https://%s.%s" -}}
+{{- $origins = append $origins (printf "https://%s" $domain) -}}
+{{- end -}}
+{{- if (index .Values.global "genesis-node-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "gms" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if .Values.global.keycloak.enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "keycloak" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "gis-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "gis" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "one-line-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "oneline" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "event-viewer-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "eventviewer" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "inventory-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "inventory" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "openfmb-event-creator-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "openfmbeventcreator" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "data-viewer-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "dataviewer" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "inspector-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "openfmb" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "der-dispatch-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "derdispatch" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "ess-manager-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "device" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "ess-tester-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "esstesting" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "historian-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "historian" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "schedule-dispatch-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "scheduledispatch" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "opendso-docs-app").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "docs" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "grafana").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "grafana" $domain (toString $httpsPort)) -}}
+{{- end -}}
+{{- if (index .Values.global "gms-api").enabled -}}
+{{- $origins = append $origins (printf $formatOrigin "api" $domain (toString $httpsPort)) -}}
 {{- end -}}
 {{- join ", " $origins -}}
 {{- end }}

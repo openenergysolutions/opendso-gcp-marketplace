@@ -27,7 +27,7 @@ containerPort: 8081
 
 # UI Environment Configuration
 environment:
-  apiUrl: "https://api.demo-gcp.oesinc.dev/api"
+  apiUrl: ""
   natsUrl: "wss://opendso-nats-service-ws:9222"
 
 tls:

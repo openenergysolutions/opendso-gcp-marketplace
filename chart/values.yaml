@@ -107,7 +107,7 @@ global:
   keycloak:
     # External URL for browser-based authentication
     # Set by deploy scripts: https://keycloak.<domain>
-    url: "https://keycloak.demo-gcp.oesinc.dev" # default; overridden by --set global.keycloak.url
+    url: "" # default; computed from the configured ingress domain when unset
     # Internal URL for service-to-service communication
     # Set by deploy scripts: http://<release-name>-keycloak-svc:8080
     internalUrl: "http://opendso-keycloak-svc:8080" # default for release name "opendso"
@@ -442,6 +442,29 @@ global:
 # =============================================================================
 # OpenDSO Apps Database (Shared)
 # =============================================================================
+mongodb:
+  auth:
+    rootUsername: root
+    rootPassword: ""
+    username: opendso
+    password: ""
+    database: settings_api
+    existingSecret: ""
+    usernameKey: username
+    passwordKey: password
+    databaseKey: database
+  externalDatabase:
+    enabled: false
+    host: ""
+    port: 27017
+    database: ""
+    username: ""
+    password: ""
+    existingSecret: ""
+    usernameKey: username
+    passwordKey: password
+    databaseKey: database
+
 opendso-apps-db:
   auth:
     username: essuser
@@ -498,30 +521,22 @@ citus-db:
 #   2. Wait for controller to be ready: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
 #
 # Access URLs after enabling (subdomain-based):
-#   http://keycloak.demo-gcp.oesinc.dev     → Keycloak user management
-#   http://genesis.demo-gcp.oesinc.dev      → Genesis Node App
-#   http://gis.demo-gcp.oesinc.dev          → GIS App
-#   http://events.demo-gcp.oesinc.dev       → Event Viewer
-#   http://inventory.demo-gcp.oesinc.dev    → Inventory Management
-#   http://event-creator.demo-gcp.oesinc.dev → OpenFMB Event Creator
-#   http://data-viewer.demo-gcp.oesinc.dev  → Data Viewer
-#   http://der-dispatch.demo-gcp.oesinc.dev → DER Dispatch
-#   http://ess-manager.demo-gcp.oesinc.dev  → ESS Manager
-#   http://api.demo-gcp.oesinc.dev          → GMS API
-#
-# Setup /etc/hosts for local development:
-#   192.168.49.2 demo-gcp.oesinc.dev keycloak.demo-gcp.oesinc.dev genesis.demo-gcp.oesinc.dev
-#   192.168.49.2 gis.demo-gcp.oesinc.dev events.demo-gcp.oesinc.dev inventory.demo-gcp.oesinc.dev
-#   192.168.49.2 event-creator.demo-gcp.oesinc.dev data-viewer.demo-gcp.oesinc.dev
-#   192.168.49.2 der-dispatch.demo-gcp.oesinc.dev ess-manager.demo-gcp.oesinc.dev api.demo-gcp.oesinc.dev
+#   https://keycloak.<domain>     → Keycloak user management
+#   https://gms.<domain>          → Genesis Node App
+#   https://gis.<domain>          → GIS App
+#   https://eventviewer.<domain>  → Event Viewer
+#   https://inventory.<domain>    → Inventory Management
+#   https://openfmbeventcreator.<domain> → OpenFMB Event Creator
+#   https://dataviewer.<domain>   → Data Viewer
+#   https://derdispatch.<domain>  → DER Dispatch
+#   https://device.<domain>       → ESS Manager
+#   https://api.<domain>          → GMS API
 #
 ingress:
   enabled: true
   className: "nginx"
-  # Base domain for all services
-  # Development: demo-gcp.oesinc.dev (with /etc/hosts or DNS)
-  # Production: your-domain.com (with real DNS)
-  domain: "demo-gcp.oesinc.dev"
+  # Base domain for all services, for example: opendso.example.com
+  domain: ""
   # Service type for ingress controller
   # LoadBalancer: Production/cloud (automatic external IP, standard ports 80/443)
   # NodePort: Development/local (custom ports)
@@ -565,7 +580,7 @@ ingress:
 keycloak:
   config:
     # Hostname configuration - uses ingress domain
-    hostname: "keycloak.demo-gcp.oesinc.dev" # Will be set to ingress.domain with keycloak subdomain
+    hostname: "" # Computed as keycloak.<domain> when unset
     # Port configuration - computed from ingress settings
     hostnamePort: "443" # Will be set to ingress HTTPS port
     hostnameStrict: "true" # Force Keycloak to always use configured hostname (prevents internal URLs in responses)
