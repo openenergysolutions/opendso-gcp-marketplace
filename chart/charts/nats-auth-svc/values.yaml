@@ -9,8 +9,16 @@ global:
     realm: "oes"
 
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 # Name of the Kubernetes Secret containing the NATS NKey files:
 #   account.nk, user.nk, xkey.xk

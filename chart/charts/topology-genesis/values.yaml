@@ -21,8 +21,14 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 100
   fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 env:
   PLATFORM_NATS_SERVICE: ""

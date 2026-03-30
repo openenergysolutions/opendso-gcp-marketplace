@@ -105,6 +105,19 @@ mongodb:
 # Citus DB (PostgreSQL) configuration
 citus-db:
   enabled: true  # Set to false if using Cloud SQL
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
   persistence:
     enabled: true
@@ -134,6 +147,19 @@ citus-db:
 # OpenDSO Apps DB (TimescaleDB/PostgreSQL) configuration
 opendso-apps-db:
   enabled: true
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
   persistence:
     enabled: true
@@ -268,6 +294,14 @@ historian-svc:
 
 # ESS Manager Redis (Cache)
 ess-manager-redis:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   persistence:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
@@ -288,6 +322,14 @@ ess-manager-redis:
 # Genesis Node App (GMS)
 genesis-node-app:
   replicaCount: 2
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
   resources:
     limits:
@@ -299,6 +341,14 @@ genesis-node-app:
 
 # Data Viewer App
 data-viewer-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -309,6 +359,14 @@ data-viewer-app:
 
 # Event Viewer App
 event-viewer-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -319,6 +377,14 @@ event-viewer-app:
 
 # GIS App
 gis-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -329,6 +395,14 @@ gis-app:
 
 # Historian App
 historian-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -339,6 +413,14 @@ historian-app:
 
 # Inspector App (OpenFMB)
 inspector-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -349,6 +431,14 @@ inspector-app:
 
 # Inventory App
 inventory-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -359,6 +449,14 @@ inventory-app:
 
 # One-Line App
 one-line-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -369,6 +467,14 @@ one-line-app:
 
 # OpenDSO Docs App
 opendso-docs-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -379,6 +485,14 @@ opendso-docs-app:
 
 # OpenFMB Event Creator App
 openfmb-event-creator-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -389,6 +503,14 @@ openfmb-event-creator-app:
 
 # Schedule Dispatch App
 schedule-dispatch-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -399,6 +521,14 @@ schedule-dispatch-app:
 
 # ESS Manager App
 ess-manager-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -409,6 +539,14 @@ ess-manager-app:
 
 # ESS Tester App
 ess-tester-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -419,6 +557,14 @@ ess-tester-app:
 
 # DER Dispatch App
 der-dispatch-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -523,6 +669,19 @@ asset-health-sim-service:
 # Keycloak DB (separate database for Keycloak)
 keycloak-db:
   enabled: false
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
 # ============================================================================
 # Notes - Production Deployment

@@ -5,6 +5,8 @@ metadata:
   labels:
     {{- include "genesis-node-app.labels" . | nindent 4 }}
 spec:
+  {{- $podSecurityContext := .Values.podSecurityContext | default (dict "seccompProfile" (dict "type" "RuntimeDefault")) }}
+  {{- $securityContext := .Values.securityContext | default (dict "allowPrivilegeEscalation" false "capabilities" (dict "drop" (list "ALL"))) }}
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
@@ -23,11 +25,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml $securityContext | nindent 12 }}
           image: {{ include "genesis-node-app.image" (dict "imageRoot" .Values.global.images.genesisNodeApp "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.genesisNodeApp.pullPolicy }}
           ports:

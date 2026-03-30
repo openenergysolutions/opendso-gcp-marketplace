@@ -474,6 +474,19 @@ opendso-apps-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   # BYO database (marketplace-friendly)
   externalDatabase:
     enabled: false
@@ -498,6 +511,19 @@ citus-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   externalDatabase:
     enabled: false
     host: ""
@@ -509,6 +535,30 @@ citus-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
+
+omegadss-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+rpcdss-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 # =============================================================================
 # Ingress Configuration
 # =============================================================================
