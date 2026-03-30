@@ -103,7 +103,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
     ```bash
     mkcert "*.yourdomain.com" yourdomain.com
-    kubectl create secret tls opendso-tls-secret \
+    kubectl create secret tls <release-name>-tls-secret \
       --cert=_wildcard.yourdomain.com.pem \
       --key=_wildcard.yourdomain.com-key.pem \
       -n <namespace>
@@ -174,7 +174,7 @@ mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0
 # Test install into a real cluster
 mpdev install \
   --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
-  --parameters='{"APP_INSTANCE_NAME":"opendso-test","NAMESPACE":"test","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","grafana.adminPassword":"secret"}'
+  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","grafana.adminPassword":"secret"}'
 ```
 
 ---
