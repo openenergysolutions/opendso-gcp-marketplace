@@ -132,7 +132,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
 ```text
 opendso-gcp-marketplace/
-├── chart/                  # Helm chart (mirrors opendso-helm-charts/opendso/)
+├── chart/                  # Helm chart
 │   ├── Chart.yaml
 │   ├── values.yaml         # Default values
 │   ├── values-gcp.yaml     # GCP-specific overrides

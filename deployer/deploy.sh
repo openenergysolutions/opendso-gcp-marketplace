@@ -388,8 +388,6 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set global.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set ingress.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
-    --set keycloak.config.hostnameStrict=false \
-    --set keycloak.config.hostnameStrictHttps=false \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \

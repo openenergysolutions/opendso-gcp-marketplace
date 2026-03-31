@@ -22,8 +22,9 @@ global:
   imageRegistry: ""  # Set via global.imageRegistry parameter or --set at deploy time
 
   # Image pull secrets
-  imagePullSecrets:
-    - name: regsecret
+  # GCP Marketplace: GKE node SA has Artifact Registry reader access via Workload Identity.
+  # No pull secret is needed — deploy.sh also explicitly clears this to [].
+  imagePullSecrets: []
 
   # Frontend environment variables
   # These URLs are exposed to browser clients
@@ -187,7 +188,7 @@ keycloak:
     # Only set this if you want Keycloak to use a different hostname
     # hostname: "keycloak.your-domain.example.com"
     hostnamePort: "443"
-    hostnameStrict: "true"
+    hostnameStrict: "false"
     httpsEnabled: true
     httpsCertFile: "/opt/keycloak/conf/server.crt.pem"
     httpsKeyFile: "/opt/keycloak/conf/server.key.pem"
@@ -223,9 +224,7 @@ gms-api:
     enabled: false
 
   config:
-    # GKE uses containerd — no Docker socket at /var/run/docker.sock.
-    # Set DOCKER_API to a local address so gms-api initializes without crashing.
-    # Orchestration API calls will fail gracefully at runtime (no node containers to show).
+    # GKE uses containerd — no Docker socket at /var/run/docker.sock, set to 127.0.0.1 to disable it
     dockerApi: "http://127.0.0.1:2376"
     tls:
       enabled: false

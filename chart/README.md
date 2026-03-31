@@ -1,12 +1,12 @@
 # OpenDSO Helm Chart
 
-An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 42 microservices.
+An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 39 subcharts.
 
 ## Chart Information
 
 - **Version**: 0.1.0
 - **Type**: Umbrella Chart
-- **Components**: 38 subcharts (37 internal + 1 external)
+- **Components**: 39 subcharts (38 internal + 1 external)
 - **External Dependencies**: Grafana (10.5.14)
 
 ## Prerequisites
@@ -39,7 +39,7 @@ opendso/
 ├── Chart.yaml                    # Chart metadata and dependencies
 ├── Chart.lock                    # Dependency lock file
 ├── values.yaml                   # Default configuration
-├── charts/                       # 42 subcharts
+├── charts/                       # 39 subcharts
 │   ├── nats/                    # Infrastructure services
 │   ├── keycloak/
 │   ├── mongodb/                 # Database services
@@ -72,7 +72,7 @@ dependencies:
 
 ### Internal Subcharts
 
-37 internal subcharts + 1 external (grafana) in the `charts/` directory:
+38 internal subcharts + 1 external (grafana) in the `charts/` directory:
 
 - **Infrastructure** (3): nats, keycloak, grafana
 - **Databases** (4): mongodb, citus-db, keycloak-db, opendso-apps-db
@@ -351,7 +351,7 @@ ingress:
 
 ### values.yaml (Default)
 
-Full configuration with all 42 services available.
+Full configuration with all 39 subcharts available.
 
 ## Upgrading
 

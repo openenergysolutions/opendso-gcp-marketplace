@@ -373,11 +373,11 @@ global:
     enabled: false
   # Core Services
   historian-svc:
-    enabled: false
+    enabled: true
   gms-api:
     enabled: true
   openfmb-event-service:
-    enabled: false
+    enabled: true
   # Topology Services
   topology-genesis:
     enabled: true
@@ -770,8 +770,7 @@ grafana:
       label: grafana_datasource
       labelValue: "1"
   # Plugins to install
-  plugins:
-    - grafana-mongodb-datasource
+  plugins: []
   # Resource limits
   resources:
     limits:
