@@ -105,19 +105,8 @@ mongodb:
 # Citus DB (PostgreSQL) configuration
 citus-db:
   enabled: true  # Set to false if using Cloud SQL
-  podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 999
-    runAsGroup: 999
-    fsGroup: 999
-    seccompProfile:
-      type: RuntimeDefault
-  securityContext:
-    runAsNonRoot: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
+  podSecurityContext: {}
+  securityContext: {}
 
   persistence:
     enabled: true
@@ -147,19 +136,8 @@ citus-db:
 # OpenDSO Apps DB (TimescaleDB/PostgreSQL) configuration
 opendso-apps-db:
   enabled: true
-  podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 999
-    runAsGroup: 999
-    fsGroup: 999
-    seccompProfile:
-      type: RuntimeDefault
-  securityContext:
-    runAsNonRoot: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
+  podSecurityContext: {}
+  securityContext: {}
 
   persistence:
     enabled: true
@@ -189,6 +167,21 @@ opendso-apps-db:
 
 # Keycloak (Authentication)
 keycloak:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   config:
     # Hostname (OPTIONAL - defaults to keycloak.{global.domain})
     # Only set this if you want Keycloak to use a different hostname
@@ -203,6 +196,16 @@ keycloak:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
     size: 10Gi
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
 
   resources:
     limits:
@@ -262,6 +265,8 @@ topology-nodes:
 
 # NATS (Message Bus)
 nats:
+  podSecurityContext: {}
+  securityContext: {}
   tls:
     enabled: true
     secretName: ""  # Defaults to <release-name>-tls-secret when unset
@@ -294,14 +299,8 @@ historian-svc:
 
 # ESS Manager Redis (Cache)
 ess-manager-redis:
-  podSecurityContext:
-    seccompProfile:
-      type: RuntimeDefault
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
+  podSecurityContext: {}
+  securityContext: {}
   persistence:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
@@ -314,6 +313,79 @@ ess-manager-redis:
     requests:
       cpu: 100m
       memory: 128Mi
+
+# ESS Manager Service
+ess-manager-svc:
+  env:
+    RUST_LOG: debug
+    APP_CONF: /etc/ess/app.yaml
+    DAY_AHEAD_DIR: /var/lib/ess/dayahead
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+rpcdss-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+nats-auth-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+ess-tester-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
 # ============================================================================
 # Frontend Applications
@@ -649,6 +721,16 @@ grafana:
     requests:
       cpu: 250m
       memory: 256Mi
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
 
   # Admin credentials
   # Default: admin / (auto-generated password in secret)

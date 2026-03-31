@@ -24,24 +24,6 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.persistence.enabled }}
-      initContainers:
-        - name: fix-permissions
-          image: busybox:1.36
-          command:
-            - sh
-            - -c
-            - |
-              echo "Fixing permissions on /opt/keycloak/data..."
-              chown -R 1000:1000 /opt/keycloak/data
-              chmod -R 755 /opt/keycloak/data
-              echo "Permissions fixed!"
-          volumeMounts:
-            - name: keycloak-data
-              mountPath: /opt/keycloak/data
-          securityContext:
-            runAsUser: 0
-      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -121,10 +103,6 @@ spec:
             - name: keycloak-data
               mountPath: /opt/keycloak/data/h2
             {{- end }}
-          readinessProbe:
-            httpGet:
-              path: /realms/master
-              port: {{ .Values.config.httpPort }}
           resources:
             {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
 

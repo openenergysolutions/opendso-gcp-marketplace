@@ -16,16 +16,8 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext:
-  runAsNonRoot: true
-  seccompProfile:
-    type: RuntimeDefault
-securityContext:
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
+podSecurityContext: {}
+securityContext: {}
 
 service:
   type: ClusterIP

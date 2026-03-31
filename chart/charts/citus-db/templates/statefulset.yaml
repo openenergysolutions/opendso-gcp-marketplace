@@ -1,6 +1,6 @@
 {{- if not .Values.externalDatabase.enabled }}
-{{- $podSecurityContext := .Values.podSecurityContext | default (dict "runAsNonRoot" true "runAsUser" 999 "runAsGroup" 999 "fsGroup" 999 "seccompProfile" (dict "type" "RuntimeDefault")) -}}
-{{- $securityContext := .Values.securityContext | default (dict "runAsNonRoot" true "allowPrivilegeEscalation" false "capabilities" (dict "drop" (list "ALL"))) -}}
+{{- $podSecurityContext := .Values.podSecurityContext | default dict -}}
+{{- $securityContext := .Values.securityContext | default dict -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

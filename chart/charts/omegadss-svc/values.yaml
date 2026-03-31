@@ -15,10 +15,15 @@ env:
 podAnnotations: {}
 podSecurityContext:
   runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 securityContext:
   runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
   allowPrivilegeEscalation: false
   capabilities:
     drop:
@@ -30,6 +35,29 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
+
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - /usr/local/bin/health
+      - omegadss
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  exec:
+    command:
+      - /usr/local/bin/health
+      - --ready
+      - omegadss
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 3
 
 nodeSelector: {}
 tolerations: []

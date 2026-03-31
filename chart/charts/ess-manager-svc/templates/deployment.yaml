@@ -61,7 +61,10 @@ spec:
                 optional: true
           volumeMounts:
             - name: config
-              mountPath: /ess
+              mountPath: /etc/ess
+              readOnly: true
+            - name: dayahead
+              mountPath: /var/lib/ess/dayahead
           resources:
             {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
 
@@ -107,6 +110,8 @@ spec:
         - name: config
           configMap:
             name: {{ .Values.siteConfigMap | default (printf "%s-ess-manager-svc-site-config" .Release.Name) }}
+        - name: dayahead
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -26,12 +26,14 @@ podAnnotations: {}
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
+  runAsGroup: 1000
   fsGroup: 1000
   seccompProfile:
     type: RuntimeDefault
 securityContext:
   runAsNonRoot: true
   runAsUser: 1000
+  runAsGroup: 1000
   allowPrivilegeEscalation: false
   capabilities:
     drop:
@@ -118,7 +120,7 @@ readinessProbe:
   httpGet:
     path: /realms/master
     port: 8080
-  initialDelaySeconds: 10
+  initialDelaySeconds: 120
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3

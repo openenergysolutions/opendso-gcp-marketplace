@@ -312,9 +312,11 @@ for name, secret in secrets.items():
     cmd = [
         "kubectl", "create", "secret", "generic", secret_name,
         "--namespace", namespace,
-        # Many services use KEYCLOAK_URL as the expected OIDC issuer, so this
-        # must match the issuer Keycloak advertises in discovery.
-        f"--from-literal=KEYCLOAK_URL={kc_external_url}",
+        # Backend services resolve Keycloak over the in-cluster Service.
+        # Keep the external URL alongside it for components that need the
+        # public issuer separately, but make KEYCLOAK_URL usable inside the
+        # verify namespace without external DNS.
+        f"--from-literal=KEYCLOAK_URL={kc_internal_url}",
         f"--from-literal=KEYCLOAK_INTERNAL_URL={kc_internal_url}",
         f"--from-literal=KEYCLOAK_EXTERNAL_URL={kc_external_url}",
         f"--from-literal=KEYCLOAK_CLIENT_ID={name}",
@@ -386,6 +388,7 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set global.keycloak.internalUrl="http://${APP_INSTANCE_NAME}-keycloak-svc:8080" \
     --set global.environment.apiUrl="https://api.${DOMAIN}" \
     --set global.keycloak.url="https://keycloak.${DOMAIN}" \
+    --set global.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set ingress.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set keycloak.config.hostnameStrict=false \

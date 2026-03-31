@@ -19,14 +19,8 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext:
-  seccompProfile:
-    type: RuntimeDefault
-securityContext:
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
+podSecurityContext: {}
+securityContext: {}
 
 service:
   type: ClusterIP
