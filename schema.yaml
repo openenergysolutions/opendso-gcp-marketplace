@@ -17,7 +17,152 @@ x-google-marketplace:
   #
   # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
-  images: {}
+  images:
+    nats:
+      properties:
+        repository: global.images.nats.repository
+        tag: global.images.nats.tag
+        digest: global.images.nats.digest
+    keycloak:
+      properties:
+        repository: global.images.keycloak.repository
+        tag: global.images.keycloak.tag
+        digest: global.images.keycloak.digest
+    mongodb:
+      properties:
+        repository: global.images.mongodb.repository
+        tag: global.images.mongodb.tag
+        digest: global.images.mongodb.digest
+    citusDb:
+      properties:
+        repository: global.images.citusDb.repository
+        tag: global.images.citusDb.tag
+        digest: global.images.citusDb.digest
+    appsDb:
+      properties:
+        repository: global.images.appsDb.repository
+        tag: global.images.appsDb.tag
+        digest: global.images.appsDb.digest
+    gmsApi:
+      properties:
+        repository: global.images.gmsApi.repository
+        tag: global.images.gmsApi.tag
+        digest: global.images.gmsApi.digest
+    topologyGenesis:
+      properties:
+        repository: global.images.topologyGenesis.repository
+        tag: global.images.topologyGenesis.tag
+        digest: global.images.topologyGenesis.digest
+    topologyNodes:
+      properties:
+        repository: global.images.topologyNodes.repository
+        tag: global.images.topologyNodes.tag
+        digest: global.images.topologyNodes.digest
+    derDispatchApp:
+      properties:
+        repository: global.images.derDispatchApp.repository
+        tag: global.images.derDispatchApp.tag
+        digest: global.images.derDispatchApp.digest
+    derDispatchSvc:
+      properties:
+        repository: global.images.derDispatchSvc.repository
+        tag: global.images.derDispatchSvc.tag
+        digest: global.images.derDispatchSvc.digest
+    genesisNodeApp:
+      properties:
+        repository: global.images.genesisNodeApp.repository
+        tag: global.images.genesisNodeApp.tag
+        digest: global.images.genesisNodeApp.digest
+    dataViewerApp:
+      properties:
+        repository: global.images.dataViewerApp.repository
+        tag: global.images.dataViewerApp.tag
+        digest: global.images.dataViewerApp.digest
+    scheduleDispatchApp:
+      properties:
+        repository: global.images.scheduleDispatchApp.repository
+        tag: global.images.scheduleDispatchApp.tag
+        digest: global.images.scheduleDispatchApp.digest
+    eventViewerApp:
+      properties:
+        repository: global.images.eventViewerApp.repository
+        tag: global.images.eventViewerApp.tag
+        digest: global.images.eventViewerApp.digest
+    gisApp:
+      properties:
+        repository: global.images.gisApp.repository
+        tag: global.images.gisApp.tag
+        digest: global.images.gisApp.digest
+    historianApp:
+      properties:
+        repository: global.images.historianApp.repository
+        tag: global.images.historianApp.tag
+        digest: global.images.historianApp.digest
+    inspectorApp:
+      properties:
+        repository: global.images.inspectorApp.repository
+        tag: global.images.inspectorApp.tag
+        digest: global.images.inspectorApp.digest
+    inventoryApp:
+      properties:
+        repository: global.images.inventoryApp.repository
+        tag: global.images.inventoryApp.tag
+        digest: global.images.inventoryApp.digest
+    oneLineApp:
+      properties:
+        repository: global.images.oneLineApp.repository
+        tag: global.images.oneLineApp.tag
+        digest: global.images.oneLineApp.digest
+    opendsoDocsApp:
+      properties:
+        repository: global.images.opendsoDocsApp.repository
+        tag: global.images.opendsoDocsApp.tag
+        digest: global.images.opendsoDocsApp.digest
+    openfmbEventCreatorApp:
+      properties:
+        repository: global.images.openfmbEventCreatorApp.repository
+        tag: global.images.openfmbEventCreatorApp.tag
+        digest: global.images.openfmbEventCreatorApp.digest
+    essManagerSvc:
+      properties:
+        repository: global.images.essManagerSvc.repository
+        tag: global.images.essManagerSvc.tag
+        digest: global.images.essManagerSvc.digest
+    essManagerApp:
+      properties:
+        repository: global.images.essManagerApp.repository
+        tag: global.images.essManagerApp.tag
+        digest: global.images.essManagerApp.digest
+    essTesterSvc:
+      properties:
+        repository: global.images.essTesterSvc.repository
+        tag: global.images.essTesterSvc.tag
+        digest: global.images.essTesterSvc.digest
+    essTesterApp:
+      properties:
+        repository: global.images.essTesterApp.repository
+        tag: global.images.essTesterApp.tag
+        digest: global.images.essTesterApp.digest
+    essManagerRedis:
+      properties:
+        repository: global.images.essManagerRedis.repository
+        tag: global.images.essManagerRedis.tag
+        digest: global.images.essManagerRedis.digest
+    omegadssSvc:
+      properties:
+        repository: global.images.omegadssSvc.repository
+        tag: global.images.omegadssSvc.tag
+        digest: global.images.omegadssSvc.digest
+    rpcdssSvc:
+      properties:
+        repository: global.images.rpcdssSvc.repository
+        tag: global.images.rpcdssSvc.tag
+        digest: global.images.rpcdssSvc.digest
+    natsAuthSvc:
+      properties:
+        repository: global.images.natsAuthSvc.repository
+        tag: global.images.natsAuthSvc.tag
+        digest: global.images.natsAuthSvc.digest
 
 properties:
   # ---------------------------------------------------------------------------

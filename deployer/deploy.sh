@@ -322,9 +322,6 @@ for name, secret in secrets.items():
         f"--from-literal=KEYCLOAK_CLIENT_ID={name}",
         f"--from-literal=KEYCLOAK_CLIENT_SECRET={secret}",
     ]
-    # topology-genesis binary has a typo: KEYCLOAD_CLIENT_ID (missing 'A')
-    if name == "topology-genesis":
-        cmd.append(f"--from-literal=KEYCLOAD_CLIENT_ID={name}")
     cmd += ["--dry-run=client", "-o", "yaml"]
     render = subprocess.run(cmd, capture_output=True, text=True)
     if render.returncode != 0:
