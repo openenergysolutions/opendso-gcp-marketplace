@@ -263,7 +263,7 @@ kubectl create secret generic "$LICENSE_SECRET" \
     --from-literal=LICENSE_KEY="${LICENSE_KEY}" \
     --from-literal=LICENSE_INSTALLATION_KEY="${INSTALLATION_KEY}" \
     --from-literal=LICENSE_ENVIRONMENT_NAME="${CLUSTER_ID}" \
-    --from-literal=LICENSE_API_URL="http://${APP_INSTANCE_NAME}-license-stub.${NAMESPACE}.svc.cluster.local" \
+    --from-literal=LICENSE_API_URL="https://license-api.demo-gcp.oesinc.dev" \
     --dry-run=client -o yaml \
   | kubectl apply -f -
 
@@ -410,7 +410,7 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
-    --set global.gcpMarketplace=true \
+    --set global.tls.createSecrets=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
 
 # mpdev pre-creates the Application resource before Helm runs. Even after Helm

@@ -94,6 +94,122 @@ Expected result: the LoadBalancer IP address.
 
 > **Note:** DNS must be propagated before the TLS certificate can be issued in Step 4. For the recommended wildcard certificate path on GKE, use **DNS-01**, not `HTTP-01`.
 
+### Adding the wildcard A record
+
+In your DNS provider's management console, create an `A` record:
+
+| Field | Value |
+| --- | --- |
+| Type | `A` |
+| Name / Host | `*.opendso` (or `*` if your provider scopes records to the base domain automatically) |
+| Value / Points to | `<LoadBalancer IP from Step 2>` |
+| TTL | `600` seconds (10 minutes) — lower TTL speeds up initial propagation; raise it after confirming everything works |
+
+> **Scope:** This wildcard record covers one level of subdomain only — e.g. `api.opendso.example.com` matches, but `foo.api.opendso.example.com` does not. OpenDSO only needs one level, so this is sufficient.
+>
+> **cert-manager DNS-01:** Many DNS providers do not have a built-in cert-manager solver. For automated wildcard TLS renewal via DNS-01, you have two options:
+>
+> - Use a community cert-manager webhook for your DNS provider (if one exists)
+> - Delegate the subdomain zone to Cloud DNS (add `NS` records at your registrar pointing `opendso.example.com` to Google's nameservers) and use cert-manager's built-in `cloudDNS` solver as shown in Step 4
+>
+> Delegation is the more reliable long-term path if you already use GCP.
+
+### Delegating a subdomain to Cloud DNS (optional — enables cert-manager DNS-01)
+
+Use this path if you want cert-manager to manage DNS-01 challenges automatically via Cloud DNS, regardless of where your domain is registered.
+
+#### 1. Create a managed zone in Cloud DNS for your subdomain
+
+```bash
+gcloud dns managed-zones create opendso-zone \
+  --dns-name="opendso.example.com." \
+  --description="OpenDSO subdomain zone" \
+  --project=<gcp-project-id>
+```
+
+#### 2. Retrieve the nameservers Cloud DNS assigned to the zone
+
+```bash
+gcloud dns managed-zones describe opendso-zone \
+  --project=<gcp-project-id> \
+  --format="value(nameServers)"
+```
+
+You will get four nameservers, e.g.:
+
+```
+ns-cloud-a1.googledomains.com.
+ns-cloud-a2.googledomains.com.
+ns-cloud-a3.googledomains.com.
+ns-cloud-a4.googledomains.com.
+```
+
+#### 3. Add NS records at your registrar pointing to those nameservers
+
+In your DNS provider's management console, add four `NS` records — one per nameserver:
+
+| Field | Value |
+| --- | --- |
+| Type | `NS` |
+| Name / Host | `opendso` (the subdomain prefix; your provider appends `.example.com`) |
+| Value | one nameserver per record, e.g. `ns-cloud-a1.googledomains.com.` |
+| TTL | `3600` |
+
+Repeat for all four nameservers.
+
+> Some DNS providers require the trailing dot on nameserver values; others do not. Check your provider's documentation if the field rejects the value.
+
+#### 4. Verify delegation has propagated
+
+```bash
+# Should return the four Cloud DNS nameservers, not your registrar's
+dig NS opendso.example.com +short
+```
+
+Allow up to 30 minutes for your registrar's TTL to expire.
+
+#### 5. Move your wildcard A record into Cloud DNS
+
+Once delegation is active, your registrar no longer serves DNS for `opendso.example.com`. Add the wildcard A record to Cloud DNS instead:
+
+```bash
+gcloud dns record-sets create "*.opendso.example.com." \
+  --zone=opendso-zone \
+  --type=A \
+  --ttl=600 \
+  --rrdatas=<LoadBalancer IP> \
+  --project=<gcp-project-id>
+```
+
+#### 6. Grant cert-manager permission to modify the zone
+
+cert-manager needs IAM access to create and delete TXT records for DNS-01 challenges.
+
+```bash
+# Create a dedicated service account
+gcloud iam service-accounts create cert-manager-dns \
+  --display-name="cert-manager DNS-01 solver" \
+  --project=<gcp-project-id>
+
+# Grant it DNS admin on the specific zone
+gcloud projects add-iam-policy-binding <gcp-project-id> \
+  --member="serviceAccount:cert-manager-dns@<gcp-project-id>.iam.gserviceaccount.com" \
+  --role="roles/dns.admin"
+
+# Create and download a key
+gcloud iam service-accounts keys create cert-manager-dns-key.json \
+  --iam-account=cert-manager-dns@<gcp-project-id>.iam.gserviceaccount.com
+
+# Store the key as a Kubernetes secret
+kubectl create secret generic clouddns-dns01-solver-svc-acct \
+  --from-file=key.json=cert-manager-dns-key.json \
+  -n cert-manager
+```
+
+> If your GKE cluster uses Workload Identity you can bind the cert-manager service account to the GCP service account instead of using a key file. See [cert-manager GKE Workload Identity docs](https://cert-manager.io/docs/configuration/acme/dns01/google/) for that path.
+
+After completing these steps, continue to Step 4 and use the `cloudDNS` ClusterIssuer example with `hostedZoneName: opendso-zone`.
+
 ---
 
 ## Step 4 — TLS Certificate
