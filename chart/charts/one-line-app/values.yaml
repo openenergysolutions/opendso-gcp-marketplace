@@ -5,8 +5,7 @@ image:
   pullPolicy: IfNotPresent
   tag: "c6ab8cc0"
 
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
@@ -17,8 +16,16 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 service:
   type: ClusterIP
@@ -29,7 +36,7 @@ containerPort: 8085
 # UI Environment Configuration
 environment:
   apiUrl: "https://opendso-gms-api:8000"
-  natsUrl: "wss://opendso-nats-service-ws:9222"
+  natsUrl: ""
 
 tls:
   enabled: false  # Set to true and provide secrets for TLS

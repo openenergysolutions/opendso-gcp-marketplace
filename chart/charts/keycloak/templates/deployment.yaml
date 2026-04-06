@@ -24,24 +24,6 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.persistence.enabled }}
-      initContainers:
-        - name: fix-permissions
-          image: busybox:1.36
-          command:
-            - sh
-            - -c
-            - |
-              echo "Fixing permissions on /opt/keycloak/data..."
-              chown -R 1000:1000 /opt/keycloak/data
-              chmod -R 755 /opt/keycloak/data
-              echo "Permissions fixed!"
-          volumeMounts:
-            - name: keycloak-data
-              mountPath: /opt/keycloak/data
-          securityContext:
-            runAsUser: 0
-      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -57,9 +39,9 @@ spec:
           {{- $hostnamePort := .Values.config.hostnamePort | default "" }}
           env:
             - name: KEYCLOAK_ADMIN
-              value: {{ .Values.admin.username | quote }}
+              value: {{ .Values.config.adminUser | default .Values.admin.username | quote }}
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: {{ .Values.admin.password | quote }}
+              value: {{ required "keycloak admin password is required; set keycloak.config.adminPassword" (.Values.config.adminPassword | default .Values.admin.password) | quote }}
             - name: KC_PROXY
               value: {{ .Values.proxy | quote }}
             {{- if $hostname }}
@@ -80,6 +62,8 @@ spec:
               value: {{ .Values.config.hostnameStrict | quote }}
             - name: KC_HOSTNAME_STRICT_HTTPS
               value: {{ .Values.config.hostnameStrictHttps | quote }}
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              value: {{ .Values.config.hostnameBackchannelDynamic | quote }}
             {{- if .Values.config.httpsEnabled }}
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: {{ .Values.config.httpsCertFile | quote }}
@@ -119,10 +103,6 @@ spec:
             - name: keycloak-data
               mountPath: /opt/keycloak/data/h2
             {{- end }}
-          readinessProbe:
-            httpGet:
-              path: /realms/master
-              port: {{ .Values.config.httpPort }}
           resources:
             {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
 

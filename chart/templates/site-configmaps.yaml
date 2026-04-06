@@ -47,25 +47,8 @@ data:
 {{- else }}
 {{- $realmJson = .Files.Get (printf "configs/%s/keycloak/realm/oes-realm.json" $site) }}
 {{- end }}
-{{- /* Replace hard-coded local URLs with actual ingress configuration */ -}}
-{{- $realmJson = $realmJson | replace "demo-gcp.oesinc.dev" (printf "%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "gms.demo-gcp.oesinc.dev" (printf "gms.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "keycloak.demo-gcp.oesinc.dev" (printf "keycloak.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "gis.demo-gcp.oesinc.dev" (printf "gis.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "scheduledispatch.demo-gcp.oesinc.dev" (printf "scheduledispatch.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "derdispatch.demo-gcp.oesinc.dev" (printf "derdispatch.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "historian.demo-gcp.oesinc.dev" (printf "historian.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "openfmbeventcreator.demo-gcp.oesinc.dev" (printf "openfmbeventcreator.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "inspector.demo-gcp.oesinc.dev" (printf "inspector.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "device.demo-gcp.oesinc.dev" (printf "device.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "oneline.demo-gcp.oesinc.dev" (printf "oneline.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "openfmb.demo-gcp.oesinc.dev" (printf "openfmb.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "dataviewer.demo-gcp.oesinc.dev" (printf "dataviewer.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "docs.demo-gcp.oesinc.dev" (printf "docs.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "eventviewer.demo-gcp.oesinc.dev" (printf "eventviewer.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "inventory.demo-gcp.oesinc.dev" (printf "inventory.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "maverick.demo-gcp.oesinc.dev" (printf "maverick.%s%s" $domain $hostSuffix) }}
-{{- $realmJson = $realmJson | replace "esstesting.demo-gcp.oesinc.dev" (printf "esstesting.%s%s" $domain $hostSuffix) }}
+{{- /* Replace neutral placeholders with the actual ingress domain/port */ -}}
+{{- $realmJson = $realmJson | replace "__BASE_DOMAIN__" (printf "%s%s" $domain $hostSuffix) }}
 {{ $realmJson | indent 4 }}
   master-realm.json: |
 {{ .Files.Get (printf "configs/%s/keycloak/realm/master-realm.json" $site) | indent 4 }}
@@ -115,10 +98,7 @@ data:
 {{- if and $httpsPort (ne $httpsPort "443") }}
 {{- $hostSuffix = printf ":%s" $httpsPort }}
 {{- end }}
-{{- $keycloakUrl := .Values.global.keycloak.url }}
-{{- if not $keycloakUrl }}
-{{- $keycloakUrl = printf "https://keycloak.%s%s" $domain $hostSuffix }}
-{{- end }}
+{{- $keycloakUrl := include "opendso.keycloakUrl" . }}
 ---
 apiVersion: v1
 kind: ConfigMap

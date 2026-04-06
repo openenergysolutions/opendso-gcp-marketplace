@@ -36,13 +36,53 @@ spec:
         - -c
         - |
           echo "Waiting for MongoDB authsettings document..."
-          until mongosh "mongodb://{{ .Values.config.mongodb.username }}:{{ .Values.config.mongodb.password }}@{{ .Release.Name }}-mongodb:27017/settings_api{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" \
+          until mongosh "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@{{ .Release.Name }}-mongodb:27017/settings_api{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" \
             --quiet \
             --eval "db.authsettings.findOne({ environmentId: 'default' })" | grep -q "environmentId"; do
             echo "authsettings document not ready yet, waiting..."
             sleep 3
           done
           echo "authsettings document found! Proceeding with startup."
+        env:
+        {{- if .Values.config.mongodb.existingSecret }}
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.config.mongodb.existingSecret }}
+              key: {{ .Values.config.mongodb.usernameKey | default "mongodb-username" }}
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.config.mongodb.existingSecret }}
+              key: {{ .Values.config.mongodb.passwordKey | default "mongodb-password" }}
+        {{- else if .Values.config.mongodb.createSecret }}
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "gms-api.fullname" . }}-mongodb
+              key: mongodb-username
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "gms-api.fullname" . }}-mongodb
+              key: mongodb-password
+        {{- else if and (dig "mongodb" "enabled" false .Values.global) (not .Values.config.mongodb.username) (not .Values.config.mongodb.password) }}
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+              key: mongodb-username
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+              key: mongodb-password
+        {{- else }}
+        - name: MONGODB_USERNAME
+          value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or config.mongodb.existingSecret" .Values.config.mongodb.username | quote }}
+        - name: MONGODB_PASSWORD
+          value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or config.mongodb.existingSecret" .Values.config.mongodb.password | quote }}
+        {{- end }}
         resources:
           limits:
             cpu: 200m
@@ -63,8 +103,6 @@ spec:
           image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.gmsApi "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.gmsApi.pullPolicy }}
           env:
-            - name: NODE_TLS_REJECT_UNAUTHORIZED
-              value: "0" 
             # we need this value, DO NOT CHANGE IT
             - name: DOCKER_API
               value: "http://127.0.0.1:2376"            
@@ -90,11 +128,22 @@ spec:
                 secretKeyRef:
                   name: {{ include "gms-api.fullname" . }}-mongodb
                   key: mongodb-password
+            {{- else if and (dig "mongodb" "enabled" false .Values.global) (not .Values.config.mongodb.username) (not .Values.config.mongodb.password) }}
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+                  key: mongodb-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
+                  key: mongodb-password
             {{- else }}
             - name: MONGODB_USERNAME
-              value: {{ .Values.config.mongodb.username | quote }}
+              value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or config.mongodb.existingSecret" .Values.config.mongodb.username | quote }}
             - name: MONGODB_PASSWORD
-              value: {{ .Values.config.mongodb.password | quote }}
+              value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or config.mongodb.existingSecret" .Values.config.mongodb.password | quote }}
             {{- end }}
           ports:
             - name: api

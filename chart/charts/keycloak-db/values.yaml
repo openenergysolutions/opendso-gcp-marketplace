@@ -7,7 +7,7 @@ fullnameOverride: ""
 # PostgreSQL configuration
 auth:
   username: keycloak
-  password: password
+  password: ""
   database: keycloak
 
 # Persistence configuration
@@ -32,8 +32,19 @@ resources:
 
 # Pod configuration
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 nodeSelector: {}
 tolerations: []
 affinity: {}

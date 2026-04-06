@@ -1,4 +1,5 @@
 {{- if and .Values.ingress.enabled (index .Values.global "gms-api").enabled -}}
+{{- $domain := .Values.global.domain | default .Values.ingress.domain -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,8 +9,6 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
-    # HTTPS backend for gms-api
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     # Increase timeouts for long-running requests
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
@@ -27,12 +26,11 @@ spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
-        - api.{{ .Values.ingress.domain }}
+        - api.{{ $domain }}
       secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-    # GMS API (HTTPS backend)
-    - host: api.{{ .Values.ingress.domain }}
+    - host: api.{{ $domain }}
       http:
         paths:
           - path: /

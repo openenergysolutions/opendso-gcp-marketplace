@@ -12,7 +12,7 @@ data:
 
     db.createUser({
       user: '{{ .Values.initdb.username }}',
-      pwd: '{{ .Values.initdb.password }}',
+      pwd: '{{ required "mongodb initdb.password is required when mongodb.initdb.createConfigMap=true" .Values.initdb.password }}',
       roles: [
         { role: 'readWrite', db: '{{ .Values.initdb.database }}' }
       ]

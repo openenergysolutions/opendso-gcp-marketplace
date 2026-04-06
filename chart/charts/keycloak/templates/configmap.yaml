@@ -27,7 +27,7 @@ data:
     db-url-port={{ .Values.config.database.port }}
     db-url-database={{ .Values.config.database.name }}
     db-username={{ .Values.config.database.username }}
-    db-password={{ .Values.config.database.password }}
+    db-password={{ required "keycloak database password is required when keycloak.config.database.enabled=true" .Values.config.database.password }}
     {{- end }}
 
     # Logging

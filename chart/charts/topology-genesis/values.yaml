@@ -5,8 +5,7 @@ image:
   pullPolicy: IfNotPresent
   tag: "c53cf381"
 
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
@@ -22,11 +21,17 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 100
   fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 env:
-  PLATFORM_NATS_SERVICE: opendso-nats-service
+  PLATFORM_NATS_SERVICE: ""
 
 args:
   - "-c"

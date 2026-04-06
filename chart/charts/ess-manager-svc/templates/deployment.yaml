@@ -24,6 +24,26 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-keycloak
+          image: busybox:1.36
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak OIDC discovery endpoint..."
+              until wget -q -O /dev/null http://{{ .Release.Name }}-keycloak-svc:8080/realms/oes/.well-known/openid-configuration; do
+                echo "Keycloak not ready yet, retrying in 5s..."
+                sleep 5
+              done
+              echo "Keycloak is ready"
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -41,7 +61,10 @@ spec:
                 optional: true
           volumeMounts:
             - name: config
-              mountPath: /ess
+              mountPath: /etc/ess
+              readOnly: true
+            - name: dayahead
+              mountPath: /var/lib/ess/dayahead
           resources:
             {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
 
@@ -87,6 +110,8 @@ spec:
         - name: config
           configMap:
             name: {{ .Values.siteConfigMap | default (printf "%s-ess-manager-svc-site-config" .Release.Name) }}
+        - name: dayahead
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

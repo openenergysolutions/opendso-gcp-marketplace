@@ -23,11 +23,24 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 8080
   nodePort:
     http: 30080
@@ -37,7 +50,7 @@ containerPort: 8080
 
 admin:
   username: admin
-  password: admin
+  password: ""
 
 proxy: edge
 
@@ -49,9 +62,9 @@ config:
   hostname: ""  # defaults to keycloak.<global.domain> via template
   hostnameStrict: "true"
   hostnameStrictHttps: "false"
-  hostnameBackchannelDynamic: "false"
+  hostnameBackchannelDynamic: "true"
   hostnamePort: "443"
-  httpsEnabled: true
+  httpsEnabled: false  # proxy=edge: nginx terminates TLS, Keycloak serves HTTP only
   httpsCertFile: "/opt/keycloak/conf/server.crt.pem"
   httpsKeyFile: "/opt/keycloak/conf/server.key.pem"
   importRealm: true  # Set to true to import realm files on startup
@@ -62,7 +75,7 @@ config:
     port: 5432
     name: "keycloak"
     username: "keycloak"
-    password: "keycloak"
+    password: ""
   logLevel: "INFO"
 
 tls:
@@ -107,7 +120,7 @@ readinessProbe:
   httpGet:
     path: /realms/master
     port: 8080
-  initialDelaySeconds: 10
+  initialDelaySeconds: 120
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3

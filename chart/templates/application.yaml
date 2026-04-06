@@ -1,4 +1,3 @@
-{{- if .Values.global.gcpMarketplace }}
 apiVersion: app.k8s.io/v1beta1
 kind: Application
 metadata:
@@ -30,7 +29,7 @@ spec:
       - description: GMS Frontend
         url: https://{{ index .Values.global "environment" | default dict | dig "apiUrl" "" | trimPrefix "https://api." | printf "oneline.%s" }}
       - description: Keycloak Admin Console
-        url: {{ .Values.global.keycloak.url }}/admin
+        url: {{ include "opendso.keycloakUrl" . }}/admin
       - description: Grafana Dashboards
         url: https://grafana.{{ .Values.global.domain }}
 
@@ -71,7 +70,7 @@ spec:
     - name: Domain
       value: {{ .Values.global.domain }}
     - name: Keycloak URL
-      value: {{ .Values.global.keycloak.url }}
+      value: {{ include "opendso.keycloakUrl" . }}
     - name: GMS API URL
       value: {{ index .Values.global "environment" | default dict | dig "apiUrl" (printf "https://api.%s" .Values.global.domain) }}
     - name: NATS WebSocket URL
@@ -86,4 +85,3 @@ spec:
       value: {{ .Chart.Version }}
     - name: App Version
       value: {{ .Chart.AppVersion }}
-{{- end }}

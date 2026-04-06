@@ -22,12 +22,16 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: {{ include "nats.image" (dict "imageRoot" .Values.global.images.nats "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.nats.pullPolicy }}
           args: ["-c", "/nats/conf/nats-server.conf"]
@@ -104,7 +108,7 @@ spec:
         {{- if .Values.tls.enabled }}
         - name: tls-secret
           secret:
-            secretName: {{ .Values.tls.secretName }}
+            secretName: {{ .Values.tls.secretName | default (printf "%s-tls-secret" .Release.Name) }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

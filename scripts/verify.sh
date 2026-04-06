@@ -98,7 +98,12 @@ log "=== Checking databases ==="
 
 wait_for_statefulset "${APP_INSTANCE_NAME}-citus-db"       || true
 wait_for_statefulset "${APP_INSTANCE_NAME}-opendso-apps-db" || true
-wait_for_statefulset "${APP_INSTANCE_NAME}-keycloak-db"    || true
+# keycloak-db is optional — only check if the statefulset exists
+if kubectl get statefulset "${APP_INSTANCE_NAME}-keycloak-db" -n "$NAMESPACE" &>/dev/null; then
+    wait_for_statefulset "${APP_INSTANCE_NAME}-keycloak-db"
+else
+    log "  ${APP_INSTANCE_NAME}-keycloak-db — not deployed (skipping)"
+fi
 
 # ---------------------------------------------------------------------------
 # 3. Core application services
@@ -146,12 +151,13 @@ log ""
 log "=== Checking GMS API ==="
 
 kubectl port-forward -n "$NAMESPACE" \
-    "svc/${APP_INSTANCE_NAME}-gms-api" 18081:8080 &>/dev/null &
+    "svc/${APP_INSTANCE_NAME}-gms-api" 18081:8000 &>/dev/null &
 PF_PID=$!
 sleep 3
 
-check_http "GMS API" "http://localhost:18081/api/health" || \
-check_http "GMS API (root)" "http://localhost:18081/api"
+# GMS API requires auth; 401 means the service is running
+check_http "GMS API" "http://localhost:18081/api/health" 401 || \
+check_http "GMS API (root)" "http://localhost:18081/api" 401
 
 kill $PF_PID 2>/dev/null || true
 

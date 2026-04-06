@@ -7,7 +7,7 @@ fullnameOverride: ""
 # MongoDB configuration
 auth:
   rootUsername: admin
-  rootPassword: password
+  rootPassword: ""
   database: settings_api
 
 # Persistence configuration
@@ -26,15 +26,13 @@ service:
   port: 27017
 
 # TLS/SSL configuration
+# MongoDB is only accessible within the cluster (ClusterIP). TLS is disabled by default
+# since inter-pod traffic is internal. Enable if required by compliance policy.
 tls:
-  enabled: true
-  # Existing secret created by scripts/lib/create-certs.sh
+  enabled: false
   # Secret must contain: mongodb.pem (combined cert+key) and ca.crt
-  # Run: CREATE_K8S_SECRETS=true ./scripts/lib/create-certs.sh
-  existingSecret: "opendso-mongodb-tls"  # Default: <release-name>-mongodb-tls (overridden by deploy scripts)
-  # TLS mode: disabled, allowTLS, preferTLS, requireTLS
+  existingSecret: ""  # Set to <release-name>-mongodb-tls when enabled
   mode: preferTLS
-  # Allow connections without TLS (useful during migration)
   allowConnectionsWithoutTLS: true
 
 # Resource limits
@@ -52,8 +50,14 @@ podSecurityContext:
   runAsUser: 999
   runAsGroup: 999
   fsGroup: 999
+  seccompProfile:
+    type: RuntimeDefault
 securityContext:
   runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 nodeSelector: {}
 tolerations: []
 affinity: {}
@@ -65,7 +69,7 @@ initdb:
   createConfigMap: false
   database: "settings_api"
   username: "gms-api"
-  password: "gms-api"
+  password: ""
 
 # Health probes
 # Note: When TLS is enabled, probes automatically use --tls and --tlsCAFile flags

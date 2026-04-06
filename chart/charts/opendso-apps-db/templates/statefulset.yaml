@@ -1,4 +1,6 @@
 {{- if not .Values.externalDatabase.enabled }}
+{{- $podSecurityContext := .Values.podSecurityContext | default dict -}}
+{{- $securityContext := .Values.securityContext | default dict -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -25,11 +27,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml $securityContext | nindent 12 }}
           image: {{ include "opendso-apps-db.image" (dict "imageRoot" .Values.global.images.appsDb "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.appsDb.pullPolicy }}
           ports:

@@ -3,6 +3,9 @@ certs-*/
 **/**/*.tgz
 chart/values-nats-auth-generated.yaml
 
+# Keycloak realm with injected secrets — generated at deploy time, never commit
+chart/configs/*/keycloak/realm/oes-realm-generated.json
+
 # NATS private key seeds — generated at deploy time, never commit
 *.nk
 *.xk

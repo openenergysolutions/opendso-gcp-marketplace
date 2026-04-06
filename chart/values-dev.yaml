@@ -2,11 +2,11 @@
 # Override for local Kubernetes development (minikube, kind, k3s, Docker Desktop)
 #
 # Usage:
-#   helm install opendso ./opendso -f opendso/values-dev.yaml --namespace opendso --create-namespace
+#   helm install dev ./chart -f chart/values-dev.yaml --namespace dev --create-namespace
 #
 # This configuration uses:
 # - LoadBalancer for ingress (MetalLB/minikube tunnel required)
-# - Local domain (demo-gcp.oesinc.dev with /etc/hosts)
+# - Local domain (example: demo.localtest.me with /etc/hosts or wildcard DNS)
 # - mkcert for TLS certificates
 # - Lower resource limits for local development
 
@@ -28,9 +28,9 @@ global:
   keycloak:
     enabled: true
     # External URL for browser-based authentication
-    url: "https://keycloak.demo-gcp.oesinc.dev"
+    url: ""
     # Internal URL for server-to-server communication (e.g., token validation)
-    internalUrl: "http://opendso-keycloak-svc:8080"
+    internalUrl: ""
     # Keycloak realm and client IDs
     realm: "oes"
     clientIds:
@@ -39,8 +39,8 @@ global:
 
   # Frontend application environment URLs (browser-accessible)
   environment:
-    apiUrl: "https://api.demo-gcp.oesinc.dev"
-    natsUrl: "wss://nats.demo-gcp.oesinc.dev"
+    apiUrl: ""
+    natsUrl: ""
 
 ingress:
   enabled: true
@@ -49,8 +49,8 @@ ingress:
   # Use LoadBalancer for local development (MetalLB/minikube tunnel required)
   serviceType: LoadBalancer
 
-  # Local domain - requires /etc/hosts entry or *.nip.io
-  domain: "demo-gcp.oesinc.dev"
+  # Local domain - requires /etc/hosts entry or wildcard DNS such as *.localtest.me
+  domain: "demo.localtest.me"
 
   # LoadBalancer configuration (standard ports)
   ports:
@@ -64,7 +64,7 @@ ingress:
 
   tls:
     enabled: true
-    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: ""  # Defaults to <release-name>-tls-secret when unset
 
     # Don't use cert-manager for local dev
     certManager:
@@ -113,9 +113,9 @@ gms-api:
 # LICENSE_KEY and LICENSE_API_KEY are injected via the opendso-license K8s Secret (envFrom).
 topology-nodes:
   env:
-    PLATFORM_NATS_SERVICE: opendso-nats-service
+    PLATFORM_NATS_SERVICE: ""
     PLATFORM_NATS_PORT: "4222"
-    LICENSE_API_URL: "https://license-api.demo-gcp.oesinc.dev"
+    LICENSE_API_URL: "https://license-api.demo.localtest.me"
 
 mongodb:
   persistence:

@@ -3,7 +3,7 @@
 global:
   keycloak:
     url: ""
-    internalUrl: "http://opendso-keycloak-svc:8080"
+    internalUrl: ""
     realm: "oes"
     clientIds:
       ui: "gms"
@@ -16,8 +16,7 @@ image:
   pullPolicy: IfNotPresent
   tag: "c6ab8cc0"
 
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
@@ -45,8 +44,8 @@ config:
   mongodb:
     uri: "mongodb://opendso-mongodb:27017"
     dbName: "settings_api"
-    username: "SettingsAPIUser"
-    password: "quietwhale62"
+    username: ""
+    password: ""
     # Create a Secret for MongoDB credentials (recommended for production)
     createSecret: false
     # Use an existing Secret for MongoDB credentials
@@ -54,7 +53,7 @@ config:
     usernameKey: "mongodb-username"
     passwordKey: "mongodb-password"
   nats:
-    url: "nats://opendso-nats-service:4222"
+    url: ""
   tls:
     enabled: true
     certFile: "/home/node/app/certs/server-cert.pem"

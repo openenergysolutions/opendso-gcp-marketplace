@@ -28,18 +28,18 @@ service:
   mqttPort: 1883
 
 nodePort:
-  enabled: true
+  enabled: false
   port: 30007
 
-# WebSocket NodePort for browser access
+# Optional WebSocket NodePort exposure
 websocketNodePort:
-  enabled: true
+  enabled: false
   port: 30009
 
 tls:
   enabled: true
-  # Default: <release-name>-tls-secret (overridden by deploy scripts via --set nats.tls.secretName)
-  secretName: opendso-tls-secret
+  # Default: <release-name>-tls-secret when unset
+  secretName: ""
 
 resources:
   limits:

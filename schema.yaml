@@ -17,7 +17,181 @@ x-google-marketplace:
   #
   # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
-  images: {}
+  images:
+    nats:
+      properties:
+        global.images.nats.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.nats.tag:
+          type: TAG
+    keycloak:
+      properties:
+        global.images.keycloak.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.keycloak.tag:
+          type: TAG
+    mongodb:
+      properties:
+        global.images.mongodb.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.mongodb.tag:
+          type: TAG
+    citusDb:
+      properties:
+        global.images.citusDb.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.citusDb.tag:
+          type: TAG
+    appsDb:
+      properties:
+        global.images.appsDb.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.appsDb.tag:
+          type: TAG
+    gmsApi:
+      properties:
+        global.images.gmsApi.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.gmsApi.tag:
+          type: TAG
+    topologyGenesis:
+      properties:
+        global.images.topologyGenesis.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.topologyGenesis.tag:
+          type: TAG
+    topologyNodes:
+      properties:
+        global.images.topologyNodes.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.topologyNodes.tag:
+          type: TAG
+    derDispatchApp:
+      properties:
+        global.images.derDispatchApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.derDispatchApp.tag:
+          type: TAG
+    derDispatchSvc:
+      properties:
+        global.images.derDispatchSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.derDispatchSvc.tag:
+          type: TAG
+    genesisNodeApp:
+      properties:
+        global.images.genesisNodeApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.genesisNodeApp.tag:
+          type: TAG
+    dataViewerApp:
+      properties:
+        global.images.dataViewerApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.dataViewerApp.tag:
+          type: TAG
+    scheduleDispatchApp:
+      properties:
+        global.images.scheduleDispatchApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.scheduleDispatchApp.tag:
+          type: TAG
+    eventViewerApp:
+      properties:
+        global.images.eventViewerApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.eventViewerApp.tag:
+          type: TAG
+    gisApp:
+      properties:
+        global.images.gisApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.gisApp.tag:
+          type: TAG
+    historianApp:
+      properties:
+        global.images.historianApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.historianApp.tag:
+          type: TAG
+    inspectorApp:
+      properties:
+        global.images.inspectorApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.inspectorApp.tag:
+          type: TAG
+    inventoryApp:
+      properties:
+        global.images.inventoryApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.inventoryApp.tag:
+          type: TAG
+    oneLineApp:
+      properties:
+        global.images.oneLineApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.oneLineApp.tag:
+          type: TAG
+    opendsoDocsApp:
+      properties:
+        global.images.opendsoDocsApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.opendsoDocsApp.tag:
+          type: TAG
+    openfmbEventCreatorApp:
+      properties:
+        global.images.openfmbEventCreatorApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.openfmbEventCreatorApp.tag:
+          type: TAG
+    essManagerSvc:
+      properties:
+        global.images.essManagerSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essManagerSvc.tag:
+          type: TAG
+    essManagerApp:
+      properties:
+        global.images.essManagerApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essManagerApp.tag:
+          type: TAG
+    essTesterSvc:
+      properties:
+        global.images.essTesterSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essTesterSvc.tag:
+          type: TAG
+    essTesterApp:
+      properties:
+        global.images.essTesterApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essTesterApp.tag:
+          type: TAG
+    essManagerRedis:
+      properties:
+        global.images.essManagerRedis.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essManagerRedis.tag:
+          type: TAG
+    omegadssSvc:
+      properties:
+        global.images.omegadssSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.omegadssSvc.tag:
+          type: TAG
+    rpcdssSvc:
+      properties:
+        global.images.rpcdssSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.rpcdssSvc.tag:
+          type: TAG
+    natsAuthSvc:
+      properties:
+        global.images.natsAuthSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.natsAuthSvc.tag:
+          type: TAG
 
 properties:
   # ---------------------------------------------------------------------------

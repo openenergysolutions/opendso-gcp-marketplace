@@ -1,4 +1,5 @@
 {{- if and .Values.ingress.enabled .Values.global.nats.enabled -}}
+{{- $domain := .Values.global.domain | default .Values.ingress.domain -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,11 +9,10 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/backend-protocol: {{ ternary "HTTPS" "HTTP" .Values.nats.tls.enabled | quote }}
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-ssl-verify: "false"
     nginx.ingress.kubernetes.io/enable-websocket: "true"
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
@@ -24,11 +24,11 @@ spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
-        - nats.{{ .Values.ingress.domain }}
+        - nats.{{ $domain }}
       secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-    - host: nats.{{ .Values.ingress.domain }}
+    - host: nats.{{ $domain }}
       http:
         paths:
           - path: /

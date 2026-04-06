@@ -25,12 +25,16 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "ess-manager-redis.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: {{ include "ess-manager-redis.image" (dict "imageRoot" .Values.global.images.essManagerRedis "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.essManagerRedis.pullPolicy }}
           {{- with .Values.args }}

@@ -4,7 +4,7 @@
 
 global:
   # Global settings shared across all subcharts
-  namespace: opendso
+  namespace: ""
   # Site configuration - determines which config files to use
   site: ieee13
   # Container registry settings
@@ -12,7 +12,7 @@ global:
   imagePullSecrets:
     - name: regsecret
   # Storage settings
-  storageClass: standard # Use "standard" for local/minikube
+  storageClass: standard
   # Common labels
   commonLabels: {}
   # Common annotations
@@ -33,7 +33,7 @@ global:
   # Override individual service resources as needed
   resourceProfile: default
   resourceProfiles:
-    minimal: # For local development (Minikube, Kind)
+    minimal:
       databases:
         requests:
           cpu: 100m
@@ -107,10 +107,10 @@ global:
   keycloak:
     # External URL for browser-based authentication
     # Set by deploy scripts: https://keycloak.<domain>
-    url: "https://keycloak.demo-gcp.oesinc.dev"  # default; overridden by --set global.keycloak.url
+    url: "" # default; computed from the configured ingress domain when unset
     # Internal URL for service-to-service communication
     # Set by deploy scripts: http://<release-name>-keycloak-svc:8080
-    internalUrl: "http://opendso-keycloak-svc:8080"  # default for release name "opendso"
+    internalUrl: "" # computed as http://<release>-keycloak-svc:8080 when unset
     # Keycloak realm name
     realm: "oes"
     # Client IDs for different services
@@ -124,9 +124,9 @@ global:
   # These must be externally accessible (not internal Kubernetes services)
   environment:
     # API URL for backend services (externally accessible)
-    apiUrl: "https://opendso-gms-api:8000" # Override in values-dev.yaml for external access
+    apiUrl: "" # set via overlay or deployer
     # NATS WebSocket URL for real-time messaging (externally accessible)
-    natsUrl: "wss://opendso-nats-service-ws:9222" # Override in values-dev.yaml for external access
+    natsUrl: "" # set via overlay or deployer
     # Google Analytics configuration
     googleTagId: "GTM-B7JGQS2"
     googleTagEnv: "&gtm_auth=NaiPwz5U_xGuF4hoZ7yHUw&gtm_preview=env-5&gtm_cookies_win=x"
@@ -184,41 +184,41 @@ global:
       digest: ""
     appsDb:
       repository: timescale/timescaledb
-      tag: "latest-pg16"
+      tag: "2.26.0-pg16"
       pullPolicy: IfNotPresent
-      digest: "sha256:f8a0c7b3c7b759b33cbc242d0e989b56df4bf68b65743b967c1d24688abf8403"
+      digest: "sha256:898b884159a49c77d08a508155eb42df3421dc1297c91512a8ee8ac0be76e05f"
     # Core Services
     historianSvc:
       repository: historian
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:673c2a6ab8a7b19b5b803d42fd10f7c9ecdf435be42c4dda79d098546572a536"
+      digest: "sha256:bd355066bc298c88bf9bb91a3b6aecd273e147cea42757b18035b9989e75e430"
     gmsApi:
       repository: gms-api
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:bb86bfd498d11b3b5291add310d53f6c1c708bc0fd8446381a4cf7bb72b1dbd7"
+      digest: "sha256:114c438291fd5345d1bdbd7a030bd82c977e35fb1939def77363d6b257368102"
     openfmbEventService:
       repository: openfmb-event-service
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:ba9abc3155bf93dac50fa93e1c23acd67c2671daa36fe3ece07c431b60cd74ea"
+      digest: "sha256:6898106f52cbcabe71143b6b64319df861c9153ac4510d5964a295fd7f7d1389"
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "pre-ods-39de39d2"
+      tag: "pre-ods-356333c4"
       pullPolicy: IfNotPresent
-      digest: "sha256:672e13095b986c9df4ec7d994e75a5b40f273a49ec701671ff2274d172480ace"
+      digest: "sha256:2d494ddbcdd6581b74c9b428629b8e7e24e1e2f35988e63e35e2c293ee5ad3a7"
     topologyNodes:
       repository: topology-nodes
-      tag: "latest"
+      tag: "local-licensed"
       pullPolicy: IfNotPresent
-      digest: "sha256:71e854de86e6c6d034836a35aa6d73680e7f5c9ddb4ceb8c1f4846c753fa5faf"
+      digest: "sha256:08d463108d5ea09f8a5a98f303110d03f0d696b3a3894988efc0c1f7cd2806dd"
     derDispatchApp:
       repository: der-dispatch-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:08c8486fb97bd9827ffa8cc44729e35e95ab1017963b642ce0f103e713bfa933"
+      digest: "sha256:98b3498bb52df9aa8eeb1fba348b7bbce8873e214733229c0c89da301baf1a84"
     derDispatchSvc:
       repository: der-dispatch
       tag: "78226199"
@@ -229,47 +229,47 @@ global:
       repository: genesis-node-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:2b0633179f310300b3992a8e30c94b09498447aa6de457a0ac1c0c41319df2f2"
+      digest: "sha256:a3062e244214ea0b976a59c5b7a7c8c03bd7809279ec123ebcfd35fc672312f6"
     dataViewerApp:
       repository: data-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d666b2c2470e7af76b72f6f4a99b167c66b98dced277ebe777c77a21ce0bfdc6"
+      digest: "sha256:f61df45ff5fb9ef6a462489174d5ef4c971820d56adb99d0736c2cd851b06336"
     scheduleDispatchApp:
       repository: edo-adr-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:891f575f1b365a811f6103332c9ac15eef74a84a114ca3722ae006f893f38534"
+      digest: "sha256:da10f48e379934d5878e3021902f79326ac298778d174f4f14d381cf2a810d02"
     eventViewerApp:
       repository: event-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:499852dc525de3c6a0db7cde038dd9fe5d357879a6fddbe3cffd930b828e410d"
+      digest: "sha256:6e0bc9fdf1edf08b1aed44fde20ab04252fb38422d6bb3c71781869a63507d7f"
     gisApp:
       repository: gis-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:3c2e8b966008d21c1c74967bdcf3e6dc631cc3462dc83eddefbef090a1039647"
+      digest: "sha256:7deaddd3b25519b1895ff14ce7a7039631f4d9ba81355016a521143df98653cc"
     historianApp:
       repository: historian-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:41e953cd361669d1b29c17523b0c67ddf698325a0501a8a52a6c41c46aa598c3"
+      digest: "sha256:bdd2cde35e3c37ff280f89741828b611afc0e338be02b05e79d1671f2f708f88"
     inspectorApp:
       repository: inspector-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:72372d469310db29bbf4c261dea62721b3a1daf1053b9ea28730b4b87c505e17"
+      digest: "sha256:6b0f5ea2883b621a638e65e2d1b4f397650d7d741a54d6b8637a96e18f069f46"
     inventoryApp:
       repository: inventory-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:a9e78eefc019453fed50d1b05a5ee5cf45a701b38f2dc3496baccddb06f57005"
+      digest: "sha256:dca81232ad5bb1a8372089b847782d578fa1be61bccb283579f71a5189f2ed92"
     oneLineApp:
       repository: one-line-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:8b39eb5a72f48b9e6bf96700564ce1f7303db074da4bc15ba88bb0a9195fde9e"
+      digest: "sha256:ee0916f78174e164e7cbb2e5377c084f7429ec91e6e9c21e8558882b89bb5be2"
     opendsoDocsApp:
       repository: opendso-docs
       tag: "latest"
@@ -279,18 +279,18 @@ global:
       repository: openfmb-event-creator-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:cd75ce1a82b2addba6b1fd8a46dc496b41af3a36c9301c0159578eaed21acb9e"
+      digest: "sha256:decd4b211231477d3388c08bee6bbf424b0d99826f18f6f5f5b822c6da5c99e2"
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:575f57c3b4866327a207df4e3069685c72fecb7cc19229f87a0ef92a06bce52b"
+      digest: "sha256:3279c3ed57f64744a2a1b04afaf894c99b05ecf1c1cb342adb671d630eaf2c52"
     essManagerApp:
-      repository: device-details-app
+      repository: ess-manager-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d43fc4ec13241284a7c1b948e6e13fa5b290f53668751673faaa0c60c0bd49b3"
+      digest: "sha256:7b3ad1c90bbc0e87859e1f947da754aeed30ffc22799c17e4ae46a4338b3f67b"
     essTesterSvc:
       repository: ess-tester
       tag: "b8ce64a3"
@@ -300,17 +300,17 @@ global:
       repository: batt-testing-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:c661a41c2bb8d55f93ac94598981cf1c2f29f3b4832389b6cb9fea2bc6eb34a2"
+      digest: "sha256:f439df62e932a2a5c25d40d5ac90d49d9012f68249caca38eac5d373086a2568"
     assetHealthSvc:
       repository: ahs
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:9683258e005e46646d05b5d2c35cc4ab9766c2db95c270c96871c38cc78ce0aa"
+      digest: "sha256:0d39e659f3fd34a1c665d59d352f5ab20e233496212eac0d91fa95b105f65cdb"
     assetHealthSimSvc:
       repository: ahs-sim
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:c491df813b2590a17bbbb81eeb92927c21f51146fd4eb2466685ebf387951ad1"
+      digest: "sha256:fb556b25bc0858cd287f910fcb73945499928f0c787ccdc6f27283c0cbfd851f"
     essManagerRedis:
       repository: redis
       tag: "7.0"
@@ -321,7 +321,7 @@ global:
       repository: cvr
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:97ee339b39de60d9674c09e02c4fac1da5485c35c2cc742a08bc797921b7b1be"
+      digest: "sha256:ac2f7aaca06e7cacd7118aefa660ae606fea858e006612fbf26474a7c5ab103c"
     cvrGeneticAlgorithmSvc:
       repository: genetic-cvr
       tag: "latest"
@@ -345,9 +345,9 @@ global:
       digest: "sha256:39548abee9d4b6d2dbd005c8f8857138d5a8e94cd56276748bfaa1b951b61926"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "local"
+      tag: "679a94b4"
       pullPolicy: IfNotPresent
-      digest: "sha256:326ac3048b4cb6cdf67c78ec2212b47fbe9b02e0d66d7133e21ddd865c161770"
+      digest: "sha256:3b3d80ea21c08d8ae925d180de19f84ec0774d372b504ffa5b4717d2f05086fa"
   # =============================================================================
   # Component Enable/Disable
   # =============================================================================
@@ -366,12 +366,7 @@ global:
   mongodb:
     enabled: true
     tls:
-      enabled: true
-      # Auto-generate self-signed certificates (recommended for development)
-      # For production, set existingSecret with proper certificates
-      existingSecret: ""
-      mode: preferTLS # Options: disabled, allowTLS, preferTLS, requireTLS
-      allowConnectionsWithoutTLS: true
+      enabled: false
   citus-db:
     enabled: true
   keycloak-db:
@@ -447,15 +442,40 @@ global:
 # =============================================================================
 # OpenDSO Apps Database (Shared)
 # =============================================================================
+mongodb:
+  auth:
+    rootUsername: root
+    rootPassword: ""
+    username: opendso
+    password: ""
+    database: settings_api
+    existingSecret: ""
+    usernameKey: username
+    passwordKey: password
+    databaseKey: database
+  externalDatabase:
+    enabled: false
+    host: ""
+    port: 27017
+    database: ""
+    username: ""
+    password: ""
+    existingSecret: ""
+    usernameKey: username
+    passwordKey: password
+    databaseKey: database
+
 opendso-apps-db:
   auth:
     username: essuser
-    password: esspassword
+    password: ""
     database: ess_tester
     existingSecret: ""
     usernameKey: username
     passwordKey: password
     databaseKey: database
+  podSecurityContext: {}
+  securityContext: {}
   # BYO database (marketplace-friendly)
   externalDatabase:
     enabled: false
@@ -474,12 +494,14 @@ opendso-apps-db:
 citus-db:
   auth:
     username: citususer
-    password: cituspassword
+    password: ""
     database: ofmb_db
     existingSecret: ""
     usernameKey: username
     passwordKey: password
     databaseKey: database
+  podSecurityContext: {}
+  securityContext: {}
   externalDatabase:
     enabled: false
     host: ""
@@ -491,6 +513,95 @@ citus-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
+
+omegadss-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+rpcdss-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+ess-manager-svc:
+  env:
+    RUST_LOG: debug
+    APP_CONF: /etc/ess/app.yaml
+    DAY_AHEAD_DIR: /var/lib/ess/dayahead
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+nats-auth-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+ess-tester-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 # =============================================================================
 # Ingress Configuration
 # =============================================================================
@@ -503,33 +614,23 @@ citus-db:
 #   2. Wait for controller to be ready: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
 #
 # Access URLs after enabling (subdomain-based):
-#   http://keycloak.demo-gcp.oesinc.dev     → Keycloak user management
-#   http://genesis.demo-gcp.oesinc.dev      → Genesis Node App
-#   http://gis.demo-gcp.oesinc.dev          → GIS App
-#   http://events.demo-gcp.oesinc.dev       → Event Viewer
-#   http://inventory.demo-gcp.oesinc.dev    → Inventory Management
-#   http://event-creator.demo-gcp.oesinc.dev → OpenFMB Event Creator
-#   http://data-viewer.demo-gcp.oesinc.dev  → Data Viewer
-#   http://der-dispatch.demo-gcp.oesinc.dev → DER Dispatch
-#   http://ess-manager.demo-gcp.oesinc.dev  → ESS Manager
-#   http://api.demo-gcp.oesinc.dev          → GMS API
-#
-# Setup /etc/hosts for local development:
-#   192.168.49.2 demo-gcp.oesinc.dev keycloak.demo-gcp.oesinc.dev genesis.demo-gcp.oesinc.dev
-#   192.168.49.2 gis.demo-gcp.oesinc.dev events.demo-gcp.oesinc.dev inventory.demo-gcp.oesinc.dev
-#   192.168.49.2 event-creator.demo-gcp.oesinc.dev data-viewer.demo-gcp.oesinc.dev
-#   192.168.49.2 der-dispatch.demo-gcp.oesinc.dev ess-manager.demo-gcp.oesinc.dev api.demo-gcp.oesinc.dev
+#   https://keycloak.<domain>     → Keycloak user management
+#   https://gms.<domain>          → Genesis Node App
+#   https://gis.<domain>          → GIS App
+#   https://eventviewer.<domain>  → Event Viewer
+#   https://inventory.<domain>    → Inventory Management
+#   https://openfmbeventcreator.<domain> → OpenFMB Event Creator
+#   https://dataviewer.<domain>   → Data Viewer
+#   https://derdispatch.<domain>  → DER Dispatch
+#   https://device.<domain>       → ESS Manager
+#   https://api.<domain>          → GMS API
 #
 ingress:
   enabled: true
   className: "nginx"
-  # Base domain for all services
-  # Development: demo-gcp.oesinc.dev (with /etc/hosts or DNS)
-  # Production: your-domain.com (with real DNS)
-  domain: "demo-gcp.oesinc.dev"
+  # Base domain for all services, for example: opendso.example.com
+  domain: ""
   # Service type for ingress controller
-  # LoadBalancer: Production/cloud (automatic external IP, standard ports 80/443)
-  # NodePort: Development/local (custom ports)
   serviceType: LoadBalancer
   # Port configuration
   # Only used when serviceType is NodePort
@@ -554,7 +655,7 @@ ingress:
   # TLS configuration
   tls:
     enabled: true
-    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: "" # Defaults to <release-name>-tls-secret when unset
     # cert-manager integration (optional, for automatic Let's Encrypt certificates)
     certManager:
       enabled: false # Set to true for automatic certificates in production
@@ -568,18 +669,44 @@ ingress:
 
 # Keycloak Authentication Server
 keycloak:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   config:
     # Hostname configuration - uses ingress domain
-    hostname: "keycloak.demo-gcp.oesinc.dev" # Will be set to ingress.domain with keycloak subdomain
+    hostname: "" # Computed as keycloak.<domain> when unset
     # Port configuration - computed from ingress settings
     hostnamePort: "443" # Will be set to ingress HTTPS port
     hostnameStrict: "true" # Force Keycloak to always use configured hostname (prevents internal URLs in responses)
     hostnameStrictHttps: "false"
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
 # NATS Messaging Server
 nats:
-  # WebSocket NodePort for browser access (development/local environments)
+  podSecurityContext: {}
+  securityContext: {}
   websocketNodePort:
-    enabled: false # Set to true in values-dev.yaml for local development
+    enabled: false
     port: 30009
 # =============================================================================
 # Grafana - Monitoring & Dashboards
@@ -590,12 +717,12 @@ grafana:
   # IMPORTANT: If using a custom release name, override with:
   #   --set grafana.admin.existingSecret=<your-release-name>-grafana-credentials
   admin:
-    existingSecret: opendso-grafana-credentials  # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
+    existingSecret: "" # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
   # Admin user configuration (for reference, actual credentials in secret)
   adminUser: admin
-  adminPassword: admin
+  adminPassword: ""
   # Persistence
   persistence:
     enabled: true
@@ -612,6 +739,16 @@ grafana:
   # Ingress will be handled by parent chart
   ingress:
     enabled: false
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
   # Environment variables for datasource credentials
   # Secret name follows pattern: {{ .Release.Name }}-grafana-credentials
   # IMPORTANT: If using a custom release name, override with:
@@ -620,11 +757,11 @@ grafana:
   envValueFrom:
     CITUS_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials  # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: "" # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: citus-password
     OPENDSO_APPS_DB_PASSWORD:
       secretKeyRef:
-        name: opendso-grafana-credentials  # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
+        name: "" # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: opendso-apps-db-password
   # Data sources are provisioned via grafana-datasources.yaml template (uses .Release.Name)
   sidecar:
@@ -633,8 +770,7 @@ grafana:
       label: grafana_datasource
       labelValue: "1"
   # Plugins to install
-  plugins:
-    - grafana-mongodb-datasource
+  plugins: []
   # Resource limits
   resources:
     limits:

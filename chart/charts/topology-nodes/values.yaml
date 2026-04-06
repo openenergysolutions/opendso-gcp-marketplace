@@ -5,8 +5,7 @@ image:
   pullPolicy: IfNotPresent
   tag: "adaa70e0"
 
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
@@ -17,21 +16,33 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 100
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 env:
-  PLATFORM_NATS_SERVICE: opendso-nats-service
+  PLATFORM_NATS_SERVICE: ""
   PLATFORM_NATS_PORT: "4222"
 
 args:
   - "-c"
   - "/resources/config.yml"
+  - "-d"
+  - "0"
 
 # Service configuration
 config:
   nats:
-    server: "nats://opendso-nats-service:4222"
+    server: ""
     tls:
       enabled: false
       certFile: "/certs/client-cert.pem"

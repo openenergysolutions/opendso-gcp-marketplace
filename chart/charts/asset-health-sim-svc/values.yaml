@@ -15,8 +15,7 @@ image:
   pullPolicy: IfNotPresent
   tag: "latest"
 
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 nameOverride: ""
 fullnameOverride: ""
@@ -27,11 +26,19 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 env:
-  NATS_URL: "nats://opendso-nats-service:4222"
+  NATS_URL: ""
   LIVE_MODE: true
   AHS_MRID: "0c8316d3-1c47-4bf9-b02c-5e31db0f5b2a"
   INTERVAL_SECS: "60"

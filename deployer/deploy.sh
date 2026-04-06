@@ -70,6 +70,8 @@ USER_VALUES=$(mktemp /tmp/user-values.XXXXXX.yaml)
 
 NATS_AUTH_VALUES=$(mktemp /tmp/nats-auth-values.XXXXXX.yaml)
 NATS_KEYS_SECRET="${APP_INSTANCE_NAME}-nats-auth-keys"
+APPS_DB_SECRET="${APP_INSTANCE_NAME}-opendso-apps-db-secret"
+CITUS_DB_SECRET="${APP_INSTANCE_NAME}-citus-db-secret"
 
 # Derive domain and imageRegistry from user values for computed --set flags
 DOMAIN=$(python3 -c "
@@ -149,6 +151,38 @@ kubectl create secret generic "$NATS_KEYS_SECRET" \
 
 echo "  Secret '$NATS_KEYS_SECRET' applied."
 
+# Reuse existing internal DB passwords on re-runs; generate once on first install.
+if kubectl get secret "$APPS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
+    OPENDSO_APPS_DB_PASSWORD=$(kubectl get secret "$APPS_DB_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.password}' | base64 -d)
+else
+    OPENDSO_APPS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+fi
+
+if kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
+    CITUS_DB_PASSWORD=$(kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" \
+        -o jsonpath='{.data.password}' | base64 -d)
+else
+    CITUS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+fi
+
+# Pre-create citus-db-secret with Helm ownership metadata so the
+# opendso.citusDb.settings helper can lookup the password at render time
+# (subcharts like historian-svc and der-dispatch-svc lack citus-db.auth.*
+# in their .Values scope). Helm labels prevent "invalid ownership" errors.
+kubectl create secret generic "$CITUS_DB_SECRET" \
+    --namespace="$NAMESPACE" \
+    --from-literal=password="${CITUS_DB_PASSWORD}" \
+    --dry-run=client -o yaml \
+  | kubectl annotate --local -f - \
+      "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
+      "meta.helm.sh/release-namespace=${NAMESPACE}" \
+      --overwrite -o yaml \
+  | kubectl label --local -f - \
+      "app.kubernetes.io/managed-by=Helm" \
+      --overwrite -o yaml \
+  | kubectl apply -f -
+
 # ---------------------------------------------------------------------------
 # 3. Write temporary Helm values overlay with derived public keys
 # ---------------------------------------------------------------------------
@@ -174,6 +208,14 @@ global:
 
 nats-auth-svc:
   natsKeysSecret: "${NATS_KEYS_SECRET}"
+
+opendso-apps-db:
+  auth:
+    password: "${OPENDSO_APPS_DB_PASSWORD}"
+
+citus-db:
+  auth:
+    password: "${CITUS_DB_PASSWORD}"
 EOF
 
 # Resolve site name (used by both step 3a and 3b below)
@@ -210,16 +252,18 @@ echo "  ConfigMap '${APP_INSTANCE_NAME}-topology-genesis-site-config' applied."
 # ---------------------------------------------------------------------------
 # 3a-2. Create OpenDSO license secret
 #
-# Stores the license key and installation key (api_key) as a Kubernetes Secret.
-# topology-nodes mounts this via envFrom to get LICENSE_KEY and LICENSE_API_KEY.
+# Stores all license env vars as a Kubernetes Secret.
+# topology-nodes mounts this via envFrom and expects LICENSE_KEY,
+# LICENSE_INSTALLATION_KEY, LICENSE_ENVIRONMENT_NAME, and LICENSE_API_URL.
 # ---------------------------------------------------------------------------
 LICENSE_SECRET="${APP_INSTANCE_NAME}-opendso-license"
 
 kubectl create secret generic "$LICENSE_SECRET" \
     --namespace="$NAMESPACE" \
     --from-literal=LICENSE_KEY="${LICENSE_KEY}" \
-    --from-literal=LICENSE_API_KEY="${INSTALLATION_KEY}" \
+    --from-literal=LICENSE_INSTALLATION_KEY="${INSTALLATION_KEY}" \
     --from-literal=LICENSE_ENVIRONMENT_NAME="${CLUSTER_ID}" \
+    --from-literal=LICENSE_API_URL="http://${APP_INSTANCE_NAME}-license-stub.${NAMESPACE}.svc.cluster.local" \
     --dry-run=client -o yaml \
   | kubectl apply -f -
 
@@ -242,12 +286,13 @@ echo "[3b/3] Injecting Keycloak client secrets..."
 REALM_SOURCE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm.json"
 REALM_FILE="${CHART_DIR}/configs/${SITE}/keycloak/realm/oes-realm-generated.json"
 cp "${REALM_SOURCE}" "${REALM_FILE}"
-KC_CLUSTER_URL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080/realms/oes"
+KC_EXTERNAL_URL="https://keycloak.${DOMAIN}/realms/oes"
+KC_INTERNAL_URL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080/realms/oes"
 
-python3 - "${REALM_FILE}" "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_CLUSTER_URL}" << 'PYEOF'
+python3 - "${REALM_FILE}" "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_INTERNAL_URL}" "${KC_EXTERNAL_URL}" << 'PYEOF'
 import base64, uuid, subprocess, sys, re
 
-realm_file, release_name, namespace, kc_url = sys.argv[1:]
+realm_file, release_name, namespace, kc_internal_url, kc_external_url = sys.argv[1:]
 
 with open(realm_file) as f:
     content = f.read()
@@ -283,14 +328,21 @@ print(f"  Patched {len(secrets)} client secrets in realm JSON")
 errors = 0
 for name, secret in secrets.items():
     secret_name = f"{release_name}-{name}-keycloak-env"
-    render = subprocess.run([
+    cmd = [
         "kubectl", "create", "secret", "generic", secret_name,
         "--namespace", namespace,
-        f"--from-literal=KEYCLOAK_URL={kc_url}",
+        # Backend services resolve Keycloak over the in-cluster Service.
+        # Keep the external URL alongside it for components that need the
+        # public issuer separately, but make KEYCLOAK_URL usable inside the
+        # verify namespace without external DNS.
+        f"--from-literal=KEYCLOAK_URL={kc_internal_url}",
+        f"--from-literal=KEYCLOAK_INTERNAL_URL={kc_internal_url}",
+        f"--from-literal=KEYCLOAK_EXTERNAL_URL={kc_external_url}",
         f"--from-literal=KEYCLOAK_CLIENT_ID={name}",
         f"--from-literal=KEYCLOAK_CLIENT_SECRET={secret}",
-        "--dry-run=client", "-o", "yaml",
-    ], capture_output=True, text=True)
+    ]
+    cmd += ["--dry-run=client", "-o", "yaml"]
+    render = subprocess.run(cmd, capture_output=True, text=True)
     if render.returncode != 0:
         print(f"  WARNING: render failed for {secret_name}: {render.stderr}", file=sys.stderr)
         errors += 1
@@ -345,7 +397,6 @@ kubectl label application.app.k8s.io "$APP_INSTANCE_NAME" \
 
 helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --namespace "$NAMESPACE" \
-    --wait \
     --timeout 15m \
     -f "$CHART_DIR/values-gcp.yaml" \
     -f "$USER_VALUES" \
@@ -353,21 +404,226 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set global.keycloak.internalUrl="http://${APP_INSTANCE_NAME}-keycloak-svc:8080" \
     --set global.environment.apiUrl="https://api.${DOMAIN}" \
     --set global.keycloak.url="https://keycloak.${DOMAIN}" \
+    --set global.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set ingress.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
-    --set mongodb.tls.enabled=false \
-    --set global.mongodb.tls.enabled=false \
-    --set keycloak.tls.enabled=false \
-    --set keycloak.config.httpsEnabled=false \
-    --set keycloak.config.hostnameStrict=false \
-    --set keycloak.config.hostnameStrictHttps=false \
-    --set historian-svc.tls.enabled=false \
-    --set nats.tls.enabled=false \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.gcpMarketplace=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
+
+# mpdev pre-creates the Application resource before Helm runs. Even after Helm
+# ownership adoption, the live Application may keep the minimal Marketplace
+# spec and omit .spec.descriptor.version, which causes patch_assembly_phase.sh
+# to fail the install with "Application's version 'null' does not match...".
+# Force the published app version onto the live resource after Helm completes.
+kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
+    -n "$NAMESPACE" \
+    --type merge \
+    --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null
+
+# ---------------------------------------------------------------------------
+# 3d. Add Application ownerReferences to all Helm-managed resources
+#
+# mpdev verify deletes the Application and then waits (timeout=600s) for ALL
+# "kubectl get all" resources to be gone before deleting the namespace.
+# The standard deployer_helm base-image adds ownerReferences to every Helm
+# resource so Kubernetes GC cascade-deletes them when the Application is
+# removed. Our custom "helm upgrade --install" path skips that step, so we
+# patch them here manually.
+#
+# Cascade chain:
+#   Application deleted
+#     → Deployments/StatefulSets/Services/Jobs (ownerRef)
+#       → ReplicaSets  (ownerRef added by Deployment controller)
+#         → Pods       (ownerRef added by ReplicaSet controller)
+# ---------------------------------------------------------------------------
+echo ""
+echo "[3d/3] Wiring Application ownerReferences for cascade GC..."
+
+APP_UID=$(kubectl get application.app.k8s.io "$APP_INSTANCE_NAME" \
+    -n "$NAMESPACE" \
+    -o jsonpath='{.metadata.uid}' 2>/dev/null || echo "")
+
+if [[ -n "$APP_UID" ]]; then
+    OWNER_PATCH=$(python3 -c "
+import json, sys
+print(json.dumps({
+    'metadata': {
+        'ownerReferences': [{
+            'apiVersion': 'app.k8s.io/v1beta1',
+            'kind': 'Application',
+            'name': sys.argv[1],
+            'uid': sys.argv[2],
+            'blockOwnerDeletion': True,
+            'controller': False,
+        }]
+    }
+}))
+" "$APP_INSTANCE_NAME" "$APP_UID")
+
+    PATCHED=0
+    SKIPPED=0
+    LABEL_SEL="app.kubernetes.io/instance=${APP_INSTANCE_NAME}"
+    for KIND in deployments statefulsets services jobs serviceaccounts roles rolebindings; do
+        while IFS= read -r resource; do
+            [[ -z "$resource" ]] && continue
+            if kubectl patch "$resource" \
+                   -n "$NAMESPACE" \
+                   --type=merge \
+                   --patch="$OWNER_PATCH" \
+                   2>/dev/null; then
+                PATCHED=$((PATCHED+1))
+            else
+                SKIPPED=$((SKIPPED+1))
+            fi
+        done < <(kubectl get "$KIND" \
+            -n "$NAMESPACE" \
+            -l "$LABEL_SEL" \
+            --no-headers \
+            -o name 2>/dev/null || true)
+    done
+    echo "  Patched $PATCHED resources with Application ownerReferences (skipped/not-found: $SKIPPED)"
+else
+    echo "  WARNING: Application UID not found — skipping ownerReferences (mpdev verify cleanup may timeout)"
+fi
+
+# ---------------------------------------------------------------------------
+# 5. Sync Keycloak client secrets via Admin REST API
+#
+# Keycloak only imports the realm JSON when starting with an EMPTY database.
+# On upgrades or restarts with an existing PVC, realm data (including client
+# secrets) is kept from the original import — even if the ConfigMap changed.
+#
+# This step pushes the *-keycloak-env K8s secret values to Keycloak via the
+# Admin API so client secrets are always in sync regardless of deploy history.
+# Errors here are non-fatal (logged as WARNINGs); a fresh cluster where Keycloak
+# just imported the realm for the first time is already in sync.
+# ---------------------------------------------------------------------------
+echo ""
+echo "[4/4] Syncing Keycloak client secrets via Admin API..."
+
+KC_ADMIN_PASSWORD=$(python3 -c "
+import yaml
+with open('${USER_VALUES}') as f:
+    v = yaml.safe_load(f) or {}
+print(v.get('keycloak.config.adminPassword') or v.get('keycloak', {}).get('config', {}).get('adminPassword', 'admin'))
+" 2>/dev/null || echo "admin")
+
+KC_INTERNAL="http://${APP_INSTANCE_NAME}-keycloak-svc:8080"
+
+python3 - "${APP_INSTANCE_NAME}" "${NAMESPACE}" "${KC_INTERNAL}" "${KC_ADMIN_PASSWORD}" << 'PYEOF'
+import base64, json, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+
+release_name, namespace, kc_base, admin_password = sys.argv[1:]
+realm = "oes"
+
+# Discover *-keycloak-env secrets created by step 3b for this release
+result = subprocess.run(
+    ["kubectl", "get", "secrets", "-n", namespace,
+     "-o", "jsonpath={.items[*].metadata.name}"],
+    capture_output=True, text=True,
+)
+all_names = result.stdout.split() if result.returncode == 0 else []
+prefix, suffix = f"{release_name}-", "-keycloak-env"
+client_secrets = {}
+for s in all_names:
+    if s.startswith(prefix) and s.endswith(suffix):
+        client_name = s[len(prefix):-len(suffix)]
+        r = subprocess.run(
+            ["kubectl", "get", "secret", s, "-n", namespace,
+             "-o", "jsonpath={.data.KEYCLOAK_CLIENT_SECRET}"],
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            client_secrets[client_name] = base64.b64decode(r.stdout.strip()).decode()
+
+if not client_secrets:
+    print("  No keycloak-env secrets found, skipping sync")
+    sys.exit(0)
+
+print(f"  Found {len(client_secrets)} client secret(s) to sync")
+
+# Obtain an admin token (retry up to 60s — Keycloak may need a moment post-start)
+def get_token():
+    data = urllib.parse.urlencode({
+        "client_id": "admin-cli",
+        "username": "admin",
+        "password": admin_password,
+        "grant_type": "password",
+    }).encode()
+    req = urllib.request.Request(
+        f"{kc_base}/realms/master/protocol/openid-connect/token",
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read())["access_token"]
+
+token = None
+for attempt in range(12):
+    try:
+        token = get_token()
+        break
+    except Exception as e:
+        if attempt < 11:
+            print(f"  Keycloak Admin API not ready yet, retrying... ({e})")
+            time.sleep(5)
+        else:
+            print(f"  WARNING: could not reach Keycloak Admin API: {e}", file=sys.stderr)
+            sys.exit(0)
+
+auth_header = {"Authorization": f"Bearer {token}"}
+
+# List all clients in the oes realm
+req = urllib.request.Request(
+    f"{kc_base}/admin/realms/{realm}/clients?max=200",
+    headers=auth_header,
+    method="GET",
+)
+try:
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        kc_clients = json.loads(resp.read())
+except Exception as e:
+    print(f"  WARNING: could not list Keycloak clients: {e}", file=sys.stderr)
+    sys.exit(0)
+
+kc_id_map = {c["clientId"]: c["id"] for c in kc_clients}
+
+updated, errors = 0, 0
+for client_name, secret in client_secrets.items():
+    if client_name not in kc_id_map:
+        print(f"  WARNING: client '{client_name}' not found in realm '{realm}'", file=sys.stderr)
+        errors += 1
+        continue
+    kc_id = kc_id_map[client_name]
+    try:
+        # Fetch full client config to avoid clobbering other settings
+        req = urllib.request.Request(
+            f"{kc_base}/admin/realms/{realm}/clients/{kc_id}",
+            headers=auth_header,
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            client_cfg = json.loads(resp.read())
+        client_cfg["secret"] = secret
+        req = urllib.request.Request(
+            f"{kc_base}/admin/realms/{realm}/clients/{kc_id}",
+            data=json.dumps(client_cfg).encode(),
+            headers={**auth_header, "Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()  # 204 No Content
+        updated += 1
+    except Exception as e:
+        print(f"  WARNING: failed to update client '{client_name}': {e}", file=sys.stderr)
+        errors += 1
+
+print(f"  Synced {updated} client secret(s){f' — {errors} error(s), check output above' if errors else ''}")
+PYEOF
 
 patch_assembly_phase.sh --status="Success"
 trap - EXIT

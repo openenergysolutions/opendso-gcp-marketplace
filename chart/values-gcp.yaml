@@ -11,8 +11,8 @@ global:
   resourceProfile: production
 
   # Domain configuration
-  # IMPORTANT: Replace with your actual domain
-  domain: "demo-gcp.oesinc.dev"
+  # IMPORTANT: Set to your actual production domain
+  domain: ""
 
   # Storage class for GKE persistent disks
   # Options: "standard-rwo" (HDD) or "pd-ssd" (SSD)
@@ -22,27 +22,27 @@ global:
   imageRegistry: ""  # Set via global.imageRegistry parameter or --set at deploy time
 
   # Image pull secrets
-  imagePullSecrets:
-    - name: regsecret
+  # GCP Marketplace: GKE node SA has Artifact Registry reader access via Workload Identity.
+  # No pull secret is needed — deploy.sh also explicitly clears this to [].
+  imagePullSecrets: []
 
   # Frontend environment variables
   # These URLs are exposed to browser clients
   environment:
-    apiUrl: "https://api.demo-gcp.oesinc.dev"
-    natsUrl: "wss://nats.demo-gcp.oesinc.dev"
+    apiUrl: ""
+    natsUrl: ""
     googleTagId: "GTM-B7JGQS2"
 
   # Keycloak configuration
   keycloak:
-    url: "https://keycloak.demo-gcp.oesinc.dev"
-    internalUrl: "http://opendso-keycloak-svc:8080"
+    url: ""
+    internalUrl: ""
     realm: "oes"
     clientIds:
       ui: "gms"
       api: "gms"
 
-  # TLS configuration for demo/POC
-  # Using self-signed certificates from scripts/lib/create-certs.sh
+  # TLS secret containing the ingress certificate
   tls:
     existingSecret: "opendso-tls"  # Created by create-certs.sh
 
@@ -50,10 +50,7 @@ global:
   mongodb:
     enabled: true
     tls:
-      enabled: true
-      existingSecret: "opendso-mongodb-tls"  # Default: <release-name>-mongodb-tls (overridden by deploy scripts)
-      mode: preferTLS
-      allowConnectionsWithoutTLS: true
+      enabled: false
 
   citus-db:
     enabled: true
@@ -90,11 +87,10 @@ mongodb:
       cpu: 1000m
       memory: 2Gi
 
-  tls:
-    enabled: true
-    existingSecret: "opendso-mongodb-tls"
-    mode: preferTLS  # Change to "requireTLS" after migration
-    allowConnectionsWithoutTLS: true
+  # MongoDB TLS disabled — internal ClusterIP traffic only
+  # tls:
+  #   enabled: true
+  #   existingSecret: "<release-name>-mongodb-tls"
 
   # External MongoDB configuration (if using managed service)
   # Uncomment and configure if enabled: false
@@ -110,6 +106,8 @@ mongodb:
 # Citus DB (PostgreSQL) configuration
 citus-db:
   enabled: true  # Set to false if using Cloud SQL
+  podSecurityContext: {}
+  securityContext: {}
 
   persistence:
     enabled: true
@@ -139,6 +137,8 @@ citus-db:
 # OpenDSO Apps DB (TimescaleDB/PostgreSQL) configuration
 opendso-apps-db:
   enabled: true
+  podSecurityContext: {}
+  securityContext: {}
 
   persistence:
     enabled: true
@@ -168,12 +168,27 @@ opendso-apps-db:
 
 # Keycloak (Authentication)
 keycloak:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   config:
     # Hostname (OPTIONAL - defaults to keycloak.{global.domain})
     # Only set this if you want Keycloak to use a different hostname
-    # hostname: "keycloak.demo-gcp.oesinc.dev"
+    # hostname: "keycloak.your-domain.example.com"
     hostnamePort: "443"
-    hostnameStrict: "true"
+    hostnameStrict: "false"
     httpsEnabled: true
     httpsCertFile: "/opt/keycloak/conf/server.crt.pem"
     httpsKeyFile: "/opt/keycloak/conf/server.key.pem"
@@ -182,6 +197,16 @@ keycloak:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
     size: 10Gi
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
 
   resources:
     limits:
@@ -199,9 +224,7 @@ gms-api:
     enabled: false
 
   config:
-    # GKE uses containerd — no Docker socket at /var/run/docker.sock.
-    # Set DOCKER_API to a local address so gms-api initializes without crashing.
-    # Orchestration API calls will fail gracefully at runtime (no node containers to show).
+    # GKE uses containerd — no Docker socket at /var/run/docker.sock, set to 127.0.0.1 to disable it
     dockerApi: "http://127.0.0.1:2376"
     tls:
       enabled: false
@@ -232,18 +255,19 @@ gms-api:
     size: 1Gi
 
 # Topology Nodes — license validation env vars
-# LICENSE_KEY and LICENSE_API_KEY are injected via the opendso-license K8s Secret (envFrom).
+# LICENSE_KEY and LICENSE_INSTALLATION_KEY are injected via the opendso-license K8s Secret (envFrom).
 topology-nodes:
   env:
-    PLATFORM_NATS_SERVICE: opendso-nats-service
+    PLATFORM_NATS_SERVICE: ""
     PLATFORM_NATS_PORT: "4222"
-    LICENSE_API_URL: "https://license-api.demo-gcp.oesinc.dev"
 
 # NATS (Message Bus)
 nats:
+  podSecurityContext: {}
+  securityContext: {}
   tls:
     enabled: true
-    secretName: opendso-tls-secret  # Default: <release-name>-tls-secret (overridden by deploy scripts)
+    secretName: ""  # Defaults to <release-name>-tls-secret when unset
   authCallout:
     enabled: false  # Enabled only via values-nats-auth-generated.yaml
 
@@ -273,6 +297,8 @@ historian-svc:
 
 # ESS Manager Redis (Cache)
 ess-manager-redis:
+  podSecurityContext: {}
+  securityContext: {}
   persistence:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
@@ -286,6 +312,79 @@ ess-manager-redis:
       cpu: 100m
       memory: 128Mi
 
+# ESS Manager Service
+ess-manager-svc:
+  env:
+    RUST_LOG: debug
+    APP_CONF: /etc/ess/app.yaml
+    DAY_AHEAD_DIR: /var/lib/ess/dayahead
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+rpcdss-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+nats-auth-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+ess-tester-svc:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
 # ============================================================================
 # Frontend Applications
 # ============================================================================
@@ -293,6 +392,14 @@ ess-manager-redis:
 # Genesis Node App (GMS)
 genesis-node-app:
   replicaCount: 2
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
   resources:
     limits:
@@ -304,6 +411,14 @@ genesis-node-app:
 
 # Data Viewer App
 data-viewer-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -314,6 +429,14 @@ data-viewer-app:
 
 # Event Viewer App
 event-viewer-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -324,6 +447,14 @@ event-viewer-app:
 
 # GIS App
 gis-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -334,6 +465,14 @@ gis-app:
 
 # Historian App
 historian-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -344,6 +483,14 @@ historian-app:
 
 # Inspector App (OpenFMB)
 inspector-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -354,6 +501,14 @@ inspector-app:
 
 # Inventory App
 inventory-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -364,6 +519,14 @@ inventory-app:
 
 # One-Line App
 one-line-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -374,6 +537,14 @@ one-line-app:
 
 # OpenDSO Docs App
 opendso-docs-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -384,6 +555,14 @@ opendso-docs-app:
 
 # OpenFMB Event Creator App
 openfmb-event-creator-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -394,6 +573,14 @@ openfmb-event-creator-app:
 
 # Schedule Dispatch App
 schedule-dispatch-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -404,6 +591,14 @@ schedule-dispatch-app:
 
 # ESS Manager App
 ess-manager-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -414,6 +609,14 @@ ess-manager-app:
 
 # ESS Tester App
 ess-tester-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -424,6 +627,14 @@ ess-tester-app:
 
 # DER Dispatch App
 der-dispatch-app:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
   resources:
     limits:
       cpu: 200m
@@ -448,7 +659,7 @@ ingress:
 
   # Domain for all ingress routes (OPTIONAL - defaults to global.domain)
   # Only set this if you want ingress to use a different domain than global.domain
-  # domain: "demo-gcp.oesinc.dev"
+  # domain: "your-domain.example.com"
 
   # TLS configuration
   # Using cert-manager with Let's Encrypt for automatic certificate management
@@ -491,6 +702,11 @@ ingress:
 
 # Grafana (Monitoring/Dashboards)
 grafana:
+  # Use namespace-scoped Role instead of ClusterRole/ClusterRoleBinding.
+  # The GCP Marketplace deployer SA only has namespace-scoped permissions.
+  rbac:
+    namespaced: true
+
   persistence:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
@@ -503,6 +719,16 @@ grafana:
     requests:
       cpu: 250m
       memory: 256Mi
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
 
   # Admin credentials
   # Default: admin / (auto-generated password in secret)
@@ -523,29 +749,27 @@ asset-health-sim-service:
 # Keycloak DB (separate database for Keycloak)
 keycloak-db:
   enabled: false
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
 # ============================================================================
-# Notes - Demo/POC Deployment with Google Cloud Endpoints
+# Notes - Production Deployment
 # ============================================================================
-
-# This configuration uses Google Cloud Endpoints domain for demo/POC:
-# Domain: demo-gcp.oesinc.dev
-# Certificates: Self-signed (from scripts/lib/create-certs.sh)
 #
 # Before deploying:
-# 1. Create GKE cluster and configure kubectl
-# 2. Install nginx-ingress controller with LoadBalancer
-# 3. Create namespace: kubectl create namespace opendso
-# 4. Generate self-signed certificates:
-#    ./scripts/lib/create-certs.sh opendso demo-gcp.oesinc.dev
-# 5. Create registry secret (if using private registry):
-#    kubectl create secret docker-registry regsecret ...
-# 6. Configure Cloud Endpoints ESP:
-#    - Map *.demo-gcp.oesinc.dev to LoadBalancer IP
-#    - Or use individual subdomain mappings in Cloud Endpoints
-#
-# Deploy with:
-# helm install opendso ./opendso -f values-gcp.yaml -n opendso --timeout 15m
-#
-# Note: Browsers will show certificate warnings with self-signed certs.
-# For production, use a real domain name with Let's Encrypt or Google-managed certificates.
+# 1. Create or select the target GKE cluster and namespace
+# 2. Install an ingress controller with external access
+# 3. Set `global.domain` to a customer-owned domain
+# 4. Provision the TLS secret expected by the release
+# 5. Ensure Artifact Registry pull access is configured

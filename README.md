@@ -18,7 +18,7 @@ A single Helm release installs the full OpenDSO stack into your GKE cluster:
 | **Databases** | MongoDB, Citus (PostgreSQL), TimescaleDB |
 | **Core Services** | GMS API, Historian, OpenFMB Event Service, NATS Auth |
 | **Topology** | Topology Genesis, Topology Nodes |
-| **Grid Applications** | CVR, DER Dispatch, ESS Manager, Asset Health |
+| **Grid Applications** | DER Dispatch, ESS Manager, ESS Tester, Asset Health |
 | **Frontend Apps** | One-Line, GIS, Historian, Inspector, Inventory, Data Viewer, and more |
 
 After deployment, the following endpoints are available at your configured domain:
@@ -40,8 +40,10 @@ After deployment, the following endpoints are available at your configured domai
 3. Select your GKE cluster and namespace
 4. Fill in the required parameters:
    - **Domain Name** — base domain (e.g. `opendso.example.com`). DNS must point to your cluster's LoadBalancer IP.
+   - **OpenDSO License Key** — obtained from OES; required to activate the application.
+   - **OpenDSO Installation Key** — obtained from OES; required to activate the application.
    - **Keycloak Admin Password**
-   - **MongoDB Passwords**
+   - **MongoDB Root Password** and **MongoDB App Password**
    - **Grafana Admin Password**
    - **Resource Profile** — `minimal`, `default`, or `production`
 5. Click **Deploy**
@@ -52,7 +54,13 @@ The deployer will:
 - Generate per-service Keycloak client secrets and pre-populate the realm
 - Create all `*-keycloak-env` Kubernetes secrets before services start
 - Deploy all services via Helm in a single pass (no post-install step required)
-- Verify health before marking the installation complete
+- Run post-deploy verification checks after Helm applies the manifests; readiness is validated by `scripts/verify.sh`, not by `helm --wait`
+
+Licensing note:
+
+- OpenDSO licensing in this package is handled by OES through the supplied `license.key` and `installation.key`
+- this package does not implement GCP Marketplace metering-based entitlement enforcement
+- `topology-nodes` performs runtime license validation against the configured license API using those credentials
 
 ---
 
@@ -91,17 +99,33 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
   Options:
   - **cert-manager + Let's Encrypt** (recommended):
 
+    Use **DNS-01** for wildcard certificates such as `*.yourdomain.com`. `HTTP-01` is not suitable for a wildcard certificate. If you only want a single non-wildcard hostname, `HTTP-01` can work, but OpenDSO is designed around multiple subdomains and is best served by a wildcard certificate.
+
     ```bash
     helm repo add jetstack https://charts.jetstack.io
     helm install cert-manager jetstack/cert-manager -n cert-manager \
       --create-namespace --set installCRDs=true
     ```
 
+    Practical production guidance on GKE:
+
+    - use a DNS provider supported by cert-manager or an external DNS webhook solver
+    - create a `ClusterIssuer` that uses `dns01`
+    - request a certificate covering both `<domain>` and `*.<domain>`
+    - wait for `<release-name>-tls-secret` to exist before deploying OpenDSO
+    - on GKE with Cloud DNS, prefer a `dns01.cloudDNS` solver tied to the managed zone for your base domain
+
+    `HTTP-01` can still be used for testing a single hostname, but it should not be treated as the production wildcard path for this package
+
+  - **Chart-generated self-signed fallback** (non-production safety net):
+
+    The chart can generate a self-signed `<release-name>-tls-secret` in the Marketplace path if no certificate exists yet. Treat this as a test/install-resilience mechanism only. It is suitable for `mpdev verify` and controlled non-production installs, but it is not the recommended long-term production TLS model.
+
   - **Self-signed** (for testing):
 
     ```bash
     mkcert "*.yourdomain.com" yourdomain.com
-    kubectl create secret tls opendso-tls-secret \
+    kubectl create secret tls <release-name>-tls-secret \
       --cert=_wildcard.yourdomain.com.pem \
       --key=_wildcard.yourdomain.com-key.pem \
       -n <namespace>
@@ -111,6 +135,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
 - Container images are served from GCP Artifact Registry. GKE nodes need pull access —
   configure Workload Identity or attach the Artifact Registry Reader role to the node service account.
+- See `IMAGE_MIRRORING_ARTIFACT_REGISTRY.md` for the mirroring workflow and registry expectations.
 
 ### What the deployer does NOT handle
 
@@ -130,7 +155,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
 ```text
 opendso-gcp-marketplace/
-├── chart/                  # Helm chart (mirrors opendso-helm-charts/opendso/)
+├── chart/                  # Helm chart
 │   ├── Chart.yaml
 │   ├── values.yaml         # Default values
 │   ├── values-gcp.yaml     # GCP-specific overrides
@@ -138,10 +163,13 @@ opendso-gcp-marketplace/
 │   ├── templates/          # Parent chart templates
 │   └── configs/            # Site-specific configuration (ieee13)
 ├── deployer/
-│   ├── Dockerfile          # Custom deployer image (extends deployer_helm)
-│   └── deploy.sh           # NKey generation + Keycloak secret injection + helm install
+│   ├── Dockerfile              # Custom deployer image (extends deployer_helm)
+│   ├── deploy.sh               # NKey generation + Keycloak secret injection + helm install
+│   └── deploy_with_tests.sh    # Wraps deploy.sh + runs verify.sh (used by mpdev verify)
 ├── scripts/
-│   └── verify.sh           # Post-deploy health checks
+│   ├── verify.sh               # Post-deploy health checks (called by deploy_with_tests.sh)
+│   ├── mpdev.sh                # Helper to run mpdev verify locally
+│   └── provision-test-env.sh   # Provisions a local test cluster environment
 ├── schema.yaml             # GCP Marketplace UI schema (parameters + images)
 └── README.md               # This file
 ```
@@ -169,27 +197,8 @@ mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0
 # Test install into a real cluster
 mpdev install \
   --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
-  --parameters='{"APP_INSTANCE_NAME":"opendso-test","NAMESPACE":"test","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","grafana.adminPassword":"secret"}'
+  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","grafana.adminPassword":"secret"}'
 ```
-
----
-
-## Keeping the Chart in Sync
-
-The `chart/` directory is kept in sync with the upstream
-[opendso-helm-charts](https://github.com/openenergysolutions/opendso-helm-charts) `opendso/` directory.
-Run the following to pull in upstream changes:
-
-```bash
-rsync -av --delete \
-  ../opendso-helm-charts/opendso/ \
-  chart/ \
-  --exclude='values-nats-auth-generated.yaml' \
-  --exclude='configs/*/nats-auth-svc/keys/' \
-  --exclude='configs/*/keycloak/realm/oes-realm-generated.json'
-```
-
-After syncing, review `schema.yaml` to ensure any new images are declared in the `images` section.
 
 ---
 
@@ -197,8 +206,16 @@ After syncing, review `schema.yaml` to ensure any new images are declared in the
 
 - **NATS NKeys** are generated fresh on every deployment by `deployer/deploy.sh` — private seeds are never stored in this repository
 - **Keycloak client secrets** are generated as UUIDs at deploy time — pre-populated into the realm JSON so Keycloak imports them on first boot, never stored in this repository
-- All passwords are passed via GCP Marketplace's `MASKED_FIELD` mechanism and stored as Kubernetes Secrets
+- Marketplace-supplied passwords are passed via GCP Marketplace `MASKED_FIELD` parameters and stored as Kubernetes Secrets; the production chart path no longer relies on shipped plaintext password defaults
+- TLS is standardized around the release-scoped secret `<release-name>-tls-secret`; the chart can also create `root-ca`, `server-cert`, and `server-key` compatibility secrets for workloads that still mount those names
+- Backend services that support numeric non-root execution are configured to run with explicit non-root security contexts; stateful infrastructure components are hardened more conservatively where image startup still requires root-like filesystem initialization
+- `topology-nodes` validates `LICENSE_KEY` and `LICENSE_INSTALLATION_KEY` against the configured license API at startup and on a periodic revalidation interval
 - Third-party images (NATS, Keycloak, MongoDB, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
+
+## GKE Runtime Notes
+
+- `gms-api.config.dockerApi` is intentionally set to `http://127.0.0.1:2376` on GKE because GKE uses containerd and does not expose a Docker socket
+- orchestration features that assume direct Docker Engine access are therefore not expected to function on GKE in this package
 
 ---
 
@@ -206,4 +223,8 @@ After syncing, review `schema.yaml` to ensure any new images are declared in the
 
 - **Issues**: [opendso-gcp-marketplace](https://github.com/openenergysolutions/opendso-gcp-marketplace/issues)
 - **Documentation**: [chart/README.md](chart/README.md)
+- **Customer Checklist**: [GKE_MARKETPLACE_PREDEPLOYMENT_CHECKLIST_CUSTOMER.md](GKE_MARKETPLACE_PREDEPLOYMENT_CHECKLIST_CUSTOMER.md)
+- **Troubleshooting**: [GKE_MARKETPLACE_TROUBLESHOOTING.md](GKE_MARKETPLACE_TROUBLESHOOTING.md)
+- **Image Mirroring**: [IMAGE_MIRRORING_ARTIFACT_REGISTRY.md](IMAGE_MIRRORING_ARTIFACT_REGISTRY.md)
+- **Backup / Restore**: [GKE_BACKUP_RESTORE.md](GKE_BACKUP_RESTORE.md)
 - **Email**: <info@openenergysolutions.com>
