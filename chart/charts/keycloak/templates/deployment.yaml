@@ -146,12 +146,19 @@ spec:
           {{- end }}
       volumes:
         {{- if .Values.tls.enabled }}
+        {{- $tlsSecret := .Values.tls.existingSecret | default .Values.tls.certSecret }}
         - name: cert-file
           secret:
-            secretName: {{ .Values.tls.certSecret }}
+            secretName: {{ $tlsSecret }}
+            items:
+              - key: {{ if .Values.tls.existingSecret }}tls.crt{{ else }}{{ .Values.tls.certFilename | default "server-cert.pem" }}{{ end }}
+                path: {{ .Values.tls.certFilename | default "server-cert.pem" }}
         - name: key-file
           secret:
-            secretName: {{ .Values.tls.keySecret }}
+            secretName: {{ $tlsSecret }}
+            items:
+              - key: {{ if .Values.tls.existingSecret }}tls.key{{ else }}{{ .Values.tls.keyFilename | default "server-key.pem" }}{{ end }}
+                path: {{ .Values.tls.keyFilename | default "server-key.pem" }}
         {{- end }}
         {{- if .Values.config.importRealm }}
         - name: keycloak-config

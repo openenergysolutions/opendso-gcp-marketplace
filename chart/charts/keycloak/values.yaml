@@ -80,6 +80,7 @@ config:
 
 tls:
   enabled: true
+  existingSecret: ""
   certSecret: server-cert
   keySecret: server-key
   certFilename: server-cert.pem  # Key name in the secret

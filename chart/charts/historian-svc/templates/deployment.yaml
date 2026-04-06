@@ -173,12 +173,19 @@ spec:
           configMap:
             name: {{ include "historian-svc.fullname" . }}-historian
         {{- if .Values.tls.enabled }}
+        {{- $tlsSecret := .Values.tls.existingSecret | default .Values.tls.certSecret }}
         - name: cert-file
           secret:
-            secretName: {{ .Values.tls.certSecret }}
+            secretName: {{ $tlsSecret }}
+            items:
+              - key: {{ if .Values.tls.existingSecret }}tls.crt{{ else }}server-cert.pem{{ end }}
+                path: server-cert.pem
         - name: key-file
           secret:
-            secretName: {{ .Values.tls.keySecret }}
+            secretName: {{ $tlsSecret }}
+            items:
+              - key: {{ if .Values.tls.existingSecret }}tls.key{{ else }}server-key.pem{{ end }}
+                path: server-key.pem
         - name: root-ca
           secret:
             secretName: {{ .Values.tls.rootCaSecret }}

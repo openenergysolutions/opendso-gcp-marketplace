@@ -168,6 +168,8 @@ opendso-apps-db:
 
 # Keycloak (Authentication)
 keycloak:
+  tls:
+    existingSecret: ""  # set at deploy time via --set keycloak.tls.existingSecret
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 1000
@@ -287,6 +289,8 @@ nats:
 
 # Historian Service
 historian-svc:
+  tls:
+    existingSecret: ""  # set at deploy time via --set historian-svc.tls.existingSecret
   resources:
     limits:
       cpu: 500m

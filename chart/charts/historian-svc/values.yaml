@@ -86,6 +86,7 @@ historianSettings:
 
 tls:
   enabled: true
+  existingSecret: ""
   certSecret: server-cert
   keySecret: server-key
   rootCaSecret: root-ca
