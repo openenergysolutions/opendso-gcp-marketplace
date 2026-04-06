@@ -92,7 +92,7 @@ dig +short test.opendso.example.com
 
 Expected result: the LoadBalancer IP address.
 
-> **Note:** DNS must be propagated before the TLS certificate can be issued in Step 4 (if using Let's Encrypt HTTP-01 challenge).
+> **Note:** DNS must be propagated before the TLS certificate can be issued in Step 4. For the recommended wildcard certificate path on GKE, use **DNS-01**, not `HTTP-01`.
 
 ---
 
@@ -102,7 +102,15 @@ OpenDSO requires a Kubernetes TLS secret named **`<release-name>-tls-secret`** i
 
 **Release name:** `_______________________` (e.g. `opendso`)
 
-### Option A — cert-manager + Let's Encrypt (recommended for production)
+Production recommendation:
+
+- use a real certificate before deployment
+- do not rely on the chart's self-signed fallback for customer production installs
+- treat the self-signed path as a test-only safety net for installer resilience
+
+### Option A — cert-manager + Let's Encrypt with DNS-01 (recommended for production wildcard TLS)
+
+Use **DNS-01** if you want a certificate for `*.opendso.example.com`. `HTTP-01` does not work for wildcard certificates.
 
 - [ ] Install cert-manager:
 
@@ -120,7 +128,15 @@ helm install cert-manager jetstack/cert-manager \
 kubectl get pods -n cert-manager
 ```
 
-- [ ] Create a ClusterIssuer for Let's Encrypt:
+- [ ] Create a ClusterIssuer for Let's Encrypt using a DNS solver
+
+The exact `dns01` solver depends on your DNS provider. On GKE, the important point is the challenge type:
+
+- use `dns01` for wildcard certificates
+- request both the base domain and wildcard SANs
+- verify your DNS provider credentials or webhook solver are configured before requesting the certificate
+
+Example shape only:
 
 ```yaml
 # letsencrypt-issuer.yaml
@@ -135,10 +151,34 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-    - http01:
-        ingress:
-          class: nginx
+    - dns01:
+        # configure the solver for your DNS provider here
+        # example: Cloud DNS, Route53, Cloudflare, or a cert-manager webhook
+        <your-dns-solver>: {}
 ```
+
+GKE / Google Cloud DNS example:
+
+```yaml
+# letsencrypt-issuer-gcp.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: <your-email>
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        cloudDNS:
+          project: <gcp-project-id>
+          hostedZoneName: <cloud-dns-zone-name>
+```
+
+If you use Cloud DNS, ensure cert-manager has IAM permission to modify DNS records for the target managed zone.
 
 ```bash
 kubectl apply -f letsencrypt-issuer.yaml
@@ -174,6 +214,22 @@ kubectl get certificate -n <namespace> -w
 # READY column should show: True
 ```
 
+- [ ] Confirm the resulting secret name matches the Marketplace release name exactly:
+
+```bash
+kubectl get secret <release-name>-tls-secret -n <namespace>
+```
+
+### Option A1 — HTTP-01 (non-wildcard testing only)
+
+If you are only testing a single hostname and are not using the full wildcard model, `HTTP-01` can be used. That is not the recommended production configuration for OpenDSO because the platform expects multiple subdomains such as:
+
+- `api.<domain>`
+- `keycloak.<domain>`
+- `grafana.<domain>`
+- `nats.<domain>`
+- UI app subdomains
+
 ### Option B — Self-signed certificate (testing only)
 
 - [ ] Generate and install a self-signed cert using `mkcert`:
@@ -185,6 +241,16 @@ kubectl create secret tls <release-name>-tls-secret \
   --key=_wildcard.opendso.example.com-key.pem \
   -n <namespace>
 ```
+
+### Option C — Chart-generated self-signed fallback (last resort, non-production)
+
+If no TLS secret exists, the Marketplace chart can generate a self-signed fallback certificate in some install paths. This behavior is useful for `mpdev verify` and controlled test deployments, but it should not be your target production configuration.
+
+Use it only when:
+
+- you are validating installer behavior
+- you are testing in a non-production environment
+- you understand browsers and strict TLS clients will not trust the certificate
 
 ### Verify TLS secret exists
 

@@ -166,6 +166,23 @@ else
     CITUS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
 fi
 
+# Pre-create citus-db-secret with Helm ownership metadata so the
+# opendso.citusDb.settings helper can lookup the password at render time
+# (subcharts like historian-svc and der-dispatch-svc lack citus-db.auth.*
+# in their .Values scope). Helm labels prevent "invalid ownership" errors.
+kubectl create secret generic "$CITUS_DB_SECRET" \
+    --namespace="$NAMESPACE" \
+    --from-literal=password="${CITUS_DB_PASSWORD}" \
+    --dry-run=client -o yaml \
+  | kubectl annotate --local -f - \
+      "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
+      "meta.helm.sh/release-namespace=${NAMESPACE}" \
+      --overwrite -o yaml \
+  | kubectl label --local -f - \
+      "app.kubernetes.io/managed-by=Helm" \
+      --overwrite -o yaml \
+  | kubectl apply -f -
+
 # ---------------------------------------------------------------------------
 # 3. Write temporary Helm values overlay with derived public keys
 # ---------------------------------------------------------------------------
@@ -235,16 +252,18 @@ echo "  ConfigMap '${APP_INSTANCE_NAME}-topology-genesis-site-config' applied."
 # ---------------------------------------------------------------------------
 # 3a-2. Create OpenDSO license secret
 #
-# Stores the license key and installation key (api_key) as a Kubernetes Secret.
-# topology-nodes mounts this via envFrom to get LICENSE_KEY and LICENSE_API_KEY.
+# Stores all license env vars as a Kubernetes Secret.
+# topology-nodes mounts this via envFrom and expects LICENSE_KEY,
+# LICENSE_INSTALLATION_KEY, LICENSE_ENVIRONMENT_NAME, and LICENSE_API_URL.
 # ---------------------------------------------------------------------------
 LICENSE_SECRET="${APP_INSTANCE_NAME}-opendso-license"
 
 kubectl create secret generic "$LICENSE_SECRET" \
     --namespace="$NAMESPACE" \
     --from-literal=LICENSE_KEY="${LICENSE_KEY}" \
-    --from-literal=LICENSE_API_KEY="${INSTALLATION_KEY}" \
+    --from-literal=LICENSE_INSTALLATION_KEY="${INSTALLATION_KEY}" \
     --from-literal=LICENSE_ENVIRONMENT_NAME="${CLUSTER_ID}" \
+    --from-literal=LICENSE_API_URL="http://${APP_INSTANCE_NAME}-license-stub.${NAMESPACE}.svc.cluster.local" \
     --dry-run=client -o yaml \
   | kubectl apply -f -
 
@@ -403,6 +422,72 @@ kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     --type merge \
     --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null
+
+# ---------------------------------------------------------------------------
+# 3d. Add Application ownerReferences to all Helm-managed resources
+#
+# mpdev verify deletes the Application and then waits (timeout=600s) for ALL
+# "kubectl get all" resources to be gone before deleting the namespace.
+# The standard deployer_helm base-image adds ownerReferences to every Helm
+# resource so Kubernetes GC cascade-deletes them when the Application is
+# removed. Our custom "helm upgrade --install" path skips that step, so we
+# patch them here manually.
+#
+# Cascade chain:
+#   Application deleted
+#     → Deployments/StatefulSets/Services/Jobs (ownerRef)
+#       → ReplicaSets  (ownerRef added by Deployment controller)
+#         → Pods       (ownerRef added by ReplicaSet controller)
+# ---------------------------------------------------------------------------
+echo ""
+echo "[3d/3] Wiring Application ownerReferences for cascade GC..."
+
+APP_UID=$(kubectl get application.app.k8s.io "$APP_INSTANCE_NAME" \
+    -n "$NAMESPACE" \
+    -o jsonpath='{.metadata.uid}' 2>/dev/null || echo "")
+
+if [[ -n "$APP_UID" ]]; then
+    OWNER_PATCH=$(python3 -c "
+import json, sys
+print(json.dumps({
+    'metadata': {
+        'ownerReferences': [{
+            'apiVersion': 'app.k8s.io/v1beta1',
+            'kind': 'Application',
+            'name': sys.argv[1],
+            'uid': sys.argv[2],
+            'blockOwnerDeletion': True,
+            'controller': False,
+        }]
+    }
+}))
+" "$APP_INSTANCE_NAME" "$APP_UID")
+
+    PATCHED=0
+    SKIPPED=0
+    LABEL_SEL="app.kubernetes.io/instance=${APP_INSTANCE_NAME}"
+    for KIND in deployments statefulsets services jobs serviceaccounts roles rolebindings; do
+        while IFS= read -r resource; do
+            [[ -z "$resource" ]] && continue
+            if kubectl patch "$resource" \
+                   -n "$NAMESPACE" \
+                   --type=merge \
+                   --patch="$OWNER_PATCH" \
+                   2>/dev/null; then
+                PATCHED=$((PATCHED+1))
+            else
+                SKIPPED=$((SKIPPED+1))
+            fi
+        done < <(kubectl get "$KIND" \
+            -n "$NAMESPACE" \
+            -l "$LABEL_SEL" \
+            --no-headers \
+            -o name 2>/dev/null || true)
+    done
+    echo "  Patched $PATCHED resources with Application ownerReferences (skipped/not-found: $SKIPPED)"
+else
+    echo "  WARNING: Application UID not found — skipping ownerReferences (mpdev verify cleanup may timeout)"
+fi
 
 # ---------------------------------------------------------------------------
 # 5. Sync Keycloak client secrets via Admin REST API

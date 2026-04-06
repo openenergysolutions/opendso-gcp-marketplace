@@ -18,6 +18,8 @@ serviceAccount:
 podAnnotations: {}
 podSecurityContext:
   runAsNonRoot: true
+  runAsUser: 100
+  fsGroup: 101
   seccompProfile:
     type: RuntimeDefault
 securityContext:
@@ -34,6 +36,8 @@ env:
 args:
   - "-c"
   - "/resources/config.yml"
+  - "-d"
+  - "0"
 
 # Service configuration
 config:

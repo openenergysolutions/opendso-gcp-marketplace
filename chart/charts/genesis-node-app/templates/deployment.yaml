@@ -5,8 +5,6 @@ metadata:
   labels:
     {{- include "genesis-node-app.labels" . | nindent 4 }}
 spec:
-  {{- $podSecurityContext := .Values.podSecurityContext | default (dict "seccompProfile" (dict "type" "RuntimeDefault")) }}
-  {{- $securityContext := .Values.securityContext | default (dict "allowPrivilegeEscalation" false "capabilities" (dict "drop" (list "ALL"))) }}
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
@@ -25,11 +23,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml $podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml $securityContext | nindent 12 }}
+            {{- toYaml .Values.securityContext | nindent 12 }}
           image: {{ include "genesis-node-app.image" (dict "imageRoot" .Values.global.images.genesisNodeApp "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.genesisNodeApp.pullPolicy }}
           ports:
@@ -37,11 +35,15 @@ spec:
               containerPort: {{ .Values.containerPort }}
               protocol: TCP
           volumeMounts:
-            - name: genesis-node-resources
+            - name: environment
               mountPath: /usr/share/nginx/html/config
+              readOnly: true
             - name: config
-              mountPath: /etc/nginx/conf.d/default.conf
-              subPath: default.conf
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
               readOnly: true
             {{- if .Values.tls.enabled }}
             - name: cert-file
@@ -95,25 +97,15 @@ spec:
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           {{- end }}
       volumes:
-        - name: genesis-node-resources
-          configMap:
-            name: {{ .Values.siteConfigMap | default (printf "%s-genesis-node-app-site-config" .Release.Name) }}
-            items:
-              - key: algorithm.json
-                path: algorithm.json
-              - key: applicationsSettings.json
-                path: applicationsSettings.json
-              - key: der.json
-                path: der.json
-              - key: environment.json
-                path: environment.json
-              - key: historianState.json
-                path: historianState.json
-              - key: servicesSettings.json
-                path: servicesSettings.json
         - name: config
           configMap:
             name: {{ include "genesis-node-app.fullname" . }}-nginx
+        - name: environment
+          configMap:
+            name: {{ .Release.Name }}-frontend-environment
+        - name: nginx-conf
+          configMap:
+            name: {{ .Release.Name }}-frontend-nginx-conf
         {{- if .Values.tls.enabled }}
         - name: cert-file
           secret:

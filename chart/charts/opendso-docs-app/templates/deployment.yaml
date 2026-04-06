@@ -38,6 +38,10 @@ spec:
             - name: config
               mountPath: /etc/nginx/conf.d
               readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
             {{- if .Values.tls.enabled }}
             - name: cert-file
               mountPath: /etc/nginx/certs/server-cert.pem
@@ -93,6 +97,9 @@ spec:
         - name: config
           configMap:
             name: {{ include "opendso-docs-app.fullname" . }}-nginx
+        - name: nginx-conf
+          configMap:
+            name: {{ .Release.Name }}-frontend-nginx-conf
         {{- if .Values.tls.enabled }}
         - name: cert-file
           secret:

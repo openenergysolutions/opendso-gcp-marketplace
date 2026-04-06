@@ -197,7 +197,7 @@ global:
       repository: gms-api
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:88f1c0110729dce8c6606b8ed3b4670d4dfd9f6509cd87a9ad48c36d33db230f"
+      digest: "sha256:114c438291fd5345d1bdbd7a030bd82c977e35fb1939def77363d6b257368102"
     openfmbEventService:
       repository: openfmb-event-service
       tag: "latest"
@@ -211,14 +211,14 @@ global:
       digest: "sha256:2d494ddbcdd6581b74c9b428629b8e7e24e1e2f35988e63e35e2c293ee5ad3a7"
     topologyNodes:
       repository: topology-nodes
-      tag: "latest"
+      tag: "local-licensed"
       pullPolicy: IfNotPresent
-      digest: "sha256:6bbaa7b8af4eb50240e4390b1c2a404f74d28a0e2a4a65b49c1dce5a9e64bdec"
+      digest: "sha256:08d463108d5ea09f8a5a98f303110d03f0d696b3a3894988efc0c1f7cd2806dd"
     derDispatchApp:
       repository: der-dispatch-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:08c8486fb97bd9827ffa8cc44729e35e95ab1017963b642ce0f103e713bfa933"
+      digest: "sha256:98b3498bb52df9aa8eeb1fba348b7bbce8873e214733229c0c89da301baf1a84"
     derDispatchSvc:
       repository: der-dispatch
       tag: "78226199"
@@ -229,47 +229,47 @@ global:
       repository: genesis-node-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:720cf77506368f924c67e7411d630c521b65ed9fdf174af9bc01ef71948ca089"
+      digest: "sha256:a3062e244214ea0b976a59c5b7a7c8c03bd7809279ec123ebcfd35fc672312f6"
     dataViewerApp:
       repository: data-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:69cfcbac6bc0b1732497835f48373d5090a581fcfdbc533256f17a84dd3580e5"
+      digest: "sha256:f61df45ff5fb9ef6a462489174d5ef4c971820d56adb99d0736c2cd851b06336"
     scheduleDispatchApp:
       repository: edo-adr-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:a1c3422c68372f9912823d49803202c30d3a620da761d66bbebbcfa525626633"
+      digest: "sha256:da10f48e379934d5878e3021902f79326ac298778d174f4f14d381cf2a810d02"
     eventViewerApp:
       repository: event-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:aa636f78b19e00e42835eb19bc81e964966f29fd2baee83bf6e8d1d2088e96e8"
+      digest: "sha256:6e0bc9fdf1edf08b1aed44fde20ab04252fb38422d6bb3c71781869a63507d7f"
     gisApp:
       repository: gis-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:ec901f417fbba0408a07444832d31a53f3616e464516e78388f49bba83952429"
+      digest: "sha256:7deaddd3b25519b1895ff14ce7a7039631f4d9ba81355016a521143df98653cc"
     historianApp:
       repository: historian-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:eb41714a99ea775ccb0bae614c4594187c95f64f1382f4ad0b0f804d00667e84"
+      digest: "sha256:bdd2cde35e3c37ff280f89741828b611afc0e338be02b05e79d1671f2f708f88"
     inspectorApp:
       repository: inspector-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d73e2ce9dd80b63b2f33ca64b5a1e47bc3f02182e3c24c0f1643a1f3cf2c48ce"
+      digest: "sha256:6b0f5ea2883b621a638e65e2d1b4f397650d7d741a54d6b8637a96e18f069f46"
     inventoryApp:
       repository: inventory-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:9b1b0b88220cfdee386976f2d8b68adac94f6a0fcac79b92d808bc732696d3df"
+      digest: "sha256:dca81232ad5bb1a8372089b847782d578fa1be61bccb283579f71a5189f2ed92"
     oneLineApp:
       repository: one-line-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:9d77fa13f435a54fe9098188b703e6cc369888420f51c256363833011ee8f287"
+      digest: "sha256:ee0916f78174e164e7cbb2e5377c084f7429ec91e6e9c21e8558882b89bb5be2"
     opendsoDocsApp:
       repository: opendso-docs
       tag: "latest"
@@ -279,7 +279,7 @@ global:
       repository: openfmb-event-creator-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:a0d6ea2518785f2c116224d320c5011bc84847ebb2de42eafb0563e0b07497a6"
+      digest: "sha256:decd4b211231477d3388c08bee6bbf424b0d99826f18f6f5f5b822c6da5c99e2"
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
@@ -287,10 +287,10 @@ global:
       pullPolicy: IfNotPresent
       digest: "sha256:3279c3ed57f64744a2a1b04afaf894c99b05ecf1c1cb342adb671d630eaf2c52"
     essManagerApp:
-      repository: device-details-app
+      repository: ess-manager-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:d43fc4ec13241284a7c1b948e6e13fa5b290f53668751673faaa0c60c0bd49b3"
+      digest: "sha256:7b3ad1c90bbc0e87859e1f947da754aeed30ffc22799c17e4ae46a4338b3f67b"
     essTesterSvc:
       repository: ess-tester
       tag: "b8ce64a3"
@@ -300,7 +300,7 @@ global:
       repository: batt-testing-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:971e4b84ddd0df40a3ee8b340f580b52b34360a71c8a667dbf25db28e8d74671"
+      digest: "sha256:f439df62e932a2a5c25d40d5ac90d49d9012f68249caca38eac5d373086a2568"
     assetHealthSvc:
       repository: ahs
       tag: "latest"
@@ -335,9 +335,9 @@ global:
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
-      tag: "bf0877c2"
+      tag: "2c8e8a04"
       pullPolicy: IfNotPresent
-      digest: "sha256:2b9ca4db11eb67279f40788fc8f919b2c732be66fae90247abd232287952e054"
+      digest: "sha256:c955a6082223b554e998ea24533ed8c6469a3b42f793c74375cd80d20db6a3bc"
     rpcdssSvc:
       repository: rpcdss
       tag: "3d3b0e15"
@@ -345,9 +345,9 @@ global:
       digest: "sha256:39548abee9d4b6d2dbd005c8f8857138d5a8e94cd56276748bfaa1b951b61926"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "abe4782b"
+      tag: "679a94b4"
       pullPolicy: IfNotPresent
-      digest: "sha256:21f302c9331551940714b81187498e52f51eaa1a15397d9bd9fb3c0b6dda99ee"
+      digest: "sha256:3b3d80ea21c08d8ae925d180de19f84ec0774d372b504ffa5b4717d2f05086fa"
   # =============================================================================
   # Component Enable/Disable
   # =============================================================================

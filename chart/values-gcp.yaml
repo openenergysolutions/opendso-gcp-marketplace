@@ -255,12 +255,11 @@ gms-api:
     size: 1Gi
 
 # Topology Nodes — license validation env vars
-# LICENSE_KEY and LICENSE_API_KEY are injected via the opendso-license K8s Secret (envFrom).
+# LICENSE_KEY and LICENSE_INSTALLATION_KEY are injected via the opendso-license K8s Secret (envFrom).
 topology-nodes:
   env:
     PLATFORM_NATS_SERVICE: ""
     PLATFORM_NATS_PORT: "4222"
-    LICENSE_API_URL: ""
 
 # NATS (Message Bus)
 nats:

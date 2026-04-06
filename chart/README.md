@@ -223,7 +223,15 @@ global:
 
 ### Secret-Based Credentials (Required)
 
-All sensitive data uses Kubernetes secrets:
+All sensitive data uses Kubernetes secrets. The chart no longer ships plaintext fallback passwords for production installs. Required credentials must be provided explicitly, or created by the deploy flow before install:
+
+- `mongodb.auth.rootPassword`
+- `mongodb.auth.username`
+- `mongodb.auth.password`
+- `keycloak.config.adminPassword`
+- `grafana.adminPassword` or `grafana.admin.existingSecret`
+- `citus-db.auth.password`
+- `opendso-apps-db.auth.password`
 
 **Grafana Credentials** (auto-generated):
 
@@ -240,6 +248,16 @@ grafana:
 ```yaml
 {{ .Release.Name }}-tls-secret      # Main TLS certificate
 root-ca                             # Root CA for services
+server-cert                         # Legacy alias for internal mounts
+server-key                          # Legacy alias for internal mounts
+```
+
+When `global.tls.createSecrets=true`, the chart can generate or reuse the release-scoped TLS secret and create the compatibility aliases required by older workloads. The intended source of truth is the release-scoped secret:
+
+```yaml
+global:
+  tls:
+    existingSecret: "{{ .Release.Name }}-tls-secret"
 ```
 
 **Container Registry**:
@@ -330,6 +348,8 @@ service:
   port: 80
 ```
 
+Production values are hardened for ingress-based exposure. Local NodePort-style access belongs in development overlays such as `values-dev.yaml`, not in the production path.
+
 **External IP provided by**:
 
 - Cloud LoadBalancer (GKE, EKS, AKS)
@@ -347,11 +367,58 @@ ingress:
         - "*.your-domain.example.com"
 ```
 
+For production wildcard TLS on GKE, prefer **cert-manager with DNS-01**. `HTTP-01` is not appropriate for issuing `*.your-domain.example.com`. If you only need a single hostname for temporary testing, `HTTP-01` can work, but that is not the intended OpenDSO production model.
+
+The chart can also generate a self-signed fallback certificate in Marketplace-oriented paths when no TLS secret exists yet. That fallback is intended for non-production verification and install resilience, not as the long-term production TLS posture.
+
 ## Values Files
 
 ### values.yaml (Default)
 
 Full configuration with all 38 subcharts available.
+
+### values-ha.yaml (High Availability Overlay)
+
+`values-ha.yaml` is an optional overlay for larger production-style deployments. Apply it on top of `values-gcp.yaml` when you want higher replica counts, larger database volumes, and more aggressive resource sizing.
+
+What it changes:
+
+- scales selected stateless services to 2-3 replicas
+- increases MongoDB, Citus, and apps DB storage and resource requests
+- switches major database PVCs to `pd-ssd`
+- enables autoscaling for `gms-api`
+- adds nginx ingress rate-limit annotations
+
+Use it like this:
+
+```bash
+helm upgrade --install <release-name> . \
+  -f values-gcp.yaml \
+  -f values-ha.yaml \
+  -n <namespace>
+```
+
+Notes:
+
+- this is an overlay, not a standalone values file
+- it is intended for GKE-style production capacity planning, not minimal local testing
+- review every replica and storage change before using it in a constrained cluster
+
+### Security Context Defaults
+
+The chart now applies a mixed hardening model based on what each image can actually support:
+
+- Backend services and init containers that are known to support numeric non-root execution are configured with explicit `runAsNonRoot`, `runAsUser`, and `runAsGroup` settings.
+- Frontend images should be built to run as a non-root numeric UID. The recommended nginx-based pattern is an explicit image `USER` plus matching Kubernetes `runAsUser`.
+- Stateful and infrastructure images such as PostgreSQL-derived services, Redis, and NATS may still need image-default startup permissions. For those workloads, the chart keeps a more conservative posture instead of forcing non-root and breaking initialization.
+
+Baseline hardening that remains in place where compatible includes:
+
+- `allowPrivilegeEscalation: false`
+- dropped Linux capabilities
+- `seccompProfile.type: RuntimeDefault`
+
+Do not assume every subchart can safely be forced to the same numeric UID. Validate image behavior first, especially for database, cache, and broker images that modify mounted volumes during startup.
 
 ## Upgrading
 
@@ -452,6 +519,25 @@ kubectl get secrets -n <namespace>
 # Recreate secrets manually (see Security and Secrets section above)
 ```
 
+**2a. TLS secret alias errors**
+
+Some workloads still mount `server-cert`, `server-key`, or `root-ca`. Those secrets are created automatically only when the TLS configuration path is enabled correctly. Check:
+
+```bash
+kubectl get secret <release-name>-tls-secret root-ca server-cert server-key -n <namespace>
+```
+
+If the release secret exists but the alias secrets do not, verify the install values for:
+
+```yaml
+global:
+  tls:
+    existingSecret: "<release-name>-tls-secret"
+    createSecrets: true
+```
+
+Then upgrade the release.
+
 **3. Grafana redirect issues**
 
 Ensure correct configuration:
@@ -484,6 +570,16 @@ kubectl create secret docker-registry regsecret \
 rm -rf charts/*.tgz Chart.lock
 helm dependency update
 ```
+
+**6. `runAsNonRoot` failures**
+
+If a pod fails with `container has runAsNonRoot and image will run as root`, the issue is usually one of these:
+
+- the image Dockerfile does not set a non-root `USER`
+- the chart enforces a numeric `runAsUser` that the image is not prepared for
+- the container or init container still performs root-only filesystem setup at startup
+
+Start by checking the rendered pod security context and the image’s runtime user assumptions before forcing stricter settings.
 
 ### Debugging Commands
 

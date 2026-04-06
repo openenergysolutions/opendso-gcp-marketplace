@@ -20,149 +20,178 @@ x-google-marketplace:
   images:
     nats:
       properties:
-        repository: global.images.nats.repository
-        tag: global.images.nats.tag
-        digest: global.images.nats.digest
+        global.images.nats.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.nats.tag:
+          type: TAG
     keycloak:
       properties:
-        repository: global.images.keycloak.repository
-        tag: global.images.keycloak.tag
-        digest: global.images.keycloak.digest
+        global.images.keycloak.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.keycloak.tag:
+          type: TAG
     mongodb:
       properties:
-        repository: global.images.mongodb.repository
-        tag: global.images.mongodb.tag
-        digest: global.images.mongodb.digest
+        global.images.mongodb.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.mongodb.tag:
+          type: TAG
     citusDb:
       properties:
-        repository: global.images.citusDb.repository
-        tag: global.images.citusDb.tag
-        digest: global.images.citusDb.digest
+        global.images.citusDb.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.citusDb.tag:
+          type: TAG
     appsDb:
       properties:
-        repository: global.images.appsDb.repository
-        tag: global.images.appsDb.tag
-        digest: global.images.appsDb.digest
+        global.images.appsDb.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.appsDb.tag:
+          type: TAG
     gmsApi:
       properties:
-        repository: global.images.gmsApi.repository
-        tag: global.images.gmsApi.tag
-        digest: global.images.gmsApi.digest
+        global.images.gmsApi.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.gmsApi.tag:
+          type: TAG
     topologyGenesis:
       properties:
-        repository: global.images.topologyGenesis.repository
-        tag: global.images.topologyGenesis.tag
-        digest: global.images.topologyGenesis.digest
+        global.images.topologyGenesis.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.topologyGenesis.tag:
+          type: TAG
     topologyNodes:
       properties:
-        repository: global.images.topologyNodes.repository
-        tag: global.images.topologyNodes.tag
-        digest: global.images.topologyNodes.digest
+        global.images.topologyNodes.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.topologyNodes.tag:
+          type: TAG
     derDispatchApp:
       properties:
-        repository: global.images.derDispatchApp.repository
-        tag: global.images.derDispatchApp.tag
-        digest: global.images.derDispatchApp.digest
+        global.images.derDispatchApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.derDispatchApp.tag:
+          type: TAG
     derDispatchSvc:
       properties:
-        repository: global.images.derDispatchSvc.repository
-        tag: global.images.derDispatchSvc.tag
-        digest: global.images.derDispatchSvc.digest
+        global.images.derDispatchSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.derDispatchSvc.tag:
+          type: TAG
     genesisNodeApp:
       properties:
-        repository: global.images.genesisNodeApp.repository
-        tag: global.images.genesisNodeApp.tag
-        digest: global.images.genesisNodeApp.digest
+        global.images.genesisNodeApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.genesisNodeApp.tag:
+          type: TAG
     dataViewerApp:
       properties:
-        repository: global.images.dataViewerApp.repository
-        tag: global.images.dataViewerApp.tag
-        digest: global.images.dataViewerApp.digest
+        global.images.dataViewerApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.dataViewerApp.tag:
+          type: TAG
     scheduleDispatchApp:
       properties:
-        repository: global.images.scheduleDispatchApp.repository
-        tag: global.images.scheduleDispatchApp.tag
-        digest: global.images.scheduleDispatchApp.digest
+        global.images.scheduleDispatchApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.scheduleDispatchApp.tag:
+          type: TAG
     eventViewerApp:
       properties:
-        repository: global.images.eventViewerApp.repository
-        tag: global.images.eventViewerApp.tag
-        digest: global.images.eventViewerApp.digest
+        global.images.eventViewerApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.eventViewerApp.tag:
+          type: TAG
     gisApp:
       properties:
-        repository: global.images.gisApp.repository
-        tag: global.images.gisApp.tag
-        digest: global.images.gisApp.digest
+        global.images.gisApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.gisApp.tag:
+          type: TAG
     historianApp:
       properties:
-        repository: global.images.historianApp.repository
-        tag: global.images.historianApp.tag
-        digest: global.images.historianApp.digest
+        global.images.historianApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.historianApp.tag:
+          type: TAG
     inspectorApp:
       properties:
-        repository: global.images.inspectorApp.repository
-        tag: global.images.inspectorApp.tag
-        digest: global.images.inspectorApp.digest
+        global.images.inspectorApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.inspectorApp.tag:
+          type: TAG
     inventoryApp:
       properties:
-        repository: global.images.inventoryApp.repository
-        tag: global.images.inventoryApp.tag
-        digest: global.images.inventoryApp.digest
+        global.images.inventoryApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.inventoryApp.tag:
+          type: TAG
     oneLineApp:
       properties:
-        repository: global.images.oneLineApp.repository
-        tag: global.images.oneLineApp.tag
-        digest: global.images.oneLineApp.digest
+        global.images.oneLineApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.oneLineApp.tag:
+          type: TAG
     opendsoDocsApp:
       properties:
-        repository: global.images.opendsoDocsApp.repository
-        tag: global.images.opendsoDocsApp.tag
-        digest: global.images.opendsoDocsApp.digest
+        global.images.opendsoDocsApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.opendsoDocsApp.tag:
+          type: TAG
     openfmbEventCreatorApp:
       properties:
-        repository: global.images.openfmbEventCreatorApp.repository
-        tag: global.images.openfmbEventCreatorApp.tag
-        digest: global.images.openfmbEventCreatorApp.digest
+        global.images.openfmbEventCreatorApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.openfmbEventCreatorApp.tag:
+          type: TAG
     essManagerSvc:
       properties:
-        repository: global.images.essManagerSvc.repository
-        tag: global.images.essManagerSvc.tag
-        digest: global.images.essManagerSvc.digest
+        global.images.essManagerSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essManagerSvc.tag:
+          type: TAG
     essManagerApp:
       properties:
-        repository: global.images.essManagerApp.repository
-        tag: global.images.essManagerApp.tag
-        digest: global.images.essManagerApp.digest
+        global.images.essManagerApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essManagerApp.tag:
+          type: TAG
     essTesterSvc:
       properties:
-        repository: global.images.essTesterSvc.repository
-        tag: global.images.essTesterSvc.tag
-        digest: global.images.essTesterSvc.digest
+        global.images.essTesterSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essTesterSvc.tag:
+          type: TAG
     essTesterApp:
       properties:
-        repository: global.images.essTesterApp.repository
-        tag: global.images.essTesterApp.tag
-        digest: global.images.essTesterApp.digest
+        global.images.essTesterApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essTesterApp.tag:
+          type: TAG
     essManagerRedis:
       properties:
-        repository: global.images.essManagerRedis.repository
-        tag: global.images.essManagerRedis.tag
-        digest: global.images.essManagerRedis.digest
+        global.images.essManagerRedis.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.essManagerRedis.tag:
+          type: TAG
     omegadssSvc:
       properties:
-        repository: global.images.omegadssSvc.repository
-        tag: global.images.omegadssSvc.tag
-        digest: global.images.omegadssSvc.digest
+        global.images.omegadssSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.omegadssSvc.tag:
+          type: TAG
     rpcdssSvc:
       properties:
-        repository: global.images.rpcdssSvc.repository
-        tag: global.images.rpcdssSvc.tag
-        digest: global.images.rpcdssSvc.digest
+        global.images.rpcdssSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.rpcdssSvc.tag:
+          type: TAG
     natsAuthSvc:
       properties:
-        repository: global.images.natsAuthSvc.repository
-        tag: global.images.natsAuthSvc.tag
-        digest: global.images.natsAuthSvc.digest
+        global.images.natsAuthSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.natsAuthSvc.tag:
+          type: TAG
 
 properties:
   # ---------------------------------------------------------------------------

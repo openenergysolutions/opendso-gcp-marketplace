@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: oesinc/device-details-app
+  repository: oesinc/ess-manager-app
   pullPolicy: IfNotPresent
   tag: ""
 
@@ -20,6 +20,8 @@ podSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
   allowPrivilegeEscalation: false
   capabilities:
     drop:

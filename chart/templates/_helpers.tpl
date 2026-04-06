@@ -87,6 +87,11 @@ Returns YAML with host, port, name, user, password.
 {{- else -}}
 {{- $secretName = dig "citus-db" "auth" "existingSecret" "" $vals -}}
 {{- end -}}
+{{- /* When called from a subchart, citus-db.auth.* values are out of scope.
+       Fall back to the well-known secret the citus-db subchart creates. */}}
+{{- if and (not $secretName) (not $external) -}}
+{{- $secretName = printf "%s-citus-db-secret" .Release.Name -}}
+{{- end -}}
 {{- if $secretName -}}
 {{- $secret := lookup "v1" "Secret" .Release.Namespace $secretName -}}
 {{- if $secret -}}

@@ -30,6 +30,8 @@ podSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
   allowPrivilegeEscalation: false
   capabilities:
     drop:
