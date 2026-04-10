@@ -1,3 +1,7 @@
+# To use mpdev, do:
+# gcloud auth login
+# gcloud auth configure-docker gcr.io
+
 BIN_FILE="$HOME/.local/bin/mpdev"
 mkdir -p "$HOME/.local/bin"
 
