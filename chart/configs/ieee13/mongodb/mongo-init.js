@@ -162,7 +162,7 @@ for (const env of environmentArray) {
       index: 2
     },
     {
-      title: "OpenFMB Data Viewer",
+      title: "Message Inspector",
       group: "Operational Apps",
       company: "OES",
       icon: "mdi-format-list-numbered",
@@ -260,7 +260,7 @@ for (const env of environmentArray) {
       index: 11
     },
     {
-      title: "Data Viewer",
+      title: "Operations Dashboard",
       group: "Operational Apps",
       company: "OES",
       icon: "mdi-view-module",
