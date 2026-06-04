@@ -50,6 +50,9 @@ Returns YAML with host, port, name, user, password.
 {{- if $rawDb }}{{- $db = ($rawDb | b64dec) }}{{- end -}}
 {{- end -}}
 {{- end -}}
+{{- if and (not $pass) (not $external) -}}
+{{- $pass = include "opendso.appsDbPassword" . -}}
+{{- end -}}
 host: {{ $host | quote }}
 port: {{ $port }}
 name: {{ $db | quote }}
@@ -105,6 +108,9 @@ Returns YAML with host, port, name, user, password.
 {{- $rawDb := index $secret.data $dbKey -}}
 {{- if $rawDb }}{{- $db = ($rawDb | b64dec) }}{{- end -}}
 {{- end -}}
+{{- end -}}
+{{- if and (not $pass) (not $external) -}}
+{{- $pass = include "opendso.citusDbPassword" . -}}
 {{- end -}}
 host: {{ $host | quote }}
 port: {{ $port }}
@@ -480,4 +486,64 @@ Usage: include "opendso.image" (dict "imageRoot" .Values.global.images.foo "regi
 {{- else -}}
 {{- printf "%s:%s" $repository $tag -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Stable per-cluster seed used to derive deployment-unique secrets.
+Returns the kube-system namespace UID (unique per cluster). Empty during
+`helm template` without a live cluster — derivation still works in that
+offline-render case, just with lower entropy.
+*/}}
+{{- define "opendso.clusterSeed" -}}
+{{- $ns := lookup "v1" "Namespace" "" "kube-system" -}}
+{{- if $ns -}}{{- $ns.metadata.uid -}}{{- end -}}
+{{- end }}
+
+{{/*
+Derive a deterministic 32-char secret from a seed string.
+Usage: include "opendso.derivedSecret" (dict "root" . "seed" "citus-db")
+
+Stable for a given cluster + release + seed, so every template that references
+the same logical secret (the Secret object, the Keycloak realm import, the
+consuming service) computes the same value without a cluster round-trip. This
+replaces the random secrets that deployer/deploy.sh generated imperatively,
+making the chart self-contained for the Terraform / Marketplace deploy path.
+*/}}
+{{- define "opendso.derivedSecret" -}}
+{{- $root := .root -}}
+{{- $seed := .seed -}}
+{{- $cluster := include "opendso.clusterSeed" $root -}}
+{{- printf "%s|%s|%s" $cluster $root.Release.Name $seed | sha256sum | trunc 32 -}}
+{{- end }}
+
+{{/*
+In-cluster database passwords (derived, deployment-unique).
+*/}}
+{{- define "opendso.citusDbPassword" -}}
+{{- include "opendso.derivedSecret" (dict "root" . "seed" "citus-db-password") -}}
+{{- end }}
+{{- define "opendso.appsDbPassword" -}}
+{{- include "opendso.derivedSecret" (dict "root" . "seed" "opendso-apps-db-password") -}}
+{{- end }}
+
+{{/*
+Keycloak client IDs that need generated secrets, discovered from the
+REPLACE_SECRET_<client> placeholders in the realm JSON. Comma-separated.
+*/}}
+{{- define "opendso.keycloakClientNames" -}}
+{{- $site := .Values.global.site | default "ieee13" -}}
+{{- $realm := .Files.Get (printf "configs/%s/keycloak/realm/oes-realm.json" $site) -}}
+{{- $names := list -}}
+{{- range regexFindAll "REPLACE_SECRET_[A-Za-z0-9_-]+" $realm -1 -}}
+{{- $names = append $names (trimPrefix "REPLACE_SECRET_" .) -}}
+{{- end -}}
+{{- $names | uniq | sortAlpha | join "," -}}
+{{- end }}
+
+{{/*
+Deterministic Keycloak client secret for a given client id.
+Usage: include "opendso.keycloakClientSecret" (dict "root" . "client" "gms-api")
+*/}}
+{{- define "opendso.keycloakClientSecret" -}}
+{{- include "opendso.derivedSecret" (dict "root" .root "seed" (printf "keycloak-client-%s" .client)) -}}
 {{- end }}

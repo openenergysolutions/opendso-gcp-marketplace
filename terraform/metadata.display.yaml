@@ -1,0 +1,163 @@
+apiVersion: blueprints.cloud.google.com/v1alpha1
+kind: BlueprintMetadata
+metadata:
+  name: opendso-gcp-marketplace-display
+  annotations:
+    config.kubernetes.io/local-config: "true"
+spec:
+  info:
+    title: OpenDSO — Terraform Kubernetes deployment
+    source:
+      repo: https://github.com/openenergysolutions/opendso-gcp-marketplace.git
+      sourceType: git
+      dir: /terraform
+  ui:
+    input:
+      sections:
+        - name: cluster
+          title: Target Cluster
+          tooltip: The existing GKE cluster to deploy OpenDSO into.
+        - name: deployment
+          title: Deployment
+          tooltip: Release identity and base configuration.
+        - name: licensing
+          title: Licensing (BYOL)
+          tooltip: License and installation keys provided by OES.
+        - name: credentials
+          title: Administrator Credentials
+          tooltip: Initial admin accounts for the bundled services.
+        - name: advanced
+          title: Advanced
+          tooltip: Optional overrides; defaults are suitable for most deployments.
+      variables:
+        # --- Target cluster ---
+        project_id:
+          name: project_id
+          title: Project ID
+          section: cluster
+          tooltip: GCP project that contains the target GKE cluster.
+        cluster_name:
+          name: cluster_name
+          title: GKE Cluster Name
+          section: cluster
+          tooltip: Name of the existing GKE cluster.
+        cluster_location:
+          name: cluster_location
+          title: Cluster Location
+          section: cluster
+          placeholder: us-central1
+          tooltip: Region or zone of the GKE cluster (e.g. us-central1 or us-central1-a).
+
+        # --- Deployment ---
+        app_instance_name:
+          name: app_instance_name
+          title: Application Instance Name
+          section: deployment
+          tooltip: Used as the Helm release name. Must be unique within the namespace.
+        namespace:
+          name: namespace
+          title: Namespace
+          section: deployment
+          placeholder: opendso
+          tooltip: Kubernetes namespace to deploy into.
+        domain:
+          name: domain
+          title: Base Domain
+          section: deployment
+          placeholder: opendso.example.com
+          tooltip: >-
+            Base domain for all services. Subdomains api.<domain>,
+            keycloak.<domain>, nats.<domain>, grafana.<domain> are derived from
+            it. A wildcard *.<domain> must resolve to the ingress load balancer.
+        resource_profile:
+          name: resource_profile
+          title: Resource Profile
+          section: deployment
+          tooltip: CPU/memory sizing preset applied to all services.
+          enumValueLabels:
+            - label: Minimal (dev / smoke test)
+              value: minimal
+            - label: Default (staging)
+              value: default
+            - label: Production (recommended for GKE)
+              value: production
+        storage_class:
+          name: storage_class
+          title: Storage Class
+          section: deployment
+          placeholder: dynamic-rwo
+          tooltip: >-
+            StorageClass for persistent volumes. dynamic-rwo on current Autopilot,
+            standard-rwo on older clusters, premium-rwo for SSD.
+
+        # --- Licensing ---
+        license_key:
+          name: license_key
+          title: OpenDSO License Key
+          section: licensing
+          tooltip: License key obtained from OES. Required to activate the application.
+        installation_key:
+          name: installation_key
+          title: OpenDSO Installation Key
+          section: licensing
+          tooltip: Installation key obtained from OES.
+
+        # --- Credentials ---
+        keycloak_admin_user:
+          name: keycloak_admin_user
+          title: Keycloak Admin Username
+          section: credentials
+        keycloak_admin_password:
+          name: keycloak_admin_password
+          title: Keycloak Admin Password
+          section: credentials
+          tooltip: Password for the Keycloak admin console.
+        mongodb_root_username:
+          name: mongodb_root_username
+          title: MongoDB Root Username
+          section: credentials
+        mongodb_root_password:
+          name: mongodb_root_password
+          title: MongoDB Root Password
+          section: credentials
+        mongodb_app_username:
+          name: mongodb_app_username
+          title: MongoDB Application Username
+          section: credentials
+        mongodb_app_password:
+          name: mongodb_app_password
+          title: MongoDB Application Password
+          section: credentials
+        grafana_admin_user:
+          name: grafana_admin_user
+          title: Grafana Admin Username
+          section: credentials
+        grafana_admin_password:
+          name: grafana_admin_password
+          title: Grafana Admin Password
+          section: credentials
+
+        # --- Advanced ---
+        create_namespace:
+          name: create_namespace
+          title: Create Namespace
+          section: advanced
+          tooltip: Create the namespace if it does not already exist.
+        chart_version:
+          name: chart_version
+          title: Chart Version
+          section: advanced
+          tooltip: Version (tag) of the opendso chart to deploy.
+        image_registry:
+          name: image_registry
+          title: Image Registry
+          section: advanced
+          placeholder: us-central1-docker.pkg.dev/my-project/oesinc
+          tooltip: >-
+            Artifact Registry prefix for all images. Leave empty to use chart
+            defaults; Cloud Marketplace repoints this to its published copies.
+        additional_values:
+          name: additional_values
+          title: Additional Helm Values (YAML)
+          section: advanced
+          tooltip: Raw YAML merged into the release last (highest precedence).

@@ -49,6 +49,14 @@ data:
 {{- end }}
 {{- /* Replace neutral placeholders with the actual ingress domain/port */ -}}
 {{- $realmJson = $realmJson | replace "__BASE_DOMAIN__" (printf "%s%s" $domain $hostSuffix) }}
+{{- /* Replace REPLACE_SECRET_<client> placeholders with deterministic client
+       secrets matching the <release>-<client>-keycloak-env secrets so Keycloak's
+       imported realm and the consuming services agree (was done by deploy.sh). */ -}}
+{{- range $client := (splitList "," (include "opendso.keycloakClientNames" .)) }}
+{{- if $client }}
+{{- $realmJson = $realmJson | replace (printf "REPLACE_SECRET_%s" $client) (include "opendso.keycloakClientSecret" (dict "root" $ "client" $client)) }}
+{{- end }}
+{{- end }}
 {{ $realmJson | indent 4 }}
   master-realm.json: |
 {{ .Files.Get (printf "configs/%s/keycloak/realm/master-realm.json" $site) | indent 4 }}

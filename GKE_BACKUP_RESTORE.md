@@ -105,8 +105,7 @@ Important:
 
 Back up the following separately:
 
-- deployer-created secrets:
-  - `<release>-nats-auth-keys`
+- chart-generated secrets (Helm-managed; derived deterministically per cluster + release):
   - `<release>-opendso-license`
   - `<release>-opendso-apps-db-secret`
   - `<release>-citus-db-secret`
@@ -135,5 +134,5 @@ For a full environment rebuild, restore in this order:
 ## 8. Important Caveats
 
 - Keycloak realm import from config is not the same as restoring a live Keycloak stateful environment
-- deployer-generated secrets are not deleted by `helm uninstall`, so backup/restore plans should account for them separately from Helm state
+- chart-generated secrets are Helm-managed, so `helm uninstall` **does** delete them; the derived ones (DB passwords, Keycloak client secrets) regenerate to identical values on reinstall to the same cluster + release name, but user-supplied values (license key, admin passwords) must be retained to reproduce the deployment
 - no repo-provided orchestration exists today for point-in-time recovery across MongoDB, PostgreSQL-derived databases, and Redis as one consistent unit

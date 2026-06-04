@@ -3,7 +3,8 @@
 # provision-test-env.sh — Provision GCP prerequisites for OpenDSO Marketplace testing.
 #
 # Sets up a GKE cluster with nginx ingress, cert-manager, and a self-signed TLS
-# secret so you can run `mpdev install` without manual infrastructure work.
+# secret so you can deploy OpenDSO via the Terraform module without manual
+# infrastructure work.
 #
 # Usage:
 #   ./scripts/provision-test-env.sh [OPTIONS]
@@ -74,7 +75,6 @@ done
 
 TLS_SECRET="${RELEASE}-tls-secret"
 AR_HOST="${REGION}-docker.pkg.dev"
-DEPLOYER_IMAGE="${AR_HOST}/${PROJECT}/${AR_REPO}/deployer:1.0.0"
 
 # ---------------------------------------------------------------------------
 # 1. Ensure default VPC network exists
@@ -231,7 +231,7 @@ gcloud projects add-iam-policy-binding "$PROJECT" \
 log "IAM binding set for $NODE_SA."
 
 # ---------------------------------------------------------------------------
-# Done — print mpdev install command
+# Done — print the Terraform deploy command
 # ---------------------------------------------------------------------------
 echo ""
 echo "=========================================================================="
@@ -243,39 +243,27 @@ echo "  Domain:     $DOMAIN"
 echo "  LB IP:      $LB_IP"
 echo "  TLS secret: $TLS_SECRET"
 echo ""
-echo "  Next — verify schema:"
+echo "  Next — deploy OpenDSO with Terraform (test credentials shown):"
 echo ""
 cat <<EOF
-    mpdev verify \\
-      --deployer=${DEPLOYER_IMAGE} \\
-      --parameters='{
-        "license.key": "test",
-        "installation.key": "test",
-        "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
-        "global.domain": "${DOMAIN}",
-        "keycloak.config.adminPassword": "changeme",
-        "mongodb.auth.rootPassword": "changeme",
-        "mongodb.auth.password": "changeme",
-        "grafana.adminPassword": "changeme"
-      }'
+    cd terraform
+    terraform init
+    terraform apply \\
+      -var project_id=${PROJECT} \\
+      -var cluster_name=${CLUSTER} \\
+      -var cluster_location=${ZONE} \\
+      -var namespace=${NAMESPACE} \\
+      -var app_instance_name=${RELEASE} \\
+      -var domain=${DOMAIN} \\
+      -var image_registry=${AR_HOST}/${PROJECT}/${AR_REPO} \\
+      -var license_key=test \\
+      -var installation_key=test \\
+      -var keycloak_admin_password=changeme \\
+      -var mongodb_root_password=changeme \\
+      -var mongodb_app_password=changeme \\
+      -var grafana_admin_password=changeme
 EOF
 echo ""
-echo "  Then install:"
-echo ""
-cat <<EOF
-    mpdev install \\
-      --deployer=${DEPLOYER_IMAGE} \\
-      --parameters='{
-        "APP_INSTANCE_NAME": "${RELEASE}",
-        "NAMESPACE": "${NAMESPACE}",
-        "license.key": "test",
-        "installation.key": "test",
-        "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
-        "global.domain": "${DOMAIN}",
-        "keycloak.config.adminPassword": "changeme",
-        "mongodb.auth.rootPassword": "changeme",
-        "mongodb.auth.password": "changeme",
-        "grafana.adminPassword": "changeme"
-      }'
-EOF
+echo "  If PVCs stay Pending, your cluster's StorageClass names differ —"
+echo "  check 'kubectl get storageclass' and add: -var storage_class=<name>"
 echo "=========================================================================="

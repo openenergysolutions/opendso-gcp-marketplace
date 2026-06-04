@@ -2,10 +2,10 @@
 #
 # Post-deploy verification script for OpenDSO GCP Marketplace.
 #
-# Called by the GCP Marketplace deployer after helm install to confirm
-# the application is healthy. Exit 0 = success, non-zero = failure.
+# Run after deployment to confirm the application is healthy.
+# Exit 0 = success, non-zero = failure.
 #
-# Required environment variables (injected by deployer framework):
+# Required environment variables:
 #   APP_INSTANCE_NAME  — Helm release name
 #   NAMESPACE          — Kubernetes namespace
 

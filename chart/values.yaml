@@ -440,6 +440,17 @@ global:
   rpcdss-svc:
     enabled: true
 # =============================================================================
+# Licensing (BYOL)
+# =============================================================================
+# Provided by the customer at deploy time (Terraform vars / Marketplace form).
+# Rendered into the <release>-opendso-license Secret consumed by topology-nodes.
+license:
+  key: ""
+  # License validation API endpoint.
+  apiUrl: "https://license-api.demo-gcp.oesinc.dev"
+installation:
+  key: ""
+# =============================================================================
 # OpenDSO Apps Database (Shared)
 # =============================================================================
 mongodb:

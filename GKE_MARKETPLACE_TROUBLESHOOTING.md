@@ -1,6 +1,6 @@
 # OpenDSO GCP Marketplace — Troubleshooting Guide
 
-This guide covers the most common failure modes seen during `mpdev verify`, Marketplace deployment, and early post-install validation on GKE.
+This guide covers the most common failure modes seen during Marketplace / Terraform deployment and early post-install validation on GKE.
 
 ## 1. Start With Cluster State
 
@@ -85,9 +85,9 @@ curl -s http://localhost:18080/realms/oes/.well-known/openid-configuration
 What to verify:
 
 - Keycloak pod is actually Ready before dependent services start
-- the deployer created the per-client `*-keycloak-env` secrets
+- the chart created the per-client `*-keycloak-env` secrets
 - realm import completed on a fresh install
-- on upgrades, the deployer Keycloak Admin API sync completed successfully
+- the client secret in each `*-keycloak-env` secret matches the one in the realm import ConfigMap (both are derived by the chart, so they agree by construction)
 
 ## 5. NATS and NATS Auth Problems
 
@@ -205,21 +205,19 @@ What to verify:
 - ingress class is `nginx`
 - the correct TLS secret is attached
 
-## 10. When `mpdev verify` Fails
+## 10. When a Deployment Fails
 
-Check both the deployer logs and the namespace state:
+`terraform apply` surfaces Helm errors directly. Inspect the namespace state:
 
 ```bash
-kubectl get jobs -n <namespace>
-kubectl logs job/<deployer-job-name> -n <namespace> --tail=300
 kubectl get pods -n <namespace>
 kubectl get events -n <namespace> --sort-by='.lastTimestamp'
+helm status <release-name> -n <namespace>
 ```
 
 Important implementation details:
 
-- the deployer does not use `helm --wait`
-- readiness is checked by `scripts/verify.sh`
-- some failures reported during verify are transient probe or cache-sync warnings, while others are real container startup failures
+- post-deploy readiness can be checked with `scripts/verify.sh <release> <namespace>`
+- some failures are transient probe or cache-sync warnings, while others are real container startup failures
 
 The critical distinction is whether the pod is still making progress or is in a steady failed state such as `CrashLoopBackOff`, `ImagePullBackOff`, or repeated mount errors.

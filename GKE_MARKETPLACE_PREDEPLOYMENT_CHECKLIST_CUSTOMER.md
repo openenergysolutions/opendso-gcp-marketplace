@@ -360,7 +360,7 @@ kubectl create secret tls <release-name>-tls-secret \
 
 ### Option C — Chart-generated self-signed fallback (last resort, non-production)
 
-If no TLS secret exists, the Marketplace chart can generate a self-signed fallback certificate in some install paths. This behavior is useful for `mpdev verify` and controlled test deployments, but it should not be your target production configuration.
+If no TLS secret exists, the Marketplace chart can generate a self-signed fallback certificate in some install paths. This behavior is useful for controlled test deployments, but it should not be your target production configuration.
 
 Use it only when:
 
@@ -419,21 +419,10 @@ docker pull us-central1-docker.pkg.dev/<PROJECT_ID>/oesinc/nats:<tag>
 
 ---
 
-## Step 6 — Application CRD
+## Step 6 — Application CRD (no longer required)
 
-The GCP Marketplace deployer requires the `app.k8s.io/v1beta1` Application CRD.
-
-- [ ] Install the Application CRD:
-
-```bash
-kubectl apply -f "https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/crd/app-crd.yaml"
-```
-
-- [ ] Verify it is registered:
-
-```bash
-kubectl get crd applications.app.k8s.io
-```
+The Terraform deployment does **not** use the `app.k8s.io/v1beta1` Application CRD.
+No action is needed — this step is retained only so the checklist numbering is stable.
 
 ---
 
@@ -476,7 +465,7 @@ When you click **Deploy**, you will be prompted for the following. Have these va
 
 ## Post-Deployment Verification
 
-After the deployer completes, run the bundled verification script:
+After the deployment completes, run the bundled verification script:
 
 ```bash
 bash scripts/verify.sh <release-name> <namespace>

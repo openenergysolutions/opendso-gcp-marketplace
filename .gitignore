@@ -11,5 +11,9 @@ chart/configs/*/keycloak/realm/oes-realm-generated.json
 *.xk
 chart/configs/*/nats-auth-svc/keys/
 
-# Local test Dockerfile (not for marketplace submission)
-deployer/Dockerfile.test
+# Terraform working files
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.auto.tfvars

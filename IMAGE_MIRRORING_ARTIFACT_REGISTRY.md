@@ -12,7 +12,7 @@ The chart supports a shared registry prefix through:
 global.imageRegistry
 ```
 
-All image repositories in `values.yaml` and `schema.yaml` are relative to that prefix.
+All image repositories in `chart/values.yaml` (`global.images`) are relative to that prefix.
 
 ## 2. Create an Artifact Registry Repository
 
@@ -41,8 +41,7 @@ gcloud auth configure-docker us-central1-docker.pkg.dev
 
 The exact image inventory is defined by:
 
-- `schema.yaml`
-- `chart/values.yaml`
+- `chart/values.yaml` (see `global.images`)
 - `chart/values-gcp.yaml`
 
 Practical mirroring workflow:
@@ -139,6 +138,6 @@ And confirm the cluster can pull the images by starting a simple pod that refere
 
 ## 9. Operational Notes
 
-- keep tags and digests aligned with `schema.yaml`
+- keep tags and digests aligned with `chart/values.yaml` (`global.images`)
 - if you use digests in the chart, mirror by digest-aware tag discipline and verify the pushed image matches the expected digest
 - if a Marketplace deployment uses a repo prefix that does not contain all required images, failures will appear as pod scheduling or image pull errors rather than chart-rendering errors
