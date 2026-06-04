@@ -58,7 +58,14 @@ spec:
         - sh
         - -c
         - |
-          mongosh "mongodb://{{ .Values.mongodb.auth.rootUsername | default "admin" }}:${MONGODB_ROOT_PASSWORD}@{{ .Release.Name }}-mongodb:27017/admin{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" /scripts/mongo-init.js
+          mongosh --host {{ .Release.Name }}-mongodb --port 27017 \
+            --username {{ .Values.mongodb.auth.rootUsername | default "admin" | quote }} \
+            --password "${MONGODB_ROOT_PASSWORD}" \
+            --authenticationDatabase admin \
+            {{- if (index .Values.global "mongodb").tls.enabled }}
+            --tls --tlsCAFile /etc/mongodb/tls/ca.crt --tlsAllowInvalidCertificates \
+            {{- end }}
+            /scripts/mongo-init.js
         env:
         - name: MONGODB_ROOT_PASSWORD
           valueFrom:

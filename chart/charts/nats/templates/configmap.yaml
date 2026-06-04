@@ -41,18 +41,29 @@ data:
     trace: false
 
     {{- if .Values.authCallout.enabled }}
+    {{- $hasStaticKeys := eq (include "nats.authCallout.hasStaticKeys" .) "true" }}
     authorization {
       auth_callout {
+        {{- if $hasStaticKeys }}
         issuer: {{ .Values.authCallout.issuer | quote }}
         auth_users: [{{ .Values.authCallout.authUser | quote }}]
         xkey: {{ .Values.authCallout.xkey | quote }}
+        {{- else }}
+        issuer: "__NATS_AUTH_ISSUER__"
+        auth_users: ["__NATS_AUTH_USER__"]
+        xkey: "__NATS_AUTH_XKEY__"
+        {{- end }}
         account: AUTH
       }
     }
 
     accounts {
       AUTH {
+        {{- if $hasStaticKeys }}
         users: [{nkey: {{ .Values.authCallout.authUser | quote }}}]
+        {{- else }}
+        users: [{nkey: "__NATS_AUTH_USER__"}]
+        {{- end }}
       }
       opendso {}
     }

@@ -113,7 +113,13 @@ log "=== Checking application services ==="
 
 wait_for_deployment "${APP_INSTANCE_NAME}-gms-api"
 wait_for_deployment "${APP_INSTANCE_NAME}-historian-svc"
-wait_for_deployment "${APP_INSTANCE_NAME}-nats-auth-svc"
+if kubectl get deployment "${APP_INSTANCE_NAME}-nats-auth-svc" -n "$NAMESPACE" &>/dev/null; then
+    wait_for_deployment "${APP_INSTANCE_NAME}-nats-auth-svc"
+    NATS_AUTH_ENABLED=true
+else
+    log "  ${APP_INSTANCE_NAME}-nats-auth-svc — not deployed (skipping)"
+    NATS_AUTH_ENABLED=false
+fi
 
 # ---------------------------------------------------------------------------
 # 4. NATS auth keys secret exists
@@ -121,11 +127,15 @@ wait_for_deployment "${APP_INSTANCE_NAME}-nats-auth-svc"
 log ""
 log "=== Checking NATS auth keys secret ==="
 
-if kubectl get secret "${APP_INSTANCE_NAME}-nats-auth-keys" \
-       -n "$NAMESPACE" &>/dev/null; then
-    log "  ${APP_INSTANCE_NAME}-nats-auth-keys secret — present"
+if [[ "$NATS_AUTH_ENABLED" == "true" ]]; then
+    if kubectl get secret "${APP_INSTANCE_NAME}-nats-auth-keys" \
+           -n "$NAMESPACE" &>/dev/null; then
+        log "  ${APP_INSTANCE_NAME}-nats-auth-keys secret — present"
+    else
+        fail "Secret ${APP_INSTANCE_NAME}-nats-auth-keys not found"
+    fi
 else
-    fail "Secret ${APP_INSTANCE_NAME}-nats-auth-keys not found"
+    log "  NATS auth disabled — skipping auth keys secret check"
 fi
 
 # ---------------------------------------------------------------------------

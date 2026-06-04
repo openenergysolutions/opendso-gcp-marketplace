@@ -77,3 +77,39 @@ Usage: {{ include "nats.image" (dict "imageRoot" .Values.global.images.nats "reg
 {{- printf "%s:%s" $repository $tag -}}
 {{- end -}}
 {{- end }}
+
+{{/*
+Secret containing NATS auth callout NKey seeds and derived public keys.
+*/}}
+{{- define "nats.authCallout.keysSecretName" -}}
+{{- .Values.authCallout.keysSecretName | default (printf "%s-nats-auth-keys" .Release.Name) -}}
+{{- end }}
+
+{{/*
+Whether auth callout public keys were supplied as Helm values.
+*/}}
+{{- define "nats.authCallout.hasStaticKeys" -}}
+{{- if and .Values.authCallout.issuer .Values.authCallout.authUser .Values.authCallout.xkey -}}true{{- else -}}false{{- end -}}
+{{- end }}
+
+{{/*
+Image reference helper for local, non-global images.
+*/}}
+{{- define "nats.localImage" -}}
+{{- $registry := .registry | default "" -}}
+{{- $repository := .imageRoot.repository -}}
+{{- $tag := .imageRoot.tag -}}
+{{- $digest := .imageRoot.digest | default "" -}}
+{{- $useGlobalRegistry := true -}}
+{{- if hasKey .imageRoot "useGlobalRegistry" -}}
+{{- $useGlobalRegistry = .imageRoot.useGlobalRegistry -}}
+{{- end -}}
+{{- if and $registry $useGlobalRegistry -}}
+{{- $repository = printf "%s/%s" $registry $repository -}}
+{{- end -}}
+{{- if $digest -}}
+{{- printf "%s@%s" $repository $digest -}}
+{{- else -}}
+{{- printf "%s:%s" $repository $tag -}}
+{{- end -}}
+{{- end }}

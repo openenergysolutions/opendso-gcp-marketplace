@@ -273,7 +273,10 @@ nats:
     enabled: true
     secretName: ""  # Defaults to <release-name>-tls-secret when unset
   authCallout:
-    enabled: false  # Enabled only via values-nats-auth-generated.yaml
+    # Disabled by default until all NATS clients are validated with auth.
+    # To enable the self-contained runtime-key path, also set
+    # global.nats-auth-svc.enabled=true.
+    enabled: false
 
   # Disable NodePort (using LoadBalancer/Ingress)
   nodePort:

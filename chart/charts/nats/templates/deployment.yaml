@@ -18,6 +18,8 @@ spec:
       labels:
         {{- include "nats.selectorLabels" . | nindent 8 }}
     spec:
+      {{- $hasStaticKeys := eq (include "nats.authCallout.hasStaticKeys" .) "true" }}
+      {{- $runtimeAuthKeys := and .Values.authCallout.enabled (not $hasStaticKeys) }}
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -25,6 +27,38 @@ spec:
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $runtimeAuthKeys }}
+      initContainers:
+        - name: render-auth-callout-config
+          image: {{ include "nats.localImage" (dict "imageRoot" .Values.authCallout.configRenderer.image "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.authCallout.configRenderer.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.authCallout.configRenderer.securityContext | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              issuer="$(tr -d '\r\n' < /nats/auth-keys/account.pub)"
+              auth_user="$(tr -d '\r\n' < /nats/auth-keys/user.pub)"
+              xkey="$(tr -d '\r\n' < /nats/auth-keys/xkey.pub)"
+
+              sed \
+                -e "s|__NATS_AUTH_ISSUER__|${issuer}|g" \
+                -e "s|__NATS_AUTH_USER__|${auth_user}|g" \
+                -e "s|__NATS_AUTH_XKEY__|${xkey}|g" \
+                /nats/config-template/nats-server.conf > /nats/rendered/nats-server.conf
+          volumeMounts:
+            - name: nats-server-conf
+              mountPath: /nats/config-template/nats-server.conf
+              subPath: nats-server.conf
+              readOnly: true
+            - name: nats-auth-keys
+              mountPath: /nats/auth-keys
+              readOnly: true
+            - name: rendered-nats-conf
+              mountPath: /nats/rendered
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -47,10 +81,17 @@ spec:
             - name: mqtt
               containerPort: {{ .Values.service.mqttPort }}
           volumeMounts:
+            {{- if $runtimeAuthKeys }}
+            - name: rendered-nats-conf
+              mountPath: /nats/conf/nats-server.conf
+              subPath: nats-server.conf
+              readOnly: true
+            {{- else }}
             - name: nats-server-conf
               mountPath: /nats/conf/nats-server.conf
               subPath: nats-server.conf
               readOnly: true
+            {{- end }}
             {{- if .Values.tls.enabled }}
             - name: tls-secret
               mountPath: /nats/certs/server-cert.pem
@@ -105,6 +146,13 @@ spec:
         - name: nats-server-conf
           configMap:
             name: {{ include "nats.fullname" . }}-config
+        {{- if $runtimeAuthKeys }}
+        - name: nats-auth-keys
+          secret:
+            secretName: {{ include "nats.authCallout.keysSecretName" . }}
+        - name: rendered-nats-conf
+          emptyDir: {}
+        {{- end }}
         {{- if .Values.tls.enabled }}
         - name: tls-secret
           secret:

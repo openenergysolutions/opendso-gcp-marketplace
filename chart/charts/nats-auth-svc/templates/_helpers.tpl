@@ -84,3 +84,21 @@ Compute the JWKS URL — use override if set, otherwise derive from realm URL.
 {{- printf "%s/protocol/openid-connect/certs" (include "nats-auth-svc.realmUrl" .) -}}
 {{- end -}}
 {{- end }}
+
+{{/*
+Secret containing NATS auth callout NKey seeds.
+*/}}
+{{- define "nats-auth-svc.keysSecretName" -}}
+{{- .Values.natsKeysSecret | default (printf "%s-nats-auth-keys" .Release.Name) -}}
+{{- end }}
+
+{{/*
+NATS service name. Mirrors the nats subchart fullname behavior.
+*/}}
+{{- define "nats-auth-svc.natsServiceName" -}}
+{{- if contains "nats" .Release.Name -}}
+{{- printf "%s-service" .Release.Name -}}
+{{- else -}}
+{{- printf "%s-nats-service" .Release.Name -}}
+{{- end -}}
+{{- end }}

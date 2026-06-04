@@ -27,7 +27,8 @@ securityContext:
 
 # Name of the Kubernetes Secret containing the NATS NKey files:
 #   account.nk, user.nk, xkey.xk
-natsKeysSecret: "nats-auth-keys"
+# Defaults to <release-name>-nats-auth-keys when unset.
+natsKeysSecret: ""
 
 # JWKS configuration
 jwks:

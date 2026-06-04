@@ -59,6 +59,55 @@ authCallout:
   issuer: ""    # account.nk public key  (A...)
   authUser: ""  # user.nk public key     (U...)
   xkey: ""      # xkey.xk public key     (X...)
+  # Defaults to <release-name>-nats-auth-keys when unset.
+  keysSecretName: ""
+  keyProvisioner:
+    enabled: true
+    backoffLimit: 3
+    # Must contain the NATS nk CLI plus POSIX shell, curl, base64, and mktemp.
+    image:
+      repository: natsio/nats-box
+      tag: "latest"
+      pullPolicy: IfNotPresent
+      digest: ""
+      useGlobalRegistry: false
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65532
+      runAsGroup: 65532
+      fsGroup: 65532
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65532
+      runAsGroup: 65532
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+  configRenderer:
+    image:
+      repository: busybox
+      tag: "1.36"
+      pullPolicy: IfNotPresent
+      digest: ""
+      useGlobalRegistry: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65532
+      runAsGroup: 65532
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
 
 # Health probes
 livenessProbe:

@@ -53,7 +53,7 @@ spec:
           imagePullPolicy: {{ .Values.global.images.natsAuthSvc.pullPolicy }}
           env:
             - name: PLATFORM_NODE_IP
-              value: {{ printf "%s-nats-service" .Release.Name | quote }}
+              value: {{ include "nats-auth-svc.natsServiceName" . | quote }}
             - name: KEYCLOAK_URL
               value: {{ include "nats-auth-svc.realmUrl" . | quote }}
             - name: JWK_ENDPOINT_URL
@@ -77,7 +77,7 @@ spec:
       volumes:
         - name: nats-keys
           secret:
-            secretName: {{ .Values.natsKeysSecret }}
+            secretName: {{ include "nats-auth-svc.keysSecretName" . }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

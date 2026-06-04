@@ -1,0 +1,150 @@
+{{- $hasStaticKeys := eq (include "nats.authCallout.hasStaticKeys" .) "true" -}}
+{{- if and .Values.authCallout.enabled .Values.authCallout.keyProvisioner.enabled (not $hasStaticKeys) }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "nats.fullname" . }}-auth-key-provisioner
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "nats.fullname" . }}-auth-key-provisioner
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "nats.fullname" . }}-auth-key-provisioner
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-20"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "nats.fullname" . }}-auth-key-provisioner
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "nats.fullname" . }}-auth-key-provisioner
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "nats.fullname" . }}-auth-key-provisioner
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.authCallout.keyProvisioner.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "nats.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: nats-auth-key-provisioner
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "nats.fullname" . }}-auth-key-provisioner
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.authCallout.keyProvisioner.podSecurityContext | nindent 8 }}
+      containers:
+        - name: provisioner
+          image: {{ include "nats.localImage" (dict "imageRoot" .Values.authCallout.keyProvisioner.image "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.authCallout.keyProvisioner.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.authCallout.keyProvisioner.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.authCallout.keyProvisioner.resources | nindent 12 }}
+          env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace | quote }}
+            - name: SECRET_NAME
+              value: {{ include "nats.authCallout.keysSecretName" . | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+              ca="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              api="https://kubernetes.default.svc"
+              secret_url="${api}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}"
+
+              if curl -fsS --cacert "${ca}" --header "Authorization: Bearer ${token}" "${secret_url}" >/dev/null; then
+                echo "NATS auth key Secret ${SECRET_NAME} already exists; leaving keys unchanged"
+                exit 0
+              fi
+
+              workdir="$(mktemp -d)"
+              cd "${workdir}"
+              nk -gen account > account.nk
+              nk -gen user > user.nk
+              nk -gen curve > xkey.xk
+              nk -inkey account.nk -pubout > account.pub
+              nk -inkey user.nk -pubout > user.pub
+              nk -inkey xkey.xk -pubout > xkey.pub
+
+              b64() {
+                base64 "$1" | tr -d '\n'
+              }
+
+              payload="$(cat <<JSON
+              {
+                "apiVersion": "v1",
+                "kind": "Secret",
+                "metadata": {
+                  "name": "${SECRET_NAME}",
+                  "namespace": "${NAMESPACE}",
+                  "labels": {
+                    "app.kubernetes.io/name": "{{ include "nats.name" . }}",
+                    "app.kubernetes.io/instance": "{{ .Release.Name }}",
+                    "app.kubernetes.io/managed-by": "{{ .Release.Service }}"
+                  }
+                },
+                "type": "Opaque",
+                "data": {
+                  "account.nk": "$(b64 account.nk)",
+                  "user.nk": "$(b64 user.nk)",
+                  "xkey.xk": "$(b64 xkey.xk)",
+                  "account.pub": "$(b64 account.pub)",
+                  "user.pub": "$(b64 user.pub)",
+                  "xkey.pub": "$(b64 xkey.pub)"
+                }
+              }
+              JSON
+              )"
+
+              curl -fsS \
+                --header "Authorization: Bearer ${token}" \
+                --header "Content-Type: application/json" \
+                --cacert "${ca}" \
+                --data "${payload}" \
+                "${api}/api/v1/namespaces/${NAMESPACE}/secrets"
+              echo
+              echo "Created NATS auth key Secret ${SECRET_NAME}"
+{{- end }}
