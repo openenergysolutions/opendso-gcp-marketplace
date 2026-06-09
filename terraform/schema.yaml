@@ -1,0 +1,11 @@
+# Terraform Kubernetes app schema consumed by Producer Portal.
+#
+# UI inputs for this Terraform module are defined by metadata.yaml and
+# metadata.display.yaml. This file declares Marketplace-scanned OCI artifacts.
+images:
+  opendso:
+    variables:
+      opendso_image_repo:
+        type: REPO_WITH_REGISTRY_WITH_NAME
+      opendso_image_tag:
+        type: TAG

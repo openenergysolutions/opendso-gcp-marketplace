@@ -16,6 +16,7 @@
 #   --location   Artifact Registry location       (default: us)
 #   --repo       Artifact Registry repository      (default: oesinc)
 #   --chart      Path to the umbrella chart dir    (default: chart)
+#   --service-name Marketplace service name       (optional; stamps required OCI annotation)
 #   --help       Show this help
 #
 # The chart version is read from <chart>/Chart.yaml; the release track is its
@@ -23,6 +24,7 @@
 #
 # Prerequisites on your workstation:
 #   gcloud (authenticated), helm 3.8+
+#   crane, when --service-name is used
 
 set -euo pipefail
 
@@ -33,6 +35,7 @@ PROJECT="openenergysolutionsinc-public"
 LOCATION="us"
 REPO="oesinc"
 CHART_DIR="chart"
+SERVICE_NAME="opendso-platform.endpoints.openenergysolutionsinc-public.cloud.goog"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -42,7 +45,8 @@ step() { echo ""; echo "==> $*"; }
 fail() { echo "[package] ERROR: $*" >&2; exit 1; }
 
 usage() {
-    grep '^#' "$0" | sed 's/^# \?//'
+    sed -n '2,/^set -euo pipefail/p' "$0" \
+        | sed '/^set -euo pipefail/d; s/^# //; /^#$/d; /^$/d'
     exit 0
 }
 
@@ -55,6 +59,7 @@ while [[ $# -gt 0 ]]; do
         --location)  LOCATION="$2";  shift 2 ;;
         --repo)      REPO="$2";      shift 2 ;;
         --chart)     CHART_DIR="$2"; shift 2 ;;
+        --service-name) SERVICE_NAME="$2"; shift 2 ;;
         --help)      usage ;;
         *)           fail "Unknown option: $1 (try --help)" ;;
     esac
@@ -62,6 +67,9 @@ done
 
 command -v helm   >/dev/null || fail "helm not found on PATH"
 command -v gcloud >/dev/null || fail "gcloud not found on PATH"
+if [[ -n "$SERVICE_NAME" ]]; then
+    command -v crane >/dev/null || fail "crane not found on PATH; install github.com/google/go-containerregistry/cmd/crane or omit --service-name"
+fi
 [[ -f "$CHART_DIR/Chart.yaml" ]] || fail "No Chart.yaml under '$CHART_DIR'"
 
 # ---------------------------------------------------------------------------
@@ -78,9 +86,20 @@ TRACK=$(echo "$VERSION" | cut -d. -f1-2)
 HOST="${LOCATION}-docker.pkg.dev"
 OCI_REPO="oci://${HOST}/${PROJECT}/${REPO}"
 IMAGE="${HOST}/${PROJECT}/${REPO}/${CHART_NAME}"
+SERVICE_ANNOTATION_VALUE=""
+if [[ -n "$SERVICE_NAME" ]]; then
+    if [[ "$SERVICE_NAME" == services/* ]]; then
+        SERVICE_ANNOTATION_VALUE="$SERVICE_NAME"
+    else
+        SERVICE_ANNOTATION_VALUE="services/${SERVICE_NAME}"
+    fi
+fi
 
 log "chart:    $CHART_NAME $VERSION (track $TRACK)"
 log "registry: $IMAGE"
+if [[ -n "$SERVICE_ANNOTATION_VALUE" ]]; then
+    log "service:  $SERVICE_ANNOTATION_VALUE"
+fi
 
 # ---------------------------------------------------------------------------
 # Package
@@ -99,12 +118,25 @@ log "packaged $TGZ"
 step "Authenticating helm to $HOST"
 gcloud auth print-access-token \
     | helm registry login -u oauth2accesstoken --password-stdin "$HOST"
+if [[ -n "$SERVICE_ANNOTATION_VALUE" ]]; then
+    gcloud auth print-access-token \
+        | crane auth login "$HOST" -u oauth2accesstoken --password-stdin
+fi
 
 # ---------------------------------------------------------------------------
-# Push full version, then re-point the minor-version track tag
+# Push full version, stamp the Marketplace service annotation when requested,
+# then re-point the minor-version track tag at the annotated digest.
 # ---------------------------------------------------------------------------
 step "Pushing $CHART_NAME:$VERSION"
 helm push "$TGZ" "$OCI_REPO"
+
+if [[ -n "$SERVICE_ANNOTATION_VALUE" ]]; then
+    step "Annotating $CHART_NAME:$VERSION for Cloud Marketplace"
+    crane mutate \
+        --annotation "com.googleapis.cloudmarketplace.product.service.name=${SERVICE_ANNOTATION_VALUE}" \
+        -t "${IMAGE}:${VERSION}" \
+        "${IMAGE}:${VERSION}"
+fi
 
 step "Tagging release track $CHART_NAME:$TRACK"
 gcloud artifacts docker tags add "${IMAGE}:${VERSION}" "${IMAGE}:${TRACK}"

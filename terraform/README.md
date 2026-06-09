@@ -87,6 +87,14 @@ To uninstall: `terraform destroy`.
   chart changes.
 - **Image registry**: leave `image_registry` empty to use the chart defaults.
   Cloud Marketplace repoints this to its published image copies automatically.
+- **Marketplace deployment name**: `goog_cm_deployment_name` is populated by
+  Marketplace UI deployments and is used as the Helm release name. CLI deploys
+  can leave it empty and use `app_instance_name`.
+- **Marketplace validation cluster**: `marketplace_test.tfvars` sets
+  `create_cluster = true` and `install_helm_release = false` so Producer Portal
+  can run `terraform plan` without requiring a pre-existing validation cluster.
+  Normal customer deployments leave `create_cluster = false` and install the
+  Helm release into the selected cluster.
 - **Consumption label**: Google injects a `goog-partner-solution` label into
   provisioned resources; this module does not manage or remove it.
 - **Resource profile**: `minimal` | `default` | `production` — sizing preset
@@ -99,10 +107,13 @@ To uninstall: `terraform destroy`.
 | `project_id` | GCP project containing the target GKE cluster | — | yes |
 | `cluster_name` | Target GKE cluster name | — | yes |
 | `cluster_location` | Region or zone of the cluster | — | yes |
+| `create_cluster` | Create a temporary GKE cluster for Marketplace validation | `false` | no |
 | `namespace` | Namespace to deploy into | — | yes |
 | `domain` | Base domain for all services | — | yes |
-| `app_instance_name` | Helm release name | `opendso` | no |
+| `goog_cm_deployment_name` | Marketplace deployment name; overrides `app_instance_name` when set | `""` | no |
+| `app_instance_name` | CLI Helm release name fallback | `opendso` | no |
 | `create_namespace` | Create the namespace if absent | `true` | no |
+| `install_helm_release` | Install the OpenDSO Helm release | `true` | no |
 | `chart_version` | opendso chart version (tag) | `0.1.0` | no |
 | `image_registry` | Artifact Registry prefix for images | `""` | no |
 | `resource_profile` | `minimal`/`default`/`production` | `default` | no |

@@ -21,12 +21,48 @@ variable "cluster_location" {
   description = "Region or zone of the target GKE cluster (e.g. us-central1 or us-central1-a)."
 }
 
+variable "create_cluster" {
+  type        = bool
+  description = "Create a temporary GKE cluster for Cloud Marketplace validation. Customer deployments normally leave this false and select an existing cluster."
+  default     = false
+}
+
+variable "test_cluster_node_count" {
+  type        = number
+  description = "Initial node count for the optional Marketplace validation cluster."
+  default     = 1
+}
+
+variable "test_cluster_machine_type" {
+  type        = string
+  description = "Node machine type for the optional Marketplace validation cluster."
+  default     = "e2-standard-4"
+}
+
+variable "test_cluster_disk_size_gb" {
+  type        = number
+  description = "Node boot disk size in GB for the optional Marketplace validation cluster."
+  default     = 100
+}
+
+variable "test_cluster_min_master_version" {
+  type        = string
+  description = "Optional minimum master version for the Marketplace validation cluster. Leave empty to use the GKE default."
+  default     = ""
+}
+
 # ---------------------------------------------------------------------------
 # Release identity
 # ---------------------------------------------------------------------------
+variable "goog_cm_deployment_name" {
+  type        = string
+  description = "Cloud Marketplace deployment name. Marketplace UI deployments populate this automatically; CLI deployments may leave it empty."
+  default     = ""
+}
+
 variable "app_instance_name" {
   type        = string
-  description = "Application instance name; used as the Helm release name."
+  description = "Application instance name; used as the Helm release name for CLI deployments when goog_cm_deployment_name is not set."
   default     = "opendso"
 }
 
@@ -41,12 +77,53 @@ variable "create_namespace" {
   default     = true
 }
 
+variable "install_helm_release" {
+  type        = bool
+  description = "Install the OpenDSO Helm release. Marketplace validation can disable this when create_cluster is true because Helm cannot plan against a cluster that does not exist yet."
+  default     = true
+}
+
 # ---------------------------------------------------------------------------
 # Chart source
 # ---------------------------------------------------------------------------
 variable "chart_version" {
   type        = string
   description = "Version (tag) of the opendso umbrella chart to deploy."
+  default     = "0.1.0"
+}
+
+# Standard Marketplace Helm chart variables. Producer Portal rewrites these
+# defaults to point at the published Google-owned chart copy during validation
+# and customer deployments.
+variable "helm_chart_repo" {
+  type        = string
+  description = "OCI repository containing the OpenDSO Helm chart."
+  default     = "oci://us-docker.pkg.dev/openenergysolutionsinc-public/oesinc"
+}
+
+variable "helm_chart_name" {
+  type        = string
+  description = "OpenDSO Helm chart name."
+  default     = "opendso"
+}
+
+variable "helm_chart_version" {
+  type        = string
+  description = "OpenDSO Helm chart version/tag."
+  default     = "0.1.0"
+}
+
+# Marketplace OCI artifact declaration compatibility. Producer Portal validates
+# artifacts listed in schema.yaml and may pass these values to the module.
+variable "opendso_image_repo" {
+  type        = string
+  description = "Marketplace-provided OpenDSO OCI artifact repository."
+  default     = "us-docker.pkg.dev/openenergysolutionsinc-public/oesinc/opendso"
+}
+
+variable "opendso_image_tag" {
+  type        = string
+  description = "Marketplace-provided OpenDSO OCI artifact tag."
   default     = "0.1.0"
 }
 

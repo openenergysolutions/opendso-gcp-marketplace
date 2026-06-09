@@ -49,11 +49,16 @@ spec:
           tooltip: Region or zone of the GKE cluster (e.g. us-central1 or us-central1-a).
 
         # --- Deployment ---
+        goog_cm_deployment_name:
+          name: goog_cm_deployment_name
+          title: Marketplace Deployment Name
+          section: deployment
+          tooltip: Populated by Cloud Marketplace UI deployments and used as the Helm release name.
         app_instance_name:
           name: app_instance_name
           title: Application Instance Name
           section: deployment
-          tooltip: Used as the Helm release name. Must be unique within the namespace.
+          tooltip: CLI fallback Helm release name when the Marketplace deployment name is not set.
         namespace:
           name: namespace
           title: Namespace
@@ -143,11 +148,66 @@ spec:
           title: Create Namespace
           section: advanced
           tooltip: Create the namespace if it does not already exist.
+        install_helm_release:
+          name: install_helm_release
+          title: Install Helm Release
+          section: advanced
+          tooltip: Install the OpenDSO Helm release. Marketplace validation disables this when creating a temporary cluster.
+        create_cluster:
+          name: create_cluster
+          title: Create Validation Cluster
+          section: advanced
+          tooltip: Create a temporary GKE cluster for Cloud Marketplace validation.
+        test_cluster_node_count:
+          name: test_cluster_node_count
+          title: Validation Cluster Nodes
+          section: advanced
+          tooltip: Initial node count for the optional Marketplace validation cluster.
+        test_cluster_machine_type:
+          name: test_cluster_machine_type
+          title: Validation Cluster Machine Type
+          section: advanced
+          tooltip: Node machine type for the optional Marketplace validation cluster.
+        test_cluster_disk_size_gb:
+          name: test_cluster_disk_size_gb
+          title: Validation Cluster Disk Size
+          section: advanced
+          tooltip: Node boot disk size in GB for the optional Marketplace validation cluster.
+        test_cluster_min_master_version:
+          name: test_cluster_min_master_version
+          title: Validation Cluster Version
+          section: advanced
+          tooltip: Optional minimum master version for the Marketplace validation cluster.
         chart_version:
           name: chart_version
           title: Chart Version
           section: advanced
           tooltip: Version (tag) of the opendso chart to deploy.
+        helm_chart_repo:
+          name: helm_chart_repo
+          title: Helm Chart Repository
+          section: advanced
+          tooltip: OCI repository containing the OpenDSO Helm chart.
+        helm_chart_name:
+          name: helm_chart_name
+          title: Helm Chart Name
+          section: advanced
+          tooltip: OpenDSO Helm chart name.
+        helm_chart_version:
+          name: helm_chart_version
+          title: Helm Chart Version
+          section: advanced
+          tooltip: OpenDSO Helm chart version/tag.
+        opendso_image_repo:
+          name: opendso_image_repo
+          title: OpenDSO OCI Artifact Repository
+          section: advanced
+          tooltip: Marketplace-scanned OpenDSO OCI artifact repository.
+        opendso_image_tag:
+          name: opendso_image_tag
+          title: OpenDSO OCI Artifact Tag
+          section: advanced
+          tooltip: Marketplace-scanned OpenDSO OCI artifact tag.
         image_registry:
           name: image_registry
           title: Image Registry

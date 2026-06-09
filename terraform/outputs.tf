@@ -1,21 +1,21 @@
 output "release_name" {
   description = "Helm release name for the OpenDSO deployment."
-  value       = helm_release.opendso.name
+  value       = var.install_helm_release ? helm_release.opendso[0].name : local.release_name
 }
 
 output "namespace" {
   description = "Namespace the release was deployed into."
-  value       = helm_release.opendso.namespace
+  value       = var.install_helm_release ? helm_release.opendso[0].namespace : var.namespace
 }
 
 output "chart_version" {
   description = "Version of the opendso chart that was deployed."
-  value       = helm_release.opendso.version
+  value       = var.install_helm_release ? helm_release.opendso[0].version : local.chart_version
 }
 
 output "release_status" {
   description = "Status of the Helm release after apply."
-  value       = helm_release.opendso.status
+  value       = var.install_helm_release ? helm_release.opendso[0].status : "skipped"
 }
 
 output "service_endpoints" {
