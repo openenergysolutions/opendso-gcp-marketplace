@@ -68,7 +68,7 @@ Usage: {{ include "ess-tester-svc.image" (dict "imageRoot" .Values.global.images
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag -}}
 {{- $digest := .imageRoot.digest -}}
-{{- if $registry -}}
+{{- if and $registry (not (hasPrefix $registry $repository)) -}}
 {{- $repository = printf "%s/%s" $registry $repository -}}
 {{- end -}}
 {{- if $digest -}}

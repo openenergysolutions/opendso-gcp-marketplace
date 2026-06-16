@@ -1,0 +1,67 @@
+properties:
+  license.key:
+    type: string
+    title: OpenDSO License Key
+    description: >
+      Your OpenDSO license key obtained from OES.
+      Required to activate the application.
+    x-google-marketplace:
+      type: MASKED_FIELD
+    default: test-license-key
+
+  installation.key:
+    type: string
+    title: OpenDSO Installation Key
+    description: >
+      Your OpenDSO installation key obtained from OES.
+      Required to activate the application.
+    x-google-marketplace:
+      type: MASKED_FIELD
+    default: test-installation-key
+
+  global.domain:
+    type: string
+    title: Domain Name
+    description: >
+      Base domain for all OpenDSO services (e.g. opendso.example.com).
+      Subdomains keycloak.<domain>, api.<domain>, nats.<domain> will be created.
+    default: test.example.com
+
+  keycloak.config.adminPassword:
+    type: string
+    title: Keycloak Admin Password
+    description: Password for the Keycloak admin console.
+    x-google-marketplace:
+      type: MASKED_FIELD
+    default: testpass
+
+  mongodb.auth.rootPassword:
+    type: string
+    title: MongoDB Root Password
+    x-google-marketplace:
+      type: MASKED_FIELD
+    default: testpass
+
+  mongodb.auth.password:
+    type: string
+    title: MongoDB App Password
+    x-google-marketplace:
+      type: MASKED_FIELD
+    default: testpass
+
+  grafana.adminPassword:
+    type: string
+    title: Grafana Admin Password
+    x-google-marketplace:
+      type: MASKED_FIELD
+    default: testpass
+
+  global.resourceProfile:
+    type: string
+    title: Resource Profile
+    description: Resource requests/limits profile for all services.
+    default: minimal
+    enum:
+      - minimal
+      - default
+      - production

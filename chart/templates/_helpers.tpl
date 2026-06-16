@@ -453,10 +453,10 @@ Returns YAML:
 {{- $profiles := index $root.Values.global "resourceProfiles" | default dict -}}
 {{- $profileData := index $profiles $profile | default dict -}}
 {{- $resources := index $profileData $category | default dict -}}
-{{- if and $explicit (or $explicit.requests $explicit.limits) -}}
-{{- toYaml $explicit -}}
-{{- else if $resources -}}
+{{- if $resources -}}
 {{- toYaml $resources -}}
+{{- else if and $explicit (or $explicit.requests $explicit.limits) -}}
+{{- toYaml $explicit -}}
 {{- else -}}
 {{- /* Fallback to empty resources if profile not found */ -}}
 {}
@@ -472,7 +472,7 @@ Usage: include "opendso.image" (dict "imageRoot" .Values.global.images.foo "regi
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag | default "latest" -}}
 {{- $digest := .imageRoot.digest | default "" -}}
-{{- if $registry -}}
+{{- if and $registry (not (hasPrefix $registry $repository)) -}}
 {{- $repository = printf "%s/%s" $registry $repository -}}
 {{- end -}}
 {{- if $digest -}}

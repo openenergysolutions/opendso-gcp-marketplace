@@ -31,26 +31,26 @@ global:
   # Resource profiles provide platform-specific resource sizing presets
   # Options: minimal, default, production
   # Override individual service resources as needed
-  resourceProfile: default
+  resourceProfile: minimal
   resourceProfiles:
     minimal:
       databases:
         requests:
-          cpu: 100m
+          cpu: 75m
           memory: 256Mi
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: 250m
+          memory: 512Mi
       services:
         requests:
-          cpu: 100m
+          cpu: 75m
           memory: 128Mi
         limits:
-          cpu: 200m
+          cpu: 150m
           memory: 256Mi
       frontends:
         requests:
-          cpu: 100m
+          cpu: 50m
           memory: 64Mi
         limits:
           cpu: 100m
@@ -348,6 +348,11 @@ global:
       tag: "679a94b4"
       pullPolicy: IfNotPresent
       digest: "sha256:3b3d80ea21c08d8ae925d180de19f84ec0774d372b504ffa5b4717d2f05086fa"
+    busybox:
+      repository: busybox
+      tag: "1.36"
+      pullPolicy: IfNotPresent
+      digest: "sha256:b7f3d86d6e84fc17718c48bcde1450807faa2d56704205c697b4bd5df7b9e29f"
   # =============================================================================
   # Component Enable/Disable
   # =============================================================================
@@ -361,7 +366,7 @@ global:
     enabled: true
   # Monitoring & Observability
   grafana:
-    enabled: true # Enable for monitoring/dashboards
+    enabled: false # Enable for monitoring/dashboards
   # Database Services
   mongodb:
     enabled: true
@@ -436,9 +441,9 @@ global:
     enabled: false
   # OpenDSS Services
   omegadss-svc:
-    enabled: true
+    enabled: false
   rpcdss-svc:
-    enabled: true
+    enabled: false
 # =============================================================================
 # OpenDSO Apps Database (Shared)
 # =============================================================================
@@ -712,6 +717,29 @@ nats:
 # Grafana - Monitoring & Dashboards
 # =============================================================================
 grafana:
+  image:
+    registry: docker.io
+    repository: grafana/grafana
+    tag: "12.3.1"
+    sha: ""
+    pullPolicy: IfNotPresent
+  downloadDashboardsImage:
+    registry: docker.io
+    repository: curlimages/curl
+    tag: "8.9.1"
+    sha: ""
+    pullPolicy: IfNotPresent
+  sidecar:
+    image:
+      registry: quay.io
+      repository: kiwigrid/k8s-sidecar
+      tag: "2.5.0"
+      sha: ""
+    imagePullPolicy: IfNotPresent
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
   # Admin credentials - using Kubernetes secret
   # Secret is created by parent chart with name: {{ .Release.Name }}-grafana-credentials
   # IMPORTANT: If using a custom release name, override with:
@@ -763,12 +791,6 @@ grafana:
       secretKeyRef:
         name: "" # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
         key: opendso-apps-db-password
-  # Data sources are provisioned via grafana-datasources.yaml template (uses .Release.Name)
-  sidecar:
-    datasources:
-      enabled: true
-      label: grafana_datasource
-      labelValue: "1"
   # Plugins to install
   plugins: []
   # Resource limits

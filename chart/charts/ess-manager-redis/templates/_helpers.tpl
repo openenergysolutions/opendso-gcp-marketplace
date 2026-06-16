@@ -68,7 +68,7 @@ Usage: {{ include "ess-manager-redis.image" (dict "imageRoot" .Values.global.ima
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag -}}
 {{- $digest := .imageRoot.digest -}}
-{{- if $registry -}}
+{{- if and $registry (not (hasPrefix $registry $repository)) -}}
 {{- $repository = printf "%s/%s" $registry $repository -}}
 {{- end -}}
 {{- if $digest -}}

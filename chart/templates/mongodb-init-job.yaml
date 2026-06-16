@@ -40,11 +40,11 @@ spec:
           echo "MongoDB is ready!"
         resources:
           limits:
-            cpu: 200m
-            memory: 1Gi
-          requests:
             cpu: 100m
-            memory: 512Mi
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
         {{- if (index .Values.global "mongodb").tls.enabled }}
         volumeMounts:
         - name: tls-certs
@@ -67,11 +67,11 @@ spec:
               key: root-password
         resources:
           limits:
-            cpu: 1000m
-            memory: 1Gi
-          requests:
-            cpu: 500m
+            cpu: 250m
             memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
         volumeMounts:
         - name: init-script
           mountPath: /scripts

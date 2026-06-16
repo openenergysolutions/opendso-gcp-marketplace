@@ -16,4 +16,16 @@
 #
 set -euo pipefail
 
+# In verification mode, overlay test-only defaults onto the main schema before
+# invoking the custom deployer. Keep this file out of the canonical
+# /data-test/schema.yaml path because Producer Portal schema extraction appears
+# to inspect additional schema files in the image.
+TEST_SCHEMA="/data-test/verification-defaults.yaml"
+if [[ -f "${TEST_SCHEMA}" ]]; then
+  overlay_test_schema.py \
+    --test_schema "${TEST_SCHEMA}" \
+    --original_schema "/data/schema.yaml" \
+    --output "/data/schema.yaml"
+fi
+
 exec /bin/deploy.sh
