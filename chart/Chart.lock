@@ -7,7 +7,7 @@ dependencies:
   version: 0.1.0
 - name: grafana
   repository: https://grafana.github.io/helm-charts
-  version: 10.5.14
+  version: 10.5.15
 - name: mongodb
   repository: file://charts/mongodb
   version: 0.1.0
@@ -113,5 +113,5 @@ dependencies:
 - name: nats-auth-svc
   repository: file://charts/nats-auth-svc
   version: 0.1.0
-digest: sha256:fe4759fbe7fa660170d727d7f98c9a0e914f374aa7ff9160e1046999ff414ee7
-generated: "2026-03-17T08:43:42.013698518-04:00"
+digest: sha256:4c4a79fecca9c6ce17d4c2e4ae671b2887843511aeb168eae2fc0d3a68ccf3f0
+generated: "2026-06-16T17:00:11.462295125-04:00"

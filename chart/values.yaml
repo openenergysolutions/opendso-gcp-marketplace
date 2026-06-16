@@ -153,30 +153,30 @@ global:
     # Infrastructure images
     nats:
       repository: nats
-      tag: "2.12.5"
+      tag: "2.12.11"
       pullPolicy: IfNotPresent
-      digest: "sha256:6d12af36c7d6a6f597e7aa1cab9fbaee6d82598f4775231a446d658a61e4655b" # sha256:xxx - when set, overrides tag
+      digest: "sha256:71f522d77eb96fe73fcccaca505e246e2406c68fe76498c78f9ce83064cffb9c" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
-      tag: "24.0"
+      tag: "26.6.3"
       pullPolicy: IfNotPresent
-      digest: "sha256:e9e6b246be4efee5810511fc6b8c936decda8646b77185b85bf633c21bc68b21"
+      digest: "sha256:5fdbf2dbb5897cc34e82de49d13e23db011f9925089dbc555fc095f2c8bc1dac"
     envoy:
       repository: envoyproxy/envoy
-      tag: "v1.17.0"
+      tag: "v1.35.12"
       pullPolicy: IfNotPresent
-      digest: "sha256:750008950dece8be0f5afd93aa9507892cc7afc27020a1479098fd1569881678"
+      digest: "sha256:45876da26cbb8ef73ef86e985586f363a619eef9c0081a9c3a781cb4b3b9255e"
     # Database images
     mongodb:
       repository: mongodb/mongodb-community-server
-      tag: "7.0.2-ubi8"
+      tag: "7.0.37-ubi8"
       pullPolicy: IfNotPresent
-      digest: "sha256:0a05651332edcb61924140b7c9878bc82500fa7cd6d6b95048f0cba7518eb805"
+      digest: "sha256:2681239bbfc06a6d6fdb7cd6596ce7565f54941dd24feaffe6faf88f0599dc14"
     citusDb:
       repository: citusdata/citus
-      tag: "12.1.2-alpine"
+      tag: "12.1.6-alpine"
       pullPolicy: IfNotPresent
-      digest: "sha256:5c0062c5feda67bdf0a027d087732ef111259cac116c371c49595ac4a8b94470"
+      digest: "sha256:65234068c1b95e95cf1bfe84da4b4fed20f5599b7b77c85cedf2bdfa7179f588"
     keycloakDb:
       repository: postgres
       tag: "17.0-alpine3.20"
@@ -184,9 +184,9 @@ global:
       digest: ""
     appsDb:
       repository: timescale/timescaledb
-      tag: "2.26.0-pg16"
+      tag: "2.26.4-pg16"
       pullPolicy: IfNotPresent
-      digest: "sha256:898b884159a49c77d08a508155eb42df3421dc1297c91512a8ee8ac0be76e05f"
+      digest: "sha256:15e00162766bd6f0019afaad4e57b850dcf882de5909bd7633899eebd4c03d57"
     # Core Services
     historianSvc:
       repository: historian
@@ -313,9 +313,9 @@ global:
       digest: "sha256:fb556b25bc0858cd287f910fcb73945499928f0c787ccdc6f27283c0cbfd851f"
     essManagerRedis:
       repository: redis
-      tag: "7.0"
+      tag: "7.0.15-bookworm"
       pullPolicy: IfNotPresent
-      digest: "sha256:89c859c034b2b7641227e68b052a8a3ac0292f1c5dd9d7b8e18659ff8967ef1d"
+      digest: "sha256:352c1fdadc91926edda08f45aeb3f27f37194c2f14101229c0523a11195c96e3"
     # CVR Applications
     cvrSvc:
       repository: cvr
@@ -720,21 +720,21 @@ grafana:
   image:
     registry: docker.io
     repository: grafana/grafana
-    tag: "12.3.1"
-    sha: ""
+    tag: "12.4.4"
+    sha: "sha256:378f94b054e5384cd74322cbf7542cff6a43e068e4011f81ea5e75323247df02"
     pullPolicy: IfNotPresent
   downloadDashboardsImage:
     registry: docker.io
     repository: curlimages/curl
-    tag: "8.9.1"
-    sha: ""
+    tag: "8.20.0"
+    sha: "sha256:b3f1fb2a51d923260350d21b8654bbc607164a987e2f7c84a0ac199a67df812a"
     pullPolicy: IfNotPresent
   sidecar:
     image:
       registry: quay.io
       repository: kiwigrid/k8s-sidecar
-      tag: "2.5.0"
-      sha: ""
+      tag: "2.7.3"
+      sha: "sha256:694950d736c8b532eba4006527ccbdac98fefc9f30b3346ba2de50b6cad91c94"
     imagePullPolicy: IfNotPresent
     datasources:
       enabled: true
