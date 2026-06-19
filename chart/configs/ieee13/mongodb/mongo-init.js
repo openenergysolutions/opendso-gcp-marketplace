@@ -252,7 +252,7 @@ for (const env of environmentArray) {
       group: "Admin Tools",
       company: "OES",
       icon: "mdi-book-open",
-      link: `http://docs.${gmsEndpoint}`,
+      link: `https://docs.openenergysolutions.com/`,
       src: "/images/documentation.png",
       roles: ["Docs"],
       external: true,

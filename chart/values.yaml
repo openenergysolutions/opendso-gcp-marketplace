@@ -270,11 +270,6 @@ global:
       tag: "latest"
       pullPolicy: IfNotPresent
       digest: "sha256:966ec5339de5c157cd05de0b69f8034618b6e5245019bf2e713b81923555e202"
-    opendsoDocsApp:
-      repository: opendso-docs
-      tag: "latest"
-      pullPolicy: IfNotPresent
-      digest: "sha256:45b689227e614a888655f7968b49b47b75b80a5c2e7c1f8ca033b86177faf4f1"
     openfmbEventCreatorApp:
       repository: openfmb-event-creator-app
       tag: "latest"
@@ -329,9 +324,9 @@ global:
       digest: "sha256:9e31a06a95048a74b7777b050f8b291346ea5e783e90d7fe2f369eeae139f488"
     cvrOpenfmbServicesSvc:
       repository: openfmb-services
-      tag: "latest"
+      tag: "baac59a3"
       pullPolicy: IfNotPresent
-      digest: "sha256:f41c2af5c6f8f9db5bab701018f7f8b7c9d562f54fa033db2800428ae99243c1"
+      digest: "sha256:b52fbeb573da12216f87c960039bf99fd1b42141a0227d58ba4bb1a66e74dbb2"
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
@@ -408,8 +403,6 @@ global:
   inventory-app:
     enabled: true
   one-line-app:
-    enabled: true
-  opendso-docs-app:
     enabled: true
   openfmb-event-creator-app:
     enabled: true

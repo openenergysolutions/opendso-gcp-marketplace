@@ -62,9 +62,6 @@ dependencies:
 - name: one-line-app
   repository: file://charts/one-line-app
   version: 0.1.0
-- name: opendso-docs-app
-  repository: file://charts/opendso-docs-app
-  version: 0.1.0
 - name: openfmb-event-creator-app
   repository: file://charts/openfmb-event-creator-app
   version: 0.1.0
@@ -113,5 +110,5 @@ dependencies:
 - name: nats-auth-svc
   repository: file://charts/nats-auth-svc
   version: 0.1.0
-digest: sha256:4c4a79fecca9c6ce17d4c2e4ae671b2887843511aeb168eae2fc0d3a68ccf3f0
-generated: "2026-06-16T17:00:11.462295125-04:00"
+digest: sha256:174e605bc3ccdc777f692ad34f2284780100b9636083b62210d247865c134097
+generated: "2026-06-19T13:15:02.051545503-04:00"

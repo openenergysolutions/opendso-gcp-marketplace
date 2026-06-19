@@ -88,7 +88,7 @@ IMAGE_SPECS=(
     "ahs-sim|latest|global.images.assetHealthSimSvc"
     "cvr|latest|global.images.cvrSvc"
     "genetic-cvr|latest|global.images.cvrGeneticAlgorithmSvc"
-    "openfmb-services|latest|global.images.cvrOpenfmbServicesSvc"
+    "openfmb-services|baac59a3|global.images.cvrOpenfmbServicesSvc"
     "omegadss|6cd7c4ef|global.images.omegadssSvc"
     "rpcdss|61e9ad02|global.images.rpcdssSvc"
     "nats-auth-service|ec044b57|global.images.natsAuthSvc"

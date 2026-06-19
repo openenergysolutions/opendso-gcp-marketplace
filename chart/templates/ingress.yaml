@@ -241,20 +241,6 @@ spec:
                   number: 8094
     {{- end }}
 
-    # OpenDSO Docs App
-    {{- if (index .Values.global "opendso-docs-app").enabled }}
-    - host: docs.{{ $domain }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ .Release.Name }}-opendso-docs-app
-                port:
-                  number: 8092
-    {{- end }}
-
     # Grafana - Monitoring & Dashboards
     {{- if (index .Values.global "grafana").enabled }}
     - host: grafana.{{ $domain }}

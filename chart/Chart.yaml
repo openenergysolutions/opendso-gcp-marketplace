@@ -115,10 +115,6 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/one-line-app"
     condition: global.one-line-app.enabled
-  - name: opendso-docs-app
-    version: 0.1.0
-    repository: "file://charts/opendso-docs-app"
-    condition: global.opendso-docs-app.enabled
   - name: openfmb-event-creator-app
     version: 0.1.0
     repository: "file://charts/openfmb-event-creator-app"
