@@ -59,6 +59,7 @@ annotate_via_temp_tag() {
 
     crane mutate --annotation "$ANNOTATION" -t "$temp" "$temp" >/dev/null
     crane copy "$temp" "$image" >/dev/null
+    crane delete "$temp" >/dev/null
 }
 
 usage() {
@@ -154,6 +155,7 @@ PY
             fi
             echo "crane mutate --annotation ${ANNOTATION} -t ${temp} ${temp}"
             echo "crane copy ${temp} ${image}"
+            echo "crane delete ${temp}"
         else
             log "${image_key}:${tag}"
             annotate_via_temp_tag "$image"
@@ -175,6 +177,7 @@ if [[ "$SKIP_DEPLOYER" != "true" ]]; then
         fi
         echo "crane mutate --annotation ${ANNOTATION} -t ${temp} ${temp}"
         echo "crane copy ${temp} ${image}"
+        echo "crane delete ${temp}"
     else
         log "deployer:${DEPLOYER_TAG}"
         annotate_via_temp_tag "$image"

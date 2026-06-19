@@ -136,6 +136,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 - Container images are served from GCP Artifact Registry. GKE nodes need pull access —
   configure Workload Identity or attach the Artifact Registry Reader role to the node service account.
 - See `IMAGE_MIRRORING_ARTIFACT_REGISTRY.md` for the mirroring workflow and registry expectations.
+- First-party OpenDSO app images can be mirrored with `scripts/mirror-app-images.sh`; that workflow can also add Marketplace annotations, add release tags, and refresh digests in `chart/values.yaml`.
 
 ### What the deployer does NOT handle
 
@@ -167,6 +168,7 @@ opendso-gcp-marketplace/
 │   ├── deploy.sh               # NKey generation + Keycloak secret injection + helm install
 │   └── deploy_with_tests.sh    # Wraps deploy.sh + runs verify.sh (used by mpdev verify)
 ├── scripts/
+│   ├── mirror-app-images.sh      # Mirrors first-party app images into Artifact Registry
 │   ├── verify.sh               # Post-deploy health checks (called by deploy_with_tests.sh)
 │   ├── mpdev.sh                # Helper to run mpdev verify locally
 │   └── provision-test-env.sh   # Provisions a local test cluster environment
