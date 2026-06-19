@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-# delete-untagged-ar-images.sh — Delete untagged image digests from an
-# Artifact Registry Docker repository.
+# delete-untagged-ar-images.sh — Delete untagged image digests and temporary
+# Marketplace annotation tags from an Artifact Registry Docker repository.
 #
-# By default this script performs a dry run and prints the digests that would
-# be deleted. Pass --execute to actually delete them.
+# By default this script performs a dry run and prints the digests/tags that
+# would be deleted. Pass --execute to actually delete them.
 #
 # Usage:
 #   ./scripts/delete-untagged-ar-images.sh [OPTIONS]
@@ -15,8 +15,8 @@
 #   --repo         Artifact Registry repository  (default: oesinc)
 #   --only         Comma-separated package paths to inspect
 #                  (example: gms-api,one-line-app,curlimages/curl)
-#   --limit        Max untagged digests to delete/list
-#   --execute      Actually delete untagged digests
+#   --limit        Max image digests to inspect
+#   --execute      Actually delete matching tags and untagged digests
 #   --help         Show this help
 
 set -euo pipefail
@@ -69,7 +69,7 @@ else
     log "mode:     dry-run"
 fi
 
-step "Finding untagged digests"
+step "Finding cleanup candidates"
 LIST_ARGS=("$REGISTRY" "--include-tags" "--format=json")
 if [[ -n "$LIMIT" ]]; then
     LIST_ARGS+=("--limit=$LIMIT")
@@ -78,7 +78,7 @@ fi
 TMP_JSON="$(mktemp)"
 gcloud artifacts docker images list "${LIST_ARGS[@]}" > "$TMP_JSON" 2>/dev/null
 
-UNTAGGED_LINES="$(python3 - "$ONLY_PACKAGES" "$REGISTRY" "$TMP_JSON" <<'PY'
+CANDIDATE_LINES="$(python3 - "$ONLY_PACKAGES" "$REGISTRY" "$TMP_JSON" <<'PY'
 import json
 import sys
 
@@ -96,9 +96,17 @@ for item in items:
     media_type = item.get("metadata", {}).get("mediaType", "")
     if allowed and package_path not in allowed:
         continue
-    if tags:
-        continue
     if not package or not version:
+        continue
+
+    temp_tags = [tag for tag in tags if tag.startswith("tmp-marketplace-")]
+    for tag in temp_tags:
+        # Delete temp tags before considering digest deletion.
+        print(f"0\tTAG\t{package}:{tag}\t{media_type}\t{package_path}")
+
+    has_only_temp_tags = bool(tags) and len(temp_tags) == len(tags)
+    is_untagged = not tags
+    if not is_untagged and not has_only_temp_tags:
         continue
 
     # Delete parent indexes/lists before leaf manifests.
@@ -106,22 +114,22 @@ for item in items:
         "application/vnd.docker.distribution.manifest.list.v2+json",
         "application/vnd.oci.image.index.v1+json",
     }
-    priority = 0 if is_parent else 1
-    print(f"{priority}\t{package}@{version}\t{media_type}\t{package_path}")
+    priority = 1 if is_parent else 2
+    print(f"{priority}\tDIGEST\t{package}@{version}\t{media_type}\t{package_path}")
 PY
 )"
 rm -f "$TMP_JSON"
 
-if [[ -z "$UNTAGGED_LINES" ]]; then
-    log "No untagged digests found"
+if [[ -z "$CANDIDATE_LINES" ]]; then
+    log "No untagged digests or tmp-marketplace tags found"
     exit 0
 fi
 
-SORTED_LINES="$(printf '%s\n' "$UNTAGGED_LINES" | sort -t $'\t' -k1,1n -k2,2)"
+SORTED_LINES="$(printf '%s\n' "$CANDIDATE_LINES" | sort -t $'\t' -k1,1n -k2,2)"
 
-while IFS=$'\t' read -r priority image_ref media_type package_path; do
+while IFS=$'\t' read -r priority action image_ref media_type package_path; do
     [[ -n "$image_ref" ]] || continue
-    printf '%s\t%s\t%s\n' "$package_path" "$media_type" "$image_ref"
+    printf '%s\t%s\t%s\t%s\n' "$action" "$package_path" "$media_type" "$image_ref"
 done <<< "$SORTED_LINES"
 
 if [[ "$EXECUTE" != "true" ]]; then
@@ -129,13 +137,25 @@ if [[ "$EXECUTE" != "true" ]]; then
     exit 0
 fi
 
-step "Deleting untagged digests"
-while IFS=$'\t' read -r priority image_ref media_type package_path; do
+step "Deleting cleanup candidates"
+while IFS=$'\t' read -r priority action image_ref media_type package_path; do
     [[ -n "$image_ref" ]] || continue
-    log "$image_ref"
-    if ! gcloud artifacts docker images delete "$image_ref" --quiet; then
-        log "skip: delete failed for $image_ref"
-    fi
+    log "$action $image_ref"
+    case "$action" in
+        TAG)
+            if ! gcloud artifacts docker tags delete "$image_ref" --quiet; then
+                log "skip: tag delete failed for $image_ref"
+            fi
+            ;;
+        DIGEST)
+            if ! gcloud artifacts docker images delete "$image_ref" --quiet; then
+                log "skip: digest delete failed for $image_ref"
+            fi
+            ;;
+        *)
+            log "skip: unknown action $action for $image_ref"
+            ;;
+    esac
 done <<< "$SORTED_LINES"
 
 step "Done"

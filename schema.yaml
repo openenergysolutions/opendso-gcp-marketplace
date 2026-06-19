@@ -168,12 +168,6 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.oneLineApp.tag:
           type: TAG
-    opendso-docs:
-      properties:
-        global.images.opendsoDocsApp.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.opendsoDocsApp.tag:
-          type: TAG
     openfmb-event-creator-app:
       properties:
         global.images.openfmbEventCreatorApp.repository:
