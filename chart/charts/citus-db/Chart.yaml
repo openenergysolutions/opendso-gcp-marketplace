@@ -1,6 +1,0 @@
-apiVersion: v2
-name: citus-db
-description: CitusData PostgreSQL database for Historian service
-type: application
-version: 0.1.0
-appVersion: "12.1.2"

@@ -40,10 +40,6 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/mongodb"
     condition: global.mongodb.enabled
-  - name: citus-db
-    version: 0.1.0
-    repository: "file://charts/citus-db"
-    condition: global.citus-db.enabled
   - name: keycloak-db
     version: 0.1.0
     repository: "file://charts/keycloak-db"

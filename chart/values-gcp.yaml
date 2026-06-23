@@ -52,9 +52,6 @@ global:
     tls:
       enabled: false
 
-  citus-db:
-    enabled: true
-
   # topology-genesis: cim.xml is 367KB — exceeds the 262KB Kubernetes annotation limit
   # when using kubectl apply (client-side). The deployer pre-creates this ConfigMap via
   # kubectl apply --server-side and sets externalConfigMap=true so Helm skips creating it.
@@ -103,38 +100,7 @@ mongodb:
   #   usernameKey: "username"
   #   passwordKey: "password"
 
-# Citus DB (PostgreSQL) configuration
-citus-db:
-  enabled: true  # Set to false if using Cloud SQL
-  podSecurityContext: {}
-  securityContext: {}
-
-  persistence:
-    enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 50Gi  # Production size (dev: 10Gi)
-
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 4Gi
-    requests:
-      cpu: 1000m
-      memory: 2Gi
-
-  # External PostgreSQL configuration (if using Cloud SQL)
-  # Uncomment and configure if enabled: false
-  # externalDatabase:
-  #   enabled: true
-  #   host: "your-cloudsql-host"
-  #   port: 5432
-  #   database: "ofmb_db"
-  #   username: "citususer"
-  #   existingSecret: "citus-db-credentials"
-  #   usernameKey: "username"
-  #   passwordKey: "password"
-
-# OpenDSO Apps DB (TimescaleDB/PostgreSQL) configuration
+# OpenDSO Apps DB (PostgreSQL) — serves both apps (ess_tester) and historian (ofmb_db) databases
 opendso-apps-db:
   enabled: true
   podSecurityContext: {}
@@ -143,15 +109,15 @@ opendso-apps-db:
   persistence:
     enabled: true
     # storageClass: standard-rwo  # Uses global.storageClass
-    size: 10Gi
+    size: 60Gi  # Combined apps + historian data
 
   resources:
     limits:
-      cpu: 500m
-      memory: 1Gi
+      cpu: 2000m
+      memory: 4Gi
     requests:
-      cpu: 250m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 2Gi
 
   # External PostgreSQL configuration (if using Cloud SQL)
   # externalDatabase:

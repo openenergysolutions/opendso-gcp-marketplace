@@ -54,7 +54,7 @@ service:
 
 env:
   PLATFORM_NATS_SERVICE: ""
-  PGHOST: opendso-citus-db
+  PGHOST: opendso-opendso-apps-db
 
 # Service configuration
 config:

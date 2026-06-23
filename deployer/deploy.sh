@@ -152,7 +152,6 @@ USER_VALUES=$(mktemp /tmp/user-values.XXXXXX.yaml)
 NATS_AUTH_VALUES=$(mktemp /tmp/nats-auth-values.XXXXXX.yaml)
 NATS_KEYS_SECRET="${APP_INSTANCE_NAME}-nats-auth-keys"
 APPS_DB_SECRET="${APP_INSTANCE_NAME}-opendso-apps-db-secret"
-CITUS_DB_SECRET="${APP_INSTANCE_NAME}-citus-db-secret"
 
 # Derive domain and imageRegistry from user values for computed --set flags
 DOMAIN=$(python3 -c "
@@ -245,30 +244,6 @@ else
     OPENDSO_APPS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
 fi
 
-if kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
-    CITUS_DB_PASSWORD=$(kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" \
-        -o jsonpath='{.data.password}' | base64 -d)
-else
-    CITUS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
-fi
-
-# Pre-create citus-db-secret with Helm ownership metadata so the
-# opendso.citusDb.settings helper can lookup the password at render time
-# (subcharts like historian-svc and der-dispatch-svc lack citus-db.auth.*
-# in their .Values scope). Helm labels prevent "invalid ownership" errors.
-kubectl create secret generic "$CITUS_DB_SECRET" \
-    --namespace="$NAMESPACE" \
-    --from-literal=password="${CITUS_DB_PASSWORD}" \
-    --dry-run=client -o yaml \
-  | kubectl annotate --local -f - \
-      "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
-      "meta.helm.sh/release-namespace=${NAMESPACE}" \
-      --overwrite -o yaml \
-  | kubectl label --local -f - \
-      "app.kubernetes.io/managed-by=Helm" \
-      --overwrite -o yaml \
-  | kubectl apply -f -
-
 # ---------------------------------------------------------------------------
 # 3. Write temporary Helm values overlay with derived public keys
 # ---------------------------------------------------------------------------
@@ -298,10 +273,6 @@ nats-auth-svc:
 opendso-apps-db:
   auth:
     password: "${OPENDSO_APPS_DB_PASSWORD}"
-
-citus-db:
-  auth:
-    password: "${CITUS_DB_PASSWORD}"
 EOF
 
 # Resolve site name (used by both step 3a and 3b below)
@@ -500,7 +471,6 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set historian-svc.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set keycloak.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
-    --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.tls.createSecrets=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}

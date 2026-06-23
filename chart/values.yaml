@@ -172,21 +172,16 @@ global:
       tag: "7.0.37-ubi8"
       pullPolicy: IfNotPresent
       digest: "sha256:6dfeef0f0f56f9ef3d9f915d2df50a4dbf95a139478ea41b855b9fee30d9eee4"
-    citusDb:
-      repository: citusdata/citus
-      tag: "14.0.0-alpine"
-      pullPolicy: IfNotPresent
-      digest: "sha256:8f742dd9a9997a7a790f2a1e47d93aedf4a595466ee1e9553f6eb3e080790ef7"
     keycloakDb:
       repository: postgres
       tag: "17.0-alpine3.20"
       pullPolicy: IfNotPresent
       digest: ""
     appsDb:
-      repository: timescale/timescaledb
-      tag: "2.28.0-pg16"
+      repository: postgres
+      tag: "16-alpine"
       pullPolicy: IfNotPresent
-      digest: "sha256:359ebfc524150421433eaf4b7bd8e98fe2f5d5b4ea1b928619df4b0057359fca"
+      digest: ""
     # Core Services
     historianSvc:
       repository: historian
@@ -367,8 +362,6 @@ global:
     enabled: true
     tls:
       enabled: false
-  citus-db:
-    enabled: true
   keycloak-db:
     enabled: false
   # Core Services
@@ -472,6 +465,7 @@ opendso-apps-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
+  historianDatabase: ofmb_db
   podSecurityContext: {}
   securityContext: {}
   # BYO database (marketplace-friendly)
@@ -486,32 +480,6 @@ opendso-apps-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
-# =============================================================================
-# Historian Database (Citus)
-# =============================================================================
-citus-db:
-  auth:
-    username: citususer
-    password: ""
-    database: ofmb_db
-    existingSecret: ""
-    usernameKey: username
-    passwordKey: password
-    databaseKey: database
-  podSecurityContext: {}
-  securityContext: {}
-  externalDatabase:
-    enabled: false
-    host: ""
-    port: 5432
-    database: ""
-    username: ""
-    password: ""
-    existingSecret: ""
-    usernameKey: username
-    passwordKey: password
-    databaseKey: database
-
 omegadss-svc:
   podSecurityContext:
     runAsNonRoot: true
@@ -773,13 +741,8 @@ grafana:
   # Environment variables for datasource credentials
   # Secret name follows pattern: {{ .Release.Name }}-grafana-credentials
   # IMPORTANT: If using a custom release name, override with:
-  #   --set grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<your-release-name>-grafana-credentials
   #   --set grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<your-release-name>-grafana-credentials
   envValueFrom:
-    CITUS_PASSWORD:
-      secretKeyRef:
-        name: "" # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
-        key: citus-password
     OPENDSO_APPS_DB_PASSWORD:
       secretKeyRef:
         name: "" # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"

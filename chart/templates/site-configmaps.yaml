@@ -332,21 +332,6 @@ data:
 {{ tpl $derDispatchConfig . | indent 4 }}
 {{- end }}
 
-# Citus DB Init Script ConfigMap
-{{- if and (index .Values.global "citus-db").enabled (not (dig "citus-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-citus-db-initdb
-  labels:
-    app.kubernetes.io/name: citus-db
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-{{ (.Files.Glob (printf "configs/%s/citus-db/*.sql" $site)).AsConfig | indent 2 }}
-{{- end }}
-
 # MongoDB Init Script ConfigMap
 {{- if (index .Values.global "mongodb").enabled }}
 ---

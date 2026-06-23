@@ -57,53 +57,46 @@ user: {{ $user | quote }}
 password: {{ $pass | quote }}
 {{- end }}
 {{/*
-Resolve Citus DB connection settings with BYO/secret support.
-Returns YAML with host, port, name, user, password.
+Resolve Historian DB connection settings.
+Historian uses the opendso-apps-db postgres instance but the ofmb_db database
+(configurable via opendso-apps-db.historianDatabase). BYO/secret support mirrors
+opendso.appsDb.settings so a single existingSecret covers both.
 */}}
 {{- define "opendso.citusDb.settings" -}}
 {{- $vals := .Values | toYaml | fromYaml -}}
-{{- $external := dig "citus-db" "externalDatabase" "enabled" false $vals -}}
-{{- $nameOverride := dig "citus-db" "fullnameOverride" "" $vals -}}
-{{- $port := dig "citus-db" "service" "port" 5432 $vals -}}
-{{- $user := dig "citus-db" "auth" "username" "citususer" $vals -}}
-{{- $pass := dig "citus-db" "auth" "password" "" $vals -}}
-{{- $db := dig "citus-db" "auth" "database" "ofmb_db" $vals -}}
+{{- $external := dig "opendso-apps-db" "externalDatabase" "enabled" false $vals -}}
+{{- $nameOverride := dig "opendso-apps-db" "fullnameOverride" "" $vals -}}
+{{- $port := dig "opendso-apps-db" "service" "port" 5432 $vals -}}
+{{- $user := dig "opendso-apps-db" "auth" "username" "essuser" $vals -}}
+{{- $pass := dig "opendso-apps-db" "auth" "password" "esspassword" $vals -}}
+{{- $db := dig "opendso-apps-db" "historianDatabase" "ofmb_db" $vals -}}
 {{- $host := "" -}}
 {{- if $nameOverride -}}
 {{- $host = printf "%s.%s.svc.cluster.local" $nameOverride .Release.Namespace -}}
 {{- else -}}
-{{- $host = printf "%s-citus-db.%s.svc.cluster.local" .Release.Name .Release.Namespace -}}
+{{- $host = printf "%s-opendso-apps-db.%s.svc.cluster.local" .Release.Name .Release.Namespace -}}
 {{- end -}}
 {{- if $external -}}
-{{- $user = dig "citus-db" "externalDatabase" "username" "" $vals -}}
-{{- $pass = dig "citus-db" "externalDatabase" "password" "" $vals -}}
-{{- $db = dig "citus-db" "externalDatabase" "database" "" $vals -}}
-{{- $host = dig "citus-db" "externalDatabase" "host" "" $vals -}}
-{{- $port = dig "citus-db" "externalDatabase" "port" 5432 $vals -}}
+{{- $user = dig "opendso-apps-db" "externalDatabase" "username" "" $vals -}}
+{{- $pass = dig "opendso-apps-db" "externalDatabase" "password" "" $vals -}}
+{{- $host = dig "opendso-apps-db" "externalDatabase" "host" "" $vals -}}
+{{- $port = dig "opendso-apps-db" "externalDatabase" "port" 5432 $vals -}}
 {{- end -}}
 {{- $secretName := "" -}}
 {{- if $external -}}
-{{- $secretName = dig "citus-db" "externalDatabase" "existingSecret" "" $vals -}}
+{{- $secretName = dig "opendso-apps-db" "externalDatabase" "existingSecret" "" $vals -}}
 {{- else -}}
-{{- $secretName = dig "citus-db" "auth" "existingSecret" "" $vals -}}
-{{- end -}}
-{{- /* When called from a subchart, citus-db.auth.* values are out of scope.
-       Fall back to the well-known secret the citus-db subchart creates. */}}
-{{- if and (not $secretName) (not $external) -}}
-{{- $secretName = printf "%s-citus-db-secret" .Release.Name -}}
+{{- $secretName = dig "opendso-apps-db" "auth" "existingSecret" "" $vals -}}
 {{- end -}}
 {{- if $secretName -}}
 {{- $secret := lookup "v1" "Secret" .Release.Namespace $secretName -}}
 {{- if $secret -}}
-{{- $userKey := ternary (dig "citus-db" "externalDatabase" "usernameKey" "username" $vals) (dig "citus-db" "auth" "usernameKey" "username" $vals) $external -}}
-{{- $passKey := ternary (dig "citus-db" "externalDatabase" "passwordKey" "password" $vals) (dig "citus-db" "auth" "passwordKey" "password" $vals) $external -}}
-{{- $dbKey := ternary (dig "citus-db" "externalDatabase" "databaseKey" "database" $vals) (dig "citus-db" "auth" "databaseKey" "database" $vals) $external -}}
+{{- $userKey := ternary (dig "opendso-apps-db" "externalDatabase" "usernameKey" "username" $vals) (dig "opendso-apps-db" "auth" "usernameKey" "username" $vals) $external -}}
+{{- $passKey := ternary (dig "opendso-apps-db" "externalDatabase" "passwordKey" "password" $vals) (dig "opendso-apps-db" "auth" "passwordKey" "password" $vals) $external -}}
 {{- $rawUser := index $secret.data $userKey -}}
 {{- if $rawUser }}{{- $user = ($rawUser | b64dec) }}{{- end -}}
 {{- $rawPass := index $secret.data $passKey -}}
 {{- if $rawPass }}{{- $pass = ($rawPass | b64dec) }}{{- end -}}
-{{- $rawDb := index $secret.data $dbKey -}}
-{{- if $rawDb }}{{- $db = ($rawDb | b64dec) }}{{- end -}}
 {{- end -}}
 {{- end -}}
 host: {{ $host | quote }}

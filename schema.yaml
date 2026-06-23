@@ -13,7 +13,7 @@ x-google-marketplace:
   # All images share a single registry prefix (global.imageRegistry).
   # Image paths in values.yaml are relative to the registry:
   #   OES images:     gms-api, historian, ...
-  #   Third-party:    citusdata/citus, mongodb/mongodb-community-server, ...
+  #   Third-party:    postgres, mongodb/mongodb-community-server, ...
   #
   # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
@@ -42,13 +42,7 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.mongodb.tag:
           type: TAG
-    "citusdata/citus":
-      properties:
-        global.images.citusDb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.citusDb.tag:
-          type: TAG
-    "timescale/timescaledb":
+    "postgres":
       properties:
         global.images.appsDb.repository:
           type: REPO_WITH_REGISTRY

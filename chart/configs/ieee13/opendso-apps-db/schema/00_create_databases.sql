@@ -7,3 +7,7 @@ CREATE DATABASE assets;
 
 -- Grant privileges to the default user
 GRANT ALL PRIVILEGES ON DATABASE assets TO essuser;
+
+-- Create historian database
+CREATE DATABASE ofmb_db;
+GRANT ALL PRIVILEGES ON DATABASE ofmb_db TO essuser;

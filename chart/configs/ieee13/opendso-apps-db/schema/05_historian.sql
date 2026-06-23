@@ -1,43 +1,7 @@
--- OpenDSO Citus Database Initialization Script
--- This script runs automatically on first database startup
+-- Historian service schema (ofmb_db)
+-- Partition-management helpers used by the historian service.
 
--- Initialize Citus extension if available; plain-Postgres installs skip this.
-DO $$ BEGIN
-    CREATE EXTENSION IF NOT EXISTS citus;
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- Create historian user if it doesn't exist
-DO
-$$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'historian') THEN
-        CREATE USER historian WITH PASSWORD 'historian';
-    END IF;
-END
-$$;
-
--- Grant permissions to historian user
-GRANT ALL PRIVILEGES ON DATABASE ofmb_db TO historian;
-
--- Connect to ofmb_db and grant schema permissions
 \c ofmb_db
-
-GRANT ALL ON SCHEMA public TO historian;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO historian;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO historian;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO historian;
-
--- Grant permissions on all existing tables (in case they exist)
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO historian;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO historian;
-
--- Ensure the historian user can create tables
-ALTER ROLE historian CREATEDB;
-
-
--- Partition-management helpers.
--- On a Citus install these shadow the built-ins (same behaviour).
--- On plain Postgres these are the only implementation.
 
 -- Creates time-range child partitions for a range-partitioned table.
 -- Iterates [start_from, end_at) in steps of partition_interval.
@@ -96,7 +60,7 @@ BEGIN
 END;
 $$;
 
--- Mirrors the subset of the Citus time_partitions view used by this service.
+-- Convenience view over pg_inherits for partition introspection.
 CREATE OR REPLACE VIEW time_partitions AS
 SELECT
     parent.oid::regclass AS parent_table,
