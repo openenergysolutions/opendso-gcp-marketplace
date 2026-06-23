@@ -42,28 +42,20 @@ spec:
               value: {{ .Values.config.adminUser | default .Values.admin.username | quote }}
             - name: KEYCLOAK_ADMIN_PASSWORD
               value: {{ required "keycloak admin password is required; set keycloak.config.adminPassword" (.Values.config.adminPassword | default .Values.admin.password) | quote }}
-            - name: KC_PROXY
-              value: {{ .Values.proxy | quote }}
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+            - name: KC_HTTP_ENABLED
+              value: "true"
             {{- if $hostname }}
-            {{- $hostnameUrl := printf "https://%s" $hostname }}
-            {{- if and $hostnamePort (ne $hostnamePort "443") }}
-            - name: KC_HOSTNAME_URL
-              value: "{{ $hostnameUrl }}:{{ $hostnamePort }}"
-            - name: KC_HOSTNAME_ADMIN_URL
-              value: "{{ $hostnameUrl }}:{{ $hostnamePort }}"
-            {{- else }}
-            - name: KC_HOSTNAME_URL
-              value: "{{ $hostnameUrl }}"
-            - name: KC_HOSTNAME_ADMIN_URL
-              value: "{{ $hostnameUrl }}"
-            {{- end }}
+            - name: KC_HOSTNAME
+              {{- if and $hostnamePort (ne $hostnamePort "443") }}
+              value: "{{ $hostname }}:{{ $hostnamePort }}"
+              {{- else }}
+              value: {{ $hostname | quote }}
+              {{- end }}
             {{- end }}
             - name: KC_HOSTNAME_STRICT
               value: {{ .Values.config.hostnameStrict | quote }}
-            - name: KC_HOSTNAME_STRICT_HTTPS
-              value: {{ .Values.config.hostnameStrictHttps | quote }}
-            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
-              value: {{ .Values.config.hostnameBackchannelDynamic | quote }}
             {{- if .Values.config.httpsEnabled }}
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: {{ .Values.config.httpsCertFile | quote }}
