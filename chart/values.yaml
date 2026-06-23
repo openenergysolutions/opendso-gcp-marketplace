@@ -172,16 +172,6 @@ global:
       tag: "7.0.37-ubi8"
       pullPolicy: IfNotPresent
       digest: "sha256:6dfeef0f0f56f9ef3d9f915d2df50a4dbf95a139478ea41b855b9fee30d9eee4"
-    keycloakDb:
-      repository: postgres
-      tag: "17.0-alpine3.20"
-      pullPolicy: IfNotPresent
-      digest: ""
-    appsDb:
-      repository: postgres
-      tag: "16-alpine"
-      pullPolicy: IfNotPresent
-      digest: "sha256:a1994defb0c16d0ce917be23aac185910a8873affd3fd58289dbede2d556a443"
     # Core Services
     historianSvc:
       repository: historian
@@ -361,6 +351,8 @@ global:
       enabled: false
   keycloak-db:
     enabled: false
+  opendso-apps-db:
+    enabled: false
   # Core Services
   historian-svc:
     enabled: true
@@ -465,9 +457,8 @@ opendso-apps-db:
   historianDatabase: ofmb_db
   podSecurityContext: {}
   securityContext: {}
-  # BYO database (marketplace-friendly)
   externalDatabase:
-    enabled: false
+    enabled: true
     host: ""
     port: 5432
     database: ""

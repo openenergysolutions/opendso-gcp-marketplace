@@ -100,33 +100,19 @@ mongodb:
   #   usernameKey: "username"
   #   passwordKey: "password"
 
-# OpenDSO Apps DB (PostgreSQL) — serves both apps (ess_tester) and historian (ofmb_db) databases
+# OpenDSO Apps DB — Cloud SQL (external PostgreSQL)
+# The in-cluster postgres StatefulSet is disabled; configure your Cloud SQL instance below.
 opendso-apps-db:
-  enabled: true
-  podSecurityContext: {}
-  securityContext: {}
-
-  persistence:
+  externalDatabase:
     enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 60Gi  # Combined apps + historian data
-
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 4Gi
-    requests:
-      cpu: 1000m
-      memory: 2Gi
-
-  # External PostgreSQL configuration (if using Cloud SQL)
-  # externalDatabase:
-  #   enabled: true
-  #   host: "your-cloudsql-host"
-  #   port: 5432
-  #   database: "ess_tester"
-  #   username: "essuser"
-  #   existingSecret: "apps-db-credentials"
+    host: ""        # Cloud SQL private IP or proxy address
+    port: 5432
+    database: "ess_tester"
+    username: "essuser"
+    existingSecret: ""   # K8s Secret with credentials (recommended)
+    usernameKey: username
+    passwordKey: password
+    databaseKey: database
 
 # ============================================================================
 # Core Services

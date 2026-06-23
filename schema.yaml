@@ -42,12 +42,6 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.mongodb.tag:
           type: TAG
-    "postgres":
-      properties:
-        global.images.appsDb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.appsDb.tag:
-          type: TAG
     historian:
       properties:
         global.images.historianSvc.repository:
@@ -335,6 +329,33 @@ properties:
     x-google-marketplace:
       type: MASKED_FIELD
 
+
+  # ---------------------------------------------------------------------------
+  # Apps DB — Cloud SQL (external PostgreSQL)
+  # ---------------------------------------------------------------------------
+  opendso-apps-db.externalDatabase.host:
+    type: string
+    title: Apps DB Host
+    description: >
+      Cloud SQL private IP or proxy address for the OpenDSO apps database
+      (serves ess_tester and ofmb_db).
+    default: ""
+
+  opendso-apps-db.externalDatabase.username:
+    type: string
+    title: Apps DB Username
+    default: essuser
+
+  opendso-apps-db.externalDatabase.password:
+    type: string
+    title: Apps DB Password
+    x-google-marketplace:
+      type: MASKED_FIELD
+
+  opendso-apps-db.externalDatabase.database:
+    type: string
+    title: Apps DB Name
+    default: ess_tester
 
   # Kept for schema backwards compatibility — was present in prior submissions as MASKED_FIELD.
   # Grafana has been removed from the chart; this value is accepted but ignored.

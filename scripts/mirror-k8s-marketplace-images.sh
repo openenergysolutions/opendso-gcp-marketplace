@@ -60,7 +60,6 @@ IMAGE_SPECS=(
     "quay.io/keycloak/keycloak|quay.io/keycloak/keycloak|26.6.3|global.images.keycloak|digest"
     "envoyproxy/envoy|envoyproxy/envoy|v1.38.2|global.images.envoy|digest"
     "mongodb/mongodb-community-server|mongodb/mongodb-community-server|7.0.37-ubi8|global.images.mongodb|digest"
-    "postgres|postgres|16-alpine|global.images.appsDb|digest"
     "redis|redis|7.4.9-alpine|global.images.essManagerRedis|digest"
     "busybox|busybox|1.36|global.images.busybox|digest"
 )

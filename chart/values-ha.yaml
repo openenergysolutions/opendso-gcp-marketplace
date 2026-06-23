@@ -28,30 +28,6 @@ mongodb:
     wiredTiger:
       cacheSizeGB: 4
 
-keycloak-db:
-  persistence:
-    size: 10Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 512Mi
-      cpu: 250m
-    limits:
-      memory: 2Gi
-      cpu: 1000m
-
-opendso-apps-db:
-  persistence:
-    size: 150Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 4Gi
-      cpu: 2000m
-    limits:
-      memory: 16Gi
-      cpu: 8000m
-
 # ============================================================================
 # Stateless components — replica counts and resources
 # ============================================================================
