@@ -76,11 +76,6 @@ keycloak:
       memory: 4Gi
       cpu: 2000m
 
-grafana:
-  replicas: 2
-  persistence:
-    enabled: true
-    size: 10Gi
 
 gms-api:
   replicas: 3

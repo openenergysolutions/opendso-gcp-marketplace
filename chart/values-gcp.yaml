@@ -648,43 +648,6 @@ ingress:
     # cloud.google.com/neg: '{"ingress": true}'
     # cloud.google.com/backend-config: '{"default": "opendso-backend-config"}'
 
-# ============================================================================
-# Monitoring & Observability
-# ============================================================================
-
-# Grafana (Monitoring/Dashboards)
-grafana:
-  # Use namespace-scoped Role instead of ClusterRole/ClusterRoleBinding.
-  # The GCP Marketplace deployer SA only has namespace-scoped permissions.
-  rbac:
-    namespaced: true
-
-  persistence:
-    enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 10Gi
-
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  readinessProbe:
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-  livenessProbe:
-    initialDelaySeconds: 180
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-
-  # Admin credentials
-  # Default: admin / (auto-generated password in secret)
-  # Change this after first login!
 
 # ============================================================================
 # Optional Services (disabled by default)

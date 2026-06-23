@@ -48,24 +48,6 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.appsDb.tag:
           type: TAG
-    "grafana/grafana":
-      properties:
-        grafana.image.repository:
-          type: REPO_WITH_REGISTRY
-        grafana.image.tag:
-          type: TAG
-    "curlimages/curl":
-      properties:
-        grafana.downloadDashboardsImage.repository:
-          type: REPO_WITH_REGISTRY
-        grafana.downloadDashboardsImage.tag:
-          type: TAG
-    "kiwigrid/k8s-sidecar":
-      properties:
-        grafana.sidecar.image.repository:
-          type: REPO_WITH_REGISTRY
-        grafana.sidecar.image.tag:
-          type: TAG
     historian:
       properties:
         global.images.historianSvc.repository:
@@ -353,17 +335,12 @@ properties:
     x-google-marketplace:
       type: MASKED_FIELD
 
-  # ---------------------------------------------------------------------------
-  # Grafana credentials
-  # ---------------------------------------------------------------------------
-  grafana.adminUser:
-    type: string
-    title: Grafana Admin Username
-    default: admin
 
+  # Kept for schema backwards compatibility — was present in prior submissions as MASKED_FIELD.
+  # Grafana has been removed from the chart; this value is accepted but ignored.
   grafana.adminPassword:
     type: string
-    title: Grafana Admin Password
+    title: Grafana Admin Password (unused)
     x-google-marketplace:
       type: MASKED_FIELD
 
@@ -388,4 +365,4 @@ required:
   - keycloak.config.adminPassword
   - mongodb.auth.rootPassword
   - mongodb.auth.password
-  - grafana.adminPassword
+

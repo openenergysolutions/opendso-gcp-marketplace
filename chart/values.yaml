@@ -181,7 +181,7 @@ global:
       repository: postgres
       tag: "16-alpine"
       pullPolicy: IfNotPresent
-      digest: ""
+      digest: "sha256:a1994defb0c16d0ce917be23aac185910a8873affd3fd58289dbede2d556a443"
     # Core Services
     historianSvc:
       repository: historian
@@ -354,9 +354,6 @@ global:
     enabled: false
   keycloak:
     enabled: true
-  # Monitoring & Observability
-  grafana:
-    enabled: false # Enable for monitoring/dashboards
   # Database Services
   mongodb:
     enabled: true
@@ -674,111 +671,3 @@ nats:
   websocketNodePort:
     enabled: false
     port: 30009
-# =============================================================================
-# Grafana - Monitoring & Dashboards
-# =============================================================================
-grafana:
-  image:
-    registry: docker.io
-    repository: grafana/grafana
-    tag: "13.0.2"
-    sha: "sha256:3a49eabe6b4630879d91d9a18310bdca08d1fc22faea1ba088d7cac96df29332"
-    pullPolicy: IfNotPresent
-  downloadDashboardsImage:
-    registry: docker.io
-    repository: curlimages/curl
-    tag: "8.20.0"
-    sha: "sha256:05368cb3aa069911bc21c7a02d751f8dc46564fd3a966525809dbd32294ac6cc"
-    pullPolicy: IfNotPresent
-  sidecar:
-    image:
-      registry: quay.io
-      repository: kiwigrid/k8s-sidecar
-      tag: "2.7.3"
-      sha: "sha256:8ae9a92efff0e7941b4d74ffc779f299fe66c7f35a686269dabfb4f323c1a2ae"
-    imagePullPolicy: IfNotPresent
-    datasources:
-      enabled: true
-      label: grafana_datasource
-      labelValue: "1"
-  # Admin credentials - using Kubernetes secret
-  # Secret is created by parent chart with name: {{ .Release.Name }}-grafana-credentials
-  # IMPORTANT: If using a custom release name, override with:
-  #   --set grafana.admin.existingSecret=<your-release-name>-grafana-credentials
-  admin:
-    existingSecret: "" # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
-    userKey: admin-user
-    passwordKey: admin-password
-  # Admin user configuration (for reference, actual credentials in secret)
-  adminUser: admin
-  adminPassword: ""
-  # Persistence
-  persistence:
-    enabled: true
-    type: pvc
-    storageClassName: standard
-    size: 10Gi
-  # Disable init container that changes ownership (causes permission issues on upgrade)
-  initChownData:
-    enabled: false
-  # Service configuration
-  service:
-    type: ClusterIP
-    port: 80
-  # Ingress will be handled by parent chart
-  ingress:
-    enabled: false
-  readinessProbe:
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-  livenessProbe:
-    initialDelaySeconds: 180
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-  # Environment variables for datasource credentials
-  # Secret name follows pattern: {{ .Release.Name }}-grafana-credentials
-  # IMPORTANT: If using a custom release name, override with:
-  #   --set grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<your-release-name>-grafana-credentials
-  envValueFrom:
-    OPENDSO_APPS_DB_PASSWORD:
-      secretKeyRef:
-        name: "" # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
-        key: opendso-apps-db-password
-  # Plugins to install
-  plugins: []
-  # Resource limits
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  # Environment variables
-  env:
-    GF_SECURITY_ALLOW_EMBEDDING: "true"
-    GF_AUTH_ANONYMOUS_ENABLED: "false"
-    GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/"
-    GF_SERVER_SERVE_FROM_SUB_PATH: "false"
-  # Default dashboards
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: 'default'
-          orgId: 1
-          folder: 'OpenDSO'
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
-  # Dashboard ConfigMaps (add your dashboards here)
-  dashboards:
-    default: {}
-    # Example: Add dashboard ConfigMaps
-    # system-metrics:
-    #   file: dashboards/system-metrics.json

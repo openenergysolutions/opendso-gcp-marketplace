@@ -29,11 +29,7 @@ dependencies:
     repository: "file://charts/keycloak"
     condition: global.keycloak.enabled
 
-  # Monitoring & Observability
-  - name: grafana
-    version: "10.5.15"
-    repository: "https://grafana.github.io/helm-charts"
-    condition: global.grafana.enabled
+
 
   # Database Services
   - name: mongodb

@@ -61,9 +61,6 @@ IMAGE_SPECS=(
     "envoyproxy/envoy|envoyproxy/envoy|v1.38.2|global.images.envoy|digest"
     "mongodb/mongodb-community-server|mongodb/mongodb-community-server|7.0.37-ubi8|global.images.mongodb|digest"
     "postgres|postgres|16-alpine|global.images.appsDb|digest"
-    "grafana/grafana|docker.io/grafana/grafana|13.0.2|grafana.image|sha"
-    "curlimages/curl|docker.io/curlimages/curl|8.20.0|grafana.downloadDashboardsImage|sha"
-    "kiwigrid/k8s-sidecar|quay.io/kiwigrid/k8s-sidecar|2.7.3|grafana.sidecar.image|sha"
     "redis|redis|7.4.9-alpine|global.images.essManagerRedis|digest"
     "busybox|busybox|1.36|global.images.busybox|digest"
 )
