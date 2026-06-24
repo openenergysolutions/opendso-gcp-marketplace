@@ -54,7 +54,7 @@ let authSettings = {
   authorization_issuer: `https://keycloak.${gmsEndpoint}/realms/oes`,
   authorization_jwks_uri: `https://keycloak.${gmsEndpoint}/realms/oes/protocol/openid-connect/certs`,
   hmi_audience: "openfmb-hmi",
-  scopes: ["openid", "profile", "email", "offline_access"],
+  scopes: ["openid", "profile", "email"],
   nats_auth: {{ dig "nats-auth-svc" "enabled" false .Values.global }}
 };
 
@@ -121,7 +121,10 @@ for (const env of environmentArray) {
   {
     environmentId: envId,
     name: 'grpc',
-    uri: `https://${endpoint}:5051`
+    // gRPC-web is exposed via the grpc.<domain> ingress host (envoy on
+    // historian-svc), not a raw port on the base domain. Mirrors the nats.<domain>
+    // pattern above; `https://${endpoint}:5051` is unreachable from the browser.
+    uri: `https://grpc.${endpoint}`
   });
 
   menuItems.push(

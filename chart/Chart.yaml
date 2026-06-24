@@ -171,6 +171,10 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/rpcdss-svc"
     condition: global.rpcdss-svc.enabled
+  - name: ods-svc
+    version: 0.1.0
+    repository: "file://charts/ods-svc"
+    condition: global.ods-svc.enabled
   - name: nats-auth-svc
     version: 0.1.0
     repository: "file://charts/nats-auth-svc"
