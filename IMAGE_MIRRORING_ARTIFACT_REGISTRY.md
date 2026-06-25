@@ -170,7 +170,6 @@ Mirror at least the chart-managed default Marketplace image set:
   - NATS
   - Keycloak
   - MongoDB
-  - Citus
   - ESS Manager Redis
 - core OpenDSO services:
   - GMS API

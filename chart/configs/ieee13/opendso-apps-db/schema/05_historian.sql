@@ -9,8 +9,8 @@
 CREATE OR REPLACE FUNCTION create_time_partitions(
     table_name         TEXT,
     partition_interval INTERVAL,
-    start_from         TIMESTAMPTZ,
-    end_at             TIMESTAMPTZ
+    end_at             TIMESTAMPTZ,
+    start_from         TIMESTAMPTZ DEFAULT now()
 ) RETURNS BOOLEAN
 LANGUAGE plpgsql AS $$
 DECLARE

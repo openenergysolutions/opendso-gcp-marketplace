@@ -241,6 +241,20 @@ spec:
                   number: 8094
     {{- end }}
 
+    # AHS App (Asset Health System)
+    {{- if (index .Values.global "ahs-app").enabled }}
+    - host: ahs.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-ahs-app
+                port:
+                  number: 8100
+    {{- end }}
+
     # Grafana - Monitoring & Dashboards
     {{- if (index .Values.global "grafana").enabled }}
     - host: grafana.{{ $domain }}

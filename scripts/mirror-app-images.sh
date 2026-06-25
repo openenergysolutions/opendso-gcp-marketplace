@@ -65,8 +65,8 @@ IMAGE_SPECS=(
     "historian|latest|global.images.historianSvc"
     "gms-api|latest|global.images.gmsApi"
     "openfmb-event-service|latest|global.images.openfmbEventService"
-    "topology-genesis|pre-ods-356333c4|global.images.topologyGenesis"
-    "topology-nodes|c942b6c5-licensed|global.images.topologyNodes"
+    "topology-genesis|8e25d06b|global.images.topologyGenesis"
+    "topology-nodes|edfee6a8-licensed|global.images.topologyNodes"
     "der-dispatch|b09232f6|global.images.derDispatchSvc"
     "der-dispatch-app|latest|global.images.derDispatchApp"
     "genesis-node-app|latest|global.images.genesisNodeApp"
@@ -85,12 +85,14 @@ IMAGE_SPECS=(
     "batt-testing-app|latest|global.images.essTesterApp"
     "ahs|latest|global.images.assetHealthSvc"
     "ahs-sim|latest|global.images.assetHealthSimSvc"
+    "ahs-app|latest|global.images.ahsApp"
     "cvr|latest|global.images.cvrSvc"
     "genetic-cvr|8b70d773|global.images.cvrGeneticAlgorithmSvc"
     "openfmb-services|649c06dd|global.images.cvrOpenfmbServicesSvc"
     "omegadss|6cd7c4ef|global.images.omegadssSvc"
     "rpcdss|61e9ad02|global.images.rpcdssSvc"
     "nats-auth-service|ec044b57|global.images.natsAuthSvc"
+    "opendso-data-service|0b8d3e0f|global.images.odsSvc"
 )
 
 log()  { echo "  [mirror-app-images] $*"; }

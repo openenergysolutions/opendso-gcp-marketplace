@@ -380,3 +380,20 @@ data:
 {{- $assetHealthApp := .Files.Get (printf "configs/%s/asset-health-svc/app.yaml" $site) }}
 {{ tpl $assetHealthApp . | indent 4 }}
 {{- end }}
+
+# OpenDSO Data Service ConfigMap
+{{- if (index .Values.global "ods-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ods-svc-site-config
+  labels:
+    app.kubernetes.io/name: ods-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $odsSvcApp := .Files.Get (printf "configs/%s/ods-svc/app.yaml" $site) }}
+{{ tpl $odsSvcApp . | indent 4 }}
+{{- end }}

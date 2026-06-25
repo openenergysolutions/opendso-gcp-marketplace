@@ -1,0 +1,23 @@
+oes-app:
+  log_level: info
+  colored: false
+  app_name: "ods"
+  module_log_levels:
+    - module: "sqlx"
+      level: error
+    - module: "async_nats"
+      level: error
+nats:
+  connection_url: nats://{{ .Release.Name }}-nats-service:4222
+  creds: ''
+  auth: 'NIL'
+{{- $db := include "opendso.appsDb.settings" . | fromYaml }}
+database_settings:
+  user: {{ $db.user }}
+  password: {{ $db.password }}
+  host: {{ $db.host }}
+  port: {{ $db.port }}
+  dbname: opendso
+app_settings:
+  app_name: "ods"
+  app_version: "0.1.0"

@@ -71,7 +71,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
 ### Cloud SQL
 
-OpenDSO requires a Cloud SQL PostgreSQL 16 instance with three databases initialized before deployment.
+OpenDSO requires a Cloud SQL PostgreSQL 16 instance with four databases initialized before deployment.
 Run the provisioning script once per environment:
 
 ```bash
@@ -86,8 +86,8 @@ Run the provisioning script once per environment:
 The script:
 
 1. Creates the Cloud SQL instance (`--skip-create` to attach to an existing one)
-2. Creates the `ess_tester`, `ofmb_db`, and `assets` databases
-3. Applies the OpenDSO schema via Cloud SQL Proxy + psql
+2. Creates the `ess_tester`, `ofmb_db`, `assets`, and `opendso` databases
+3. Applies the OpenDSO schema (via Cloud SQL Proxy + psql, or via `--run-in-cluster` for private-IP-only instances)
 4. Writes a `<release>-apps-db-credentials` Kubernetes Secret
 
 After the script completes, set the reported private IP in `values-gcp.yaml`:
@@ -100,6 +100,38 @@ opendso-apps-db:
 ```
 
 **Prerequisites for the script:** `gcloud` authenticated with `roles/cloudsql.admin` + `roles/cloudsql.client`, `cloud-sql-proxy`, and `psql` in PATH.
+
+#### Materialized view refresh — pg_cron (recommended)
+
+The Asset Health service (`asset-health-svc`) uses four PostgreSQL materialized views in the `assets` database. These views must be refreshed periodically to reflect new data. The recommended approach on Cloud SQL is **pg_cron**, which schedules the refresh inside the database itself — no Kubernetes CronJob needed.
+
+Add `--pg-cron` when running the provisioning script:
+
+```bash
+./scripts/provision-cloud-sql.sh \
+  --project   my-gcp-project \
+  --region    us-central1 \
+  --instance  opendso-db \
+  --namespace opendso \
+  --release   opendso \
+  --pg-cron
+# prompts for both the essuser password and the postgres superuser password
+```
+
+With `--pg-cron` the script:
+
+1. Sets the `cloudsql.enable_pg_cron=on` database flag on the instance (at creation time, so no restart)
+2. Creates the `pg_cron` extension in the `postgres` database (requires the `postgres` superuser password)
+3. Grants the `essuser` application user the right to schedule cron jobs
+4. Schedules `ahs-matview-refresh` — a `*/15 * * * *` job that runs `REFRESH MATERIALIZED VIEW` on all four views (`common_metrics`, `breaker_metrics`, `generator_metrics`, `asset_health_daily`) in the `assets` database as `essuser`
+
+The job runs entirely inside Cloud SQL and persists across pod restarts. To inspect job history:
+
+```sql
+SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
+```
+
+If you're attaching to an **existing** instance (`--skip-create`), the script will patch the `cloudsql.enable_pg_cron=on` flag. Note that `--database-flags` replaces all existing flags on the instance — if you have other custom flags set, include them alongside `cloudsql.enable_pg_cron=on` manually after provisioning.
 
 The Cloud SQL instance must be on the same VPC as the GKE cluster (Private IP via VPC peering or Private Service Connect). The schema init scripts are in `chart/configs/ieee13/opendso-apps-db/schema/`.
 

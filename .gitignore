@@ -24,3 +24,6 @@ terraform/.terraform.lock.hcl
 terraform/*.tfstate
 terraform/*.tfstate.*
 terraform/*.auto.tfvars
+
+# jar file
+*.jar

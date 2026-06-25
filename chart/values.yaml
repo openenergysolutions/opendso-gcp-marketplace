@@ -158,9 +158,9 @@ global:
       digest: "sha256:c6f47817df8346dc8e13a08a39d86e6160e8b1a08d7c07f4297e4024d8d055ee" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
-      tag: "26.6.3"
+      tag: "26.6.3-patched"
       pullPolicy: IfNotPresent
-      digest: "sha256:5ec05e4d2bc6597d85fcd2afc75fc1ceebed6736bb878a74bc898a8e3d5c6963"
+      digest: "sha256:f606e42c630e7170a215b62c5e8fe14f0e493e5e6697d5fc5eb90e2c989a387b"
     envoy:
       repository: envoyproxy/envoy
       tag: "v1.38.2"
@@ -191,14 +191,14 @@ global:
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "pre-ods-356333c4"
+      tag: "8e25d06b"
       pullPolicy: IfNotPresent
-      digest: "sha256:7eb45fafb6bdb22dd7281774a15d59f61ce8fe703061f0703fe2660c88b9cf75"
+      digest: "sha256:c33433336bc27ee3a6e380b04b4c5075409994375d6ba9b81a043806ca3d19ed"
     topologyNodes:
       repository: topology-nodes
-      tag: "c942b6c5-licensed"
+      tag: "edfee6a8-licensed"
       pullPolicy: IfNotPresent
-      digest: "sha256:033350fac17d2591020ffc8b18d1f43cc88f13172570f99d743131ba9932301c"
+      digest: "sha256:5f8e1a00092fee24635f6d1ff885fb70856c40667be3ce673764c158cf2b6d11"
     derDispatchApp:
       repository: der-dispatch-app
       tag: "latest"
@@ -225,6 +225,11 @@ global:
       tag: "latest"
       pullPolicy: IfNotPresent
       digest: "sha256:6783a64f4c5fde35a2de0e0da06d048459a125a6bdd5f1d2faff5dbf5c7d7b1e"
+    ahsApp:
+      repository: ahs-app
+      tag: "latest"
+      pullPolicy: IfNotPresent
+      digest: "sha256:7e8034095c0b625ac7c9f9fabe5d484d1a0cdc0beaa3acd7179b07a2097dfa1b"
     eventViewerApp:
       repository: event-viewer-app
       tag: "latest"
@@ -325,9 +330,9 @@ global:
       digest: "sha256:3f4ec7c0050eff2f260eb59b19e8896417b98d94ffa85dedff525125895a5546"
     odsSvc:
       repository: opendso-data-service
-      tag: "b67a6790"
+      tag: "0b8d3e0f"
       pullPolicy: IfNotPresent
-      digest: "sha256:74f91710265d6537a94c6940c52cfe901b78e533764ff7490f6428d95cd32131"
+      digest: "sha256:4e2a63e1c1941cab2f1dc14b37922ab32ce5d1f0f4284b3b26e7a732ec98c5a8"
     natsAuthSvc:
       repository: nats-auth-service
       tag: "ec044b57"
@@ -396,6 +401,8 @@ global:
   openfmb-event-creator-app:
     enabled: true
   schedule-dispatch-app:
+    enabled: true
+  ahs-app:
     enabled: true
   ess-manager-app:
     enabled: true

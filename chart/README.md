@@ -43,7 +43,7 @@ opendso/
 │   ├── nats/                    # Infrastructure services
 │   ├── keycloak/
 │   ├── mongodb/                 # Database services
-│   ├── citus-db/
+│   ├── opendso-apps-db/
 │   ├── historian-svc/          # Core services
 │   ├── gms-api/
 │   └── ...                      # 36 more charts
@@ -75,16 +75,16 @@ dependencies:
 37 internal subcharts + 1 external (grafana) in the `charts/` directory:
 
 - **Infrastructure** (3): nats, keycloak, grafana
-- **Databases** (4): mongodb, citus-db, keycloak-db, opendso-apps-db
+- **Databases** (3): mongodb, keycloak-db, opendso-apps-db
 - **Core Services** (3): historian-svc, gms-api, openfmb-event-service
 - **Topology** (2): topology-genesis, topology-nodes
 - **DER** (2): der-dispatch-app, der-dispatch-svc
-- **Frontend Apps** (11): genesis-node-app, data-viewer-app, event-viewer-app, gis-app, historian-app, inspector-app, inventory-app, one-line-app, opendso-docs-app, openfmb-event-creator-app, schedule-dispatch-app
+- **Frontend Apps** (10): genesis-node-app, data-viewer-app, event-viewer-app, gis-app, historian-app, inspector-app, inventory-app, one-line-app, openfmb-event-creator-app, schedule-dispatch-app
 - **CVR** (3): cvr-svc, cvr-openfmb-services-svc, cvr-genetic-algorithm-svc
 - **ESS** (5): ess-manager-svc, ess-tester-svc, ess-manager-app, ess-tester-app, ess-manager-redis
-- **Asset Health** (2): asset-health-svc, asset-health-sim-svc
+- **Asset Health** (3): asset-health-svc, asset-health-sim-svc, ahs-app
 - **OpenDSS** (2): omegadss-svc, rpcdss-svc
-- **Additional** (1): nats-auth-svc
+- **Additional** (2): nats-auth-svc, ods-svc
 
 ## Configuration
 
@@ -152,12 +152,10 @@ global:
   # Databases
   mongodb:
     enabled: true
-  citus-db:
-    enabled: true
   keycloak-db:
     enabled: false              # Only for production
   opendso-apps-db:
-    enabled: true               # NEW: Consolidated app database
+    enabled: false              # In-cluster fallback; use Cloud SQL (externalDatabase.enabled: true) for GCP
 
   # Core Services
   historian-svc:
@@ -193,12 +191,11 @@ configs/
       master-realm.json         # 78KB - Master realm
     mongodb/
       mongo-init.js             # Database initialization
-    citus-db/
-      schema/init.sql           # Database schema
     opendso-apps-db/schema/
-      00_create_databases.sql   # Creates ess_tester and assets databases
+      00_create_databases.sql   # Creates ess_tester, ofmb_db, assets, and opendso databases
+      05_historian.sql          # Historian partition helpers (ofmb_db)
       10_ess_tester.sql         # ESS testing tables
-      20_asset_health.sql       # Asset health tables (TimescaleDB)
+      20_asset_health.sql       # Asset health tables
     cvr-genetic-algorithm-svc/
       IEEE13Nodeckt.dss         # Power flow model
       Load1.csv                 # 162KB - Load profiles
@@ -230,8 +227,7 @@ All sensitive data uses Kubernetes secrets. The chart no longer ships plaintext 
 - `mongodb.auth.password`
 - `keycloak.config.adminPassword`
 - `grafana.adminPassword` or `grafana.admin.existingSecret`
-- `citus-db.auth.password`
-- `opendso-apps-db.auth.password`
+- `opendso-apps-db.auth.password` (in-cluster) or `opendso-apps-db.externalDatabase.password` (Cloud SQL)
 
 **Grafana Credentials** (auto-generated):
 
@@ -277,7 +273,6 @@ kubectl create secret docker-registry regsecret \
 kubectl create secret generic <release-name>-grafana-credentials \
   --from-literal=admin-user=admin \
   --from-literal=admin-password='secure-password' \
-  --from-literal=citus-password='cituspassword' \
   --from-literal=mongodb-password='mongopassword' \
   --from-literal=opendso-apps-db-password='esspassword' \
   -n <namespace>
@@ -317,7 +312,6 @@ helm install production . \
 
 ```bash
 --set grafana.admin.existingSecret=<release-name>-grafana-credentials
---set grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials
 --set grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials
 ```
 
@@ -384,7 +378,7 @@ Full configuration with all 38 subcharts available.
 What it changes:
 
 - scales selected stateless services to 2-3 replicas
-- increases MongoDB, Citus, and apps DB storage and resource requests
+- increases MongoDB and apps DB storage and resource requests
 - switches major database PVCs to `pd-ssd`
 - enables autoscaling for `gms-api`
 - adds nginx ingress rate-limit annotations
@@ -633,11 +627,11 @@ helm repo index . --url https://charts.example.com
 
 ### Grafana Datasources
 
-The chart includes three pre-configured PostgreSQL datasources:
+The chart includes three pre-configured PostgreSQL datasources, all connecting to `opendso-apps-db` (or Cloud SQL when external database is enabled):
 
-1. **Historian DB** (Citus) - OpenFMB historian data in `ofmb_db`
-2. **OpenDSO Apps DB** - ESS testing data in `ess_tester` database
-3. **Assets DB** - Asset health monitoring data in `assets` database (TimescaleDB)
+1. **Historian DB** — OpenFMB historian data in `ofmb_db`
+2. **OpenDSO Apps DB** — ESS testing data in `ess_tester` database
+3. **Assets DB** — Asset health monitoring data in `assets` database
 
 Configure in `values.yaml`:
 
@@ -646,14 +640,14 @@ grafana:
   datasources:
     datasources.yaml:
       datasources:
-        # Historian DB (Citus)
+        # Historian DB
         - name: Historian DB
           type: postgres
-          url: <release-name>-citus-db:5432
+          url: <release-name>-opendso-apps-db:5432
           database: ofmb_db
-          user: citususer
+          user: essuser
           secureJsonData:
-            password: $CITUS_PASSWORD
+            password: $OPENDSO_APPS_DB_PASSWORD
 
         # OpenDSO Apps DB - ESS Tester
         - name: OpenDSO Apps DB
@@ -664,7 +658,7 @@ grafana:
           secureJsonData:
             password: $OPENDSO_APPS_DB_PASSWORD
 
-        # Assets DB - Asset Health (TimescaleDB)
+        # Assets DB - Asset Health
         - name: Assets DB
           type: postgres
           url: <release-name>-opendso-apps-db:5432
@@ -674,10 +668,7 @@ grafana:
             password: $OPENDSO_APPS_DB_PASSWORD
 ```
 
-**Note**: The `opendso-apps-db` PostgreSQL instance hosts two databases:
-
-- `ess_tester` - ESS testing tables
-- `assets` - Asset health tables with TimescaleDB features
+**Note**: All three databases (`ofmb_db`, `ess_tester`, `assets`) are hosted on the same `opendso-apps-db` instance. On GCP, this is a Cloud SQL PostgreSQL instance provisioned via `scripts/provision-cloud-sql.sh`.
 
 ### Multi-Site Deployment
 

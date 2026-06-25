@@ -115,6 +115,10 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/schedule-dispatch-app"
     condition: global.schedule-dispatch-app.enabled
+  - name: ahs-app
+    version: 0.1.0
+    repository: "file://charts/ahs-app"
+    condition: global.ahs-app.enabled
 
   # ESS Applications
   - name: ess-manager-svc

@@ -72,6 +72,12 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.topologyNodes.tag:
           type: TAG
+    opendso-data-service:
+      properties:
+        global.images.odsSvc.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.odsSvc.tag:
+          type: TAG
     der-dispatch-app:
       properties:
         global.images.derDispatchApp.repository:
@@ -179,6 +185,12 @@ x-google-marketplace:
         global.images.assetHealthSimSvc.repository:
           type: REPO_WITH_REGISTRY
         global.images.assetHealthSimSvc.tag:
+          type: TAG
+    ahs-app:
+      properties:
+        global.images.ahsApp.repository:
+          type: REPO_WITH_REGISTRY
+        global.images.ahsApp.tag:
           type: TAG
     redis:
       properties:

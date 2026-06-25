@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "ods-svc.name" -}}
+{{- define "ahs-app.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "ods-svc.fullname" -}}
+{{- define "ahs-app.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,16 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "ods-svc.chart" -}}
+{{- define "ahs-app.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "ods-svc.labels" -}}
-helm.sh/chart: {{ include "ods-svc.chart" . }}
-{{ include "ods-svc.selectorLabels" . }}
+{{- define "ahs-app.labels" -}}
+helm.sh/chart: {{ include "ahs-app.chart" . }}
+{{ include "ahs-app.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,16 +43,27 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "ods-svc.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "ods-svc.name" . }}
+{{- define "ahs-app.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ahs-app.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create image reference - supports digest override
-Usage: {{ include "ods-svc.image" (dict "imageRoot" .Values.global.images.odsSvc "registry" .Values.global.imageRegistry) }}
+Create the name of the service account to use
 */}}
-{{- define "ods-svc.image" -}}
+{{- define "ahs-app.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "ahs-app.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create image reference - supports digest override
+Usage: {{ include "ahs-app.image" (dict "imageRoot" .Values.global.images.ahsApp "registry" .Values.global.imageRegistry) }}
+*/}}
+{{- define "ahs-app.image" -}}
 {{- $registry := .registry | default "" -}}
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag -}}

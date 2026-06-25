@@ -321,7 +321,19 @@ for (const env of environmentArray) {
       external: true,
       environmentId: `${envId}`,
       index: 16,
-    }
+    },
+    {
+      title: "Asset Health",
+      group: "Operational Apps",
+      company: "OES",
+      icon: "mdi-shield-check",
+      link: `https://ahs.${gmsEndpoint}`,
+      src: "/images/ahs.png",
+      roles: ["AHS"],
+      external: true,
+      environmentId: `${envId}`,
+      index: 17,
+    },
   );
 }
 
