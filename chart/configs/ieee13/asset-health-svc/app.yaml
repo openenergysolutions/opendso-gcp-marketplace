@@ -22,7 +22,7 @@ app_settings:
   ai_config:
     ai_provider: Gemini
     ai_model: "gemini-2.5-pro"
-    api_key: "AIzaSyB24OMlxOCfpGRGD0LaplGKuPfAilkHviA"
+    api_key: "API_KEY"
     api_endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
   process_interval_seconds: 5
   analysis_cron_schedule: "0 0 0 * * *"
