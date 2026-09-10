@@ -22,7 +22,7 @@ set -euo pipefail
 PROJECT="openenergysolutionsinc-public"
 LOCATION="us"
 REPO="oesinc"
-TAG="0.1"
+TAG="2.0"
 SERVICE_NAME=""
 PLATFORM="linux/amd64"
 DRY_RUN=false

@@ -399,7 +399,7 @@ global:
   openfmb-event-creator-app:
     enabled: true
   schedule-dispatch-app:
-    enabled: true
+    enabled: false
   ahs-app:
     enabled: true
   ess-manager-app:
