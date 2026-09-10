@@ -29,6 +29,12 @@
 #   --run-in-cluster     Run schema init from a temporary pod inside the GKE cluster
 #                        (required when Cloud SQL has private IP only and local machine
 #                         has no VPC access; needs kubectl pointing at the target cluster)
+#   --domain             Base domain, e.g. opendso.example.com — required for the
+#                        gms-api seed (endpoint/app-launcher URLs), unless --skip-schema
+#   --site               Site config name           (default: ieee13)
+#   --keycloak-realm     Keycloak realm             (default: oes)
+#   --keycloak-client-id Keycloak client ID for gms-api (default: gms)
+#   --nats-auth-enabled  Set nats_auth=true in the seeded auth_settings row
 #   --pg-cron            Enable pg_cron and schedule materialized view refresh
 #   --postgres-password  Password for the 'postgres' superuser (prompted if omitted when --pg-cron)
 #   --dry-run            Print commands without executing them
@@ -46,6 +52,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCHEMA_DIR="${SCRIPT_DIR}/../chart/configs/ieee13/opendso-apps-db/schema"
+SEED_DIR="${SCRIPT_DIR}/../chart/configs/ieee13/opendso-apps-db/seed"
 
 PROJECT=""
 REGION="us-central1"
@@ -58,6 +65,11 @@ RELEASE="opendso"
 SKIP_CREATE=false
 SKIP_SCHEMA=false
 RUN_IN_CLUSTER=false
+DOMAIN=""
+SITE="ieee13"
+KEYCLOAK_REALM="oes"
+KEYCLOAK_CLIENT_ID="gms"
+NATS_AUTH_ENABLED=false
 PG_CRON=false
 POSTGRES_PASSWORD=""
 DRY_RUN=false
@@ -85,6 +97,11 @@ while [[ $# -gt 0 ]]; do
         --skip-create)       SKIP_CREATE=true;        shift ;;
         --skip-schema)       SKIP_SCHEMA=true;        shift ;;
         --run-in-cluster)    RUN_IN_CLUSTER=true;     shift ;;
+        --domain)             DOMAIN="$2";             shift 2 ;;
+        --site)                SITE="$2";              shift 2 ;;
+        --keycloak-realm)      KEYCLOAK_REALM="$2";    shift 2 ;;
+        --keycloak-client-id)  KEYCLOAK_CLIENT_ID="$2"; shift 2 ;;
+        --nats-auth-enabled)  NATS_AUTH_ENABLED=true;  shift ;;
         --pg-cron)           PG_CRON=true;            shift ;;
         --postgres-password) POSTGRES_PASSWORD="$2";  shift 2 ;;
         --dry-run)           DRY_RUN=true;            shift ;;
@@ -94,6 +111,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$PROJECT" ]] || fail "--project is required"
+[[ -n "$DOMAIN" || "$SKIP_SCHEMA" == "true" || "$DRY_RUN" == "true" ]] || \
+    fail "--domain is required (used to render the gms-api seed); pass --skip-schema to skip it"
 
 if [[ -z "$DB_PASSWORD" && "$DRY_RUN" != "true" ]]; then
     read -rsp "Password for '${DB_USER}': " DB_PASSWORD
@@ -116,6 +135,24 @@ run() {
     else
         "$@"
     fi
+}
+
+# 40_gms_api_seed.sql is Helm-templated ({{ .ctx.xxx }} placeholders) for use via
+# `tpl` in chart/templates/site-configmaps.yaml. Render it here with plain sed
+# substitution so it can be applied the same way as the static schema files.
+RENDERED_SEED=""
+render_gms_api_seed() {
+    RENDERED_SEED="$(mktemp)"
+    sed \
+        -e "s/{{ \.ctx\.clientId }}/${KEYCLOAK_CLIENT_ID}/g" \
+        -e "s/{{ \.ctx\.realm }}/${KEYCLOAK_REALM}/g" \
+        -e "s/{{ \.ctx\.domain }}/${DOMAIN}/g" \
+        -e "s/{{ \.ctx\.site }}/${SITE}/g" \
+        -e "s/{{ \.ctx\.natsAuth }}/${NATS_AUTH_ENABLED}/g" \
+        "${SEED_DIR}/40_gms_api_seed.sql" > "$RENDERED_SEED"
+}
+cleanup_rendered_seed() {
+    [[ -n "$RENDERED_SEED" ]] && rm -f "$RENDERED_SEED"
 }
 
 # ---------------------------------------------------------------------------
@@ -180,7 +217,7 @@ fi
 # ---------------------------------------------------------------------------
 step "Creating application databases"
 
-for DB in ess_tester ofmb_db assets opendso; do
+for DB in ess_tester ofmb_db assets settings_api opendso; do
     log "database: ${DB}"
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "  [dry-run] gcloud sql databases create ${DB} --project=${PROJECT} --instance=${INSTANCE}"
@@ -213,6 +250,7 @@ if [[ "$SKIP_SCHEMA" != "true" ]]; then
             cleanup_pod() {
                 kubectl delete pod "$INIT_POD" -n "$NAMESPACE" --now --ignore-not-found &>/dev/null \
                     && log "init pod deleted" || true
+                cleanup_rendered_seed
             }
             trap cleanup_pod EXIT
 
@@ -226,12 +264,19 @@ if [[ "$SKIP_SCHEMA" != "true" ]]; then
                 "${SCHEMA_DIR}/00_create_databases.sql" \
                 "${SCHEMA_DIR}/05_historian.sql" \
                 "${SCHEMA_DIR}/10_ess_tester.sql" \
-                "${SCHEMA_DIR}/20_asset_health.sql"; do
+                "${SCHEMA_DIR}/20_asset_health.sql" \
+                "${SCHEMA_DIR}/30_gms_api.sql"; do
                 log "  $(basename "$sql")"
                 kubectl exec -i -n "$NAMESPACE" "$INIT_POD" -- \
                     env PGPASSWORD="${DB_PASSWORD}" \
                     psql -h "$CLOUDSQL_IP" -U "${DB_USER}" -d postgres < "$sql"
             done
+
+            render_gms_api_seed
+            log "  40_gms_api_seed.sql"
+            kubectl exec -i -n "$NAMESPACE" "$INIT_POD" -- \
+                env PGPASSWORD="${DB_PASSWORD}" \
+                psql -h "$CLOUDSQL_IP" -U "${DB_USER}" -d postgres < "$RENDERED_SEED"
 
             log "Schema init complete"
 
@@ -266,6 +311,7 @@ PGSQL
         else
             echo "  [dry-run] kubectl run pg-schema-init -n ${NAMESPACE} --restart=Never --image=postgres:16 -- sleep 600"
             echo "  [dry-run] kubectl exec -i ... psql -h <CLOUDSQL-IP> -U ${DB_USER} -d postgres < schema_files..."
+            echo "  [dry-run] kubectl exec -i ... psql -h <CLOUDSQL-IP> -U ${DB_USER} -d postgres < 40_gms_api_seed.sql (rendered)"
             if [[ "$PG_CRON" == "true" ]]; then
                 echo "  [dry-run] kubectl exec ... env PGPASSWORD=... psql -U postgres   # CREATE EXTENSION pg_cron + GRANT to ${DB_USER}"
                 echo "  [dry-run] kubectl exec ... env PGPASSWORD=... psql -U ${DB_USER} # cron.schedule_in_database ahs-matview-refresh"
@@ -284,6 +330,7 @@ PGSQL
 
         cleanup() {
             [[ -n "$PROXY_PID" ]] && kill "$PROXY_PID" 2>/dev/null && log "proxy stopped" || true
+            cleanup_rendered_seed
         }
         trap cleanup EXIT
 
@@ -294,13 +341,16 @@ PGSQL
             PROXY_PID=$!
             sleep 3
 
+            render_gms_api_seed
             export PGPASSWORD="${DB_PASSWORD}"
             log "Applying schema scripts"
             psql -h 127.0.0.1 -p "${PROXY_PORT}" -U "${DB_USER}" -d postgres \
                 -f "${SCHEMA_DIR}/00_create_databases.sql" \
                 -f "${SCHEMA_DIR}/05_historian.sql" \
                 -f "${SCHEMA_DIR}/10_ess_tester.sql" \
-                -f "${SCHEMA_DIR}/20_asset_health.sql"
+                -f "${SCHEMA_DIR}/20_asset_health.sql" \
+                -f "${SCHEMA_DIR}/30_gms_api.sql" \
+                -f "${RENDERED_SEED}"
             unset PGPASSWORD
 
             log "Schema init complete"
@@ -337,7 +387,9 @@ PGSQL
             echo "    -f ${SCHEMA_DIR}/00_create_databases.sql \\"
             echo "    -f ${SCHEMA_DIR}/05_historian.sql \\"
             echo "    -f ${SCHEMA_DIR}/10_ess_tester.sql \\"
-            echo "    -f ${SCHEMA_DIR}/20_asset_health.sql"
+            echo "    -f ${SCHEMA_DIR}/20_asset_health.sql \\"
+            echo "    -f ${SCHEMA_DIR}/30_gms_api.sql \\"
+            echo "    -f <rendered ${SEED_DIR}/40_gms_api_seed.sql>"
             if [[ "$PG_CRON" == "true" ]]; then
                 echo "  [dry-run] psql -U postgres -d postgres   # CREATE EXTENSION pg_cron + GRANT to ${DB_USER}"
                 echo "  [dry-run] psql -U ${DB_USER} -d postgres # cron.schedule_in_database ahs-matview-refresh"
