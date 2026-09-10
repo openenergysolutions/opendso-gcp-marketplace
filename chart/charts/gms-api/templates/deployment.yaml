@@ -29,73 +29,36 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
-      - name: wait-for-mongodb-data
-        image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.mongodb "registry" .Values.global.imageRegistry) | quote }}
+      # Wait until the settings_api schema is provisioned and seeded (the
+      # opendso-apps-db init scripts create the tables and the 'default'
+      # auth_settings row). Mirrors the former MongoDB authsettings gate.
+      - name: wait-for-postgres-data
+        image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.appsDb "registry" .Values.global.imageRegistry) | quote }}
+        {{- $appsDb := include "opendso.appsDb.settings" . | fromYaml }}
         command:
         - sh
         - -c
         - |
-          echo "Waiting for MongoDB authsettings document..."
-          until mongosh "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@{{ .Release.Name }}-mongodb:27017/settings_api{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsAllowInvalidCertificates=true{{- end }}" \
-            --quiet \
-            --eval "db.authsettings.findOne({ environmentId: 'default' })" | grep -q "environmentId"; do
-            echo "authsettings document not ready yet, waiting..."
+          echo "Waiting for settings_api auth_settings default row..."
+          until psql "host={{ $appsDb.host }} port={{ $appsDb.port }} dbname={{ .Values.config.postgres.database | default "settings_api" }} user={{ $appsDb.user }} password=$POSTGRES_PASSWORD" \
+            -tAc "SELECT 1 FROM auth_settings WHERE environment_id='default'" 2>/dev/null | grep -q 1; do
+            echo "auth_settings not ready yet, waiting..."
             sleep 3
           done
-          echo "authsettings document found! Proceeding with startup."
+          echo "auth_settings default row found! Proceeding with startup."
         env:
-        {{- if .Values.config.mongodb.existingSecret }}
-        - name: MONGODB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.config.mongodb.existingSecret }}
-              key: {{ .Values.config.mongodb.usernameKey | default "mongodb-username" }}
-        - name: MONGODB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.config.mongodb.existingSecret }}
-              key: {{ .Values.config.mongodb.passwordKey | default "mongodb-password" }}
-        {{- else if .Values.config.mongodb.createSecret }}
-        - name: MONGODB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "gms-api.fullname" . }}-mongodb
-              key: mongodb-username
-        - name: MONGODB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "gms-api.fullname" . }}-mongodb
-              key: mongodb-password
-        {{- else if and (dig "mongodb" "enabled" false .Values.global) (not .Values.config.mongodb.username) (not .Values.config.mongodb.password) }}
-        - name: MONGODB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
-              key: mongodb-username
-        - name: MONGODB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
-              key: mongodb-password
-        {{- else }}
-        - name: MONGODB_USERNAME
-          value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or config.mongodb.existingSecret" .Values.config.mongodb.username | quote }}
-        - name: MONGODB_PASSWORD
-          value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or config.mongodb.existingSecret" .Values.config.mongodb.password | quote }}
-        {{- end }}
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-opendso-apps-db-secret
+                key: password
         resources:
           limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
             cpu: 100m
             memory: 256Mi
-          requests:
-            cpu: 50m
-            memory: 128Mi
-        {{- if (index .Values.global "mongodb").tls.enabled }}
-        volumeMounts:
-        - name: mongodb-tls
-          mountPath: /etc/mongodb/tls
-          readOnly: true
-        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -103,48 +66,36 @@ spec:
           image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.gmsApi "registry" .Values.global.imageRegistry) | quote }}
           imagePullPolicy: {{ .Values.global.images.gmsApi.pullPolicy }}
           env:
-            # we need this value, DO NOT CHANGE IT
-            - name: DOCKER_API
-              value: "http://127.0.0.1:2376"            
-            {{- if .Values.config.mongodb.existingSecret }}
-            - name: MONGODB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.config.mongodb.existingSecret }}
-                  key: {{ .Values.config.mongodb.usernameKey | default "mongodb-username" }}
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.config.mongodb.existingSecret }}
-                  key: {{ .Values.config.mongodb.passwordKey | default "mongodb-password" }}
-            {{- else if .Values.config.mongodb.createSecret }}
-            - name: MONGODB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "gms-api.fullname" . }}-mongodb
-                  key: mongodb-username
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "gms-api.fullname" . }}-mongodb
-                  key: mongodb-password
-            {{- else if and (dig "mongodb" "enabled" false .Values.global) (not .Values.config.mongodb.username) (not .Values.config.mongodb.password) }}
-            - name: MONGODB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
-                  key: mongodb-username
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ printf "%s-gms-api-mongodb-auth" .Release.Name }}
-                  key: mongodb-password
-            {{- else }}
-            - name: MONGODB_USERNAME
-              value: {{ required "gms-api MongoDB username is required; set config.mongodb.username or config.mongodb.existingSecret" .Values.config.mongodb.username | quote }}
-            - name: MONGODB_PASSWORD
-              value: {{ required "gms-api MongoDB password is required; set config.mongodb.password or config.mongodb.existingSecret" .Values.config.mongodb.password | quote }}
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
+            # Orchestration backend: query the local Kubernetes API in-cluster
+            # (via the pod's service account) rather than a Docker daemon.
+            - name: ORCHESTRATION_BACKEND
+              value: {{ .Values.orchestration.backend | quote }}
+            {{- if .Values.orchestration.namespace }}
+            - name: ORCHESTRATION_NAMESPACE
+              value: {{ .Values.orchestration.namespace | quote }}
             {{- end }}
+            # PostgreSQL password from the shared opendso-apps-db secret.
+            # Host/port/db/user come from the mounted production.env configmap.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-opendso-apps-db-secret
+                  key: password
+            {{- if .Values.entitlement.serviceUrl }}
+            - name: ENTITLEMENT_SERVICE_URL
+              value: {{ .Values.entitlement.serviceUrl | quote }}
+            {{- end }}
+            {{- if .Values.entitlement.cacheTtlMs }}
+            - name: ENTITLEMENT_CACHE_TTL_MS
+              value: {{ .Values.entitlement.cacheTtlMs | quote }}
+            {{- end }}
+          {{- if (.Values.license).secretName }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.license.secretName }}
+          {{- end }}
           ports:
             - name: api
               containerPort: {{ .Values.containerPort }}
@@ -165,11 +116,6 @@ spec:
             {{- end }}
             - name: logger
               mountPath: {{ .Values.persistence.mountPath }}
-            {{- if (index .Values.global "mongodb").tls.enabled }}
-            - name: mongodb-tls
-              mountPath: /etc/mongodb/tls
-              readOnly: true
-            {{- end }}
           resources:
             {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
 
@@ -252,12 +198,6 @@ spec:
         {{- else }}
         - name: logger
           emptyDir: {}
-        {{- end }}
-        {{- if (index .Values.global "mongodb").tls.enabled }}
-        - name: mongodb-tls
-          secret:
-            secretName: {{ .Release.Name }}-mongodb-tls
-            defaultMode: 0444
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

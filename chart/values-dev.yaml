@@ -117,19 +117,6 @@ topology-nodes:
     PLATFORM_NATS_PORT: "4222"
     LICENSE_API_URL: "https://license-api.demo.localtest.me"
 
-mongodb:
-  persistence:
-    deleteOnUpgrade: true  # Fresh database on every upgrade (dev only)
-  initdb:
-    createConfigMap: false  # Parent chart provides the ConfigMap
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 2Gi
-    requests:
-      cpu: 500m
-      memory: 1Gi
-
 nats:
   tls:
     enabled: true

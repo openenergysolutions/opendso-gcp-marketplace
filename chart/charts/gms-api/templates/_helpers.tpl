@@ -68,7 +68,7 @@ Usage: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.gmsApi
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag -}}
 {{- $digest := .imageRoot.digest -}}
-{{- if and $registry (not (hasPrefix $registry $repository)) -}}
+{{- if $registry -}}
 {{- $repository = printf "%s/%s" $registry $repository -}}
 {{- end -}}
 {{- if $digest -}}

@@ -166,12 +166,14 @@ global:
       tag: "v1.38.2"
       pullPolicy: IfNotPresent
       digest: "sha256:faee76995af40723f30beb51121a29515597be6e622101df70da840d109c1147"
-    # Database images
-    mongodb:
-      repository: mongodb/mongodb-community-server
-      tag: "7.0.37-ubi8"
+    # postgres client image (psql) used by gms-api's wait-for-postgres-data
+    # init container. Not the database server itself — opendso-apps-db runs
+    # against external Cloud SQL in values-gcp.yaml.
+    appsDb:
+      repository: postgres
+      tag: "16-alpine"
       pullPolicy: IfNotPresent
-      digest: "sha256:6dfeef0f0f56f9ef3d9f915d2df50a4dbf95a139478ea41b855b9fee30d9eee4"
+      digest: "" # TODO: pin after mirroring — see scripts/mirror-k8s-marketplace-images.sh --only postgres
     # Core Services
     historianSvc:
       repository: historian
@@ -357,10 +359,6 @@ global:
   keycloak:
     enabled: true
   # Database Services
-  mongodb:
-    enabled: true
-    tls:
-      enabled: false
   keycloak-db:
     enabled: false
   opendso-apps-db:
@@ -436,29 +434,6 @@ global:
 # =============================================================================
 # OpenDSO Apps Database (Shared)
 # =============================================================================
-mongodb:
-  auth:
-    rootUsername: root
-    rootPassword: ""
-    username: opendso
-    password: ""
-    database: settings_api
-    existingSecret: ""
-    usernameKey: username
-    passwordKey: password
-    databaseKey: database
-  externalDatabase:
-    enabled: false
-    host: ""
-    port: 27017
-    database: ""
-    username: ""
-    password: ""
-    existingSecret: ""
-    usernameKey: username
-    passwordKey: password
-    databaseKey: database
-
 opendso-apps-db:
   auth:
     username: essuser

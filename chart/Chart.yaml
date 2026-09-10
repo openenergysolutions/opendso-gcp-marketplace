@@ -32,10 +32,6 @@ dependencies:
 
 
   # Database Services
-  - name: mongodb
-    version: 0.1.0
-    repository: "file://charts/mongodb"
-    condition: global.mongodb.enabled
   - name: keycloak-db
     version: 0.1.0
     repository: "file://charts/keycloak-db"

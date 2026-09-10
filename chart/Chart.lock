@@ -5,9 +5,6 @@ dependencies:
 - name: keycloak
   repository: file://charts/keycloak
   version: 0.1.0
-- name: mongodb
-  repository: file://charts/mongodb
-  version: 0.1.0
 - name: keycloak-db
   repository: file://charts/keycloak-db
   version: 0.1.0
@@ -110,5 +107,5 @@ dependencies:
 - name: nats-auth-svc
   repository: file://charts/nats-auth-svc
   version: 0.1.0
-digest: sha256:d86c272907a876e205b71dd4054976b6ca37dea7c4eb9c70abe11f9892889b12
-generated: "2026-06-24T15:12:21.867070185-04:00"
+digest: sha256:0496301a66cc050d41b3e1f6f2f0d498fa7bcbcda1294108cfc68c05df8cb459
+generated: "2026-09-10T11:43:16.416881023-04:00"

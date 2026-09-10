@@ -13,7 +13,7 @@ x-google-marketplace:
   # All images share a single registry prefix (global.imageRegistry).
   # Image paths in values.yaml are relative to the registry:
   #   OES images:     gms-api, historian, ...
-  #   Third-party:    postgres, mongodb/mongodb-community-server, ...
+  #   Third-party:    postgres, ...
   #
   # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
@@ -36,11 +36,11 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.envoy.tag:
           type: TAG
-    "mongodb/mongodb-community-server":
+    postgres:
       properties:
-        global.images.mongodb.repository:
+        global.images.appsDb.repository:
           type: REPO_WITH_REGISTRY
-        global.images.mongodb.tag:
+        global.images.appsDb.tag:
           type: TAG
     historian:
       properties:
@@ -317,32 +317,6 @@ properties:
       type: MASKED_FIELD
 
   # ---------------------------------------------------------------------------
-  # MongoDB credentials
-  # ---------------------------------------------------------------------------
-  mongodb.auth.rootUsername:
-    type: string
-    title: MongoDB Root Username
-    default: root
-
-  mongodb.auth.rootPassword:
-    type: string
-    title: MongoDB Root Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-
-  mongodb.auth.username:
-    type: string
-    title: MongoDB App Username
-    default: opendso
-
-  mongodb.auth.password:
-    type: string
-    title: MongoDB App Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-
-
-  # ---------------------------------------------------------------------------
   # Apps DB — Cloud SQL (external PostgreSQL)
   # ---------------------------------------------------------------------------
   opendso-apps-db.externalDatabase.host:
@@ -396,6 +370,4 @@ required:
   - installation.key
   - global.domain
   - keycloak.config.adminPassword
-  - mongodb.auth.rootPassword
-  - mongodb.auth.password
 

@@ -332,23 +332,6 @@ data:
 {{ tpl $derDispatchConfig . | indent 4 }}
 {{- end }}
 
-# MongoDB Init Script ConfigMap
-{{- if (index .Values.global "mongodb").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-mongodb-init
-  labels:
-    app.kubernetes.io/name: mongodb
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  mongo-init.js: |
-{{- $mongoInit := .Files.Get (printf "configs/%s/mongodb/mongo-init.js" $site) }}
-{{ tpl $mongoInit . | indent 4 }}
-{{- end }}
-
 # OpenDSO Apps DB Init Script ConfigMap
 {{- if and (index .Values.global "opendso-apps-db").enabled (not (dig "opendso-apps-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
 ---
@@ -362,6 +345,20 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
 {{ (.Files.Glob (printf "configs/%s/opendso-apps-db/schema/*.sql" $site)).AsConfig | indent 2 }}
+  # gms-api seed is templated (Helm values -> env-specific URLs) via tpl, unlike
+  # the verbatim schema files above. Keyed 40_* so the entrypoint runs it after
+  # the schema DDL (30_gms_api.sql). Values are resolved nil-safely with dig (the
+  # chart's existing idiom) and passed as a flat context, so the seed renders
+  # regardless of partial value sets (e.g. a clobbered global.keycloak block).
+  40_gms_api_seed.sql: |
+{{- $domain := .Values.global.domain | default (dig "domain" "" (.Values.ingress | default dict)) }}
+{{- $seedCtx := dict
+      "clientId" (dig "keycloak" "clientIds" "api" "gms" .Values.global)
+      "realm" (dig "keycloak" "realm" "oes" .Values.global)
+      "domain" $domain
+      "site" (.Values.global.site | default "ieee13")
+      "natsAuth" (dig "nats-auth-svc" "enabled" false .Values.global) }}
+{{ tpl (.Files.Get (printf "configs/%s/opendso-apps-db/seed/40_gms_api_seed.sql" $site)) (dict "ctx" $seedCtx) | indent 4 }}
 {{- end }}
 
 # Asset Health Service ConfigMap

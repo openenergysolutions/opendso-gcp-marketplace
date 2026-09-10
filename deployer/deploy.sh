@@ -434,14 +434,6 @@ echo ""
 echo "[3/3] Running helm upgrade --install..."
 CURRENT_STEP="helm upgrade --install"
 
-# Delete any existing Jobs from this release before upgrading.
-# Kubernetes Jobs have immutable specs; Helm cannot patch them on upgrade.
-# The mongodb-init job runs once on first install and is idempotent.
-kubectl delete jobs \
-    "${APP_INSTANCE_NAME}-mongodb-init" \
-    -n "$NAMESPACE" \
-    --ignore-not-found 2>/dev/null || true
-
 # Adopt any Application resource pre-created by mpdev into Helm management.
 # mpdev install creates the Application before the deployer job runs, without
 # Helm ownership labels. Without adoption, helm upgrade --install fails with

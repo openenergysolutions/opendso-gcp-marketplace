@@ -42,8 +42,7 @@ opendso/
 ├── charts/                       # 38 subcharts
 │   ├── nats/                    # Infrastructure services
 │   ├── keycloak/
-│   ├── mongodb/                 # Database services
-│   ├── opendso-apps-db/
+│   ├── opendso-apps-db/         # Database services
 │   ├── historian-svc/          # Core services
 │   ├── gms-api/
 │   └── ...                      # 36 more charts
@@ -75,7 +74,7 @@ dependencies:
 37 internal subcharts + 1 external (grafana) in the `charts/` directory:
 
 - **Infrastructure** (3): nats, keycloak, grafana
-- **Databases** (3): mongodb, keycloak-db, opendso-apps-db
+- **Databases** (2): keycloak-db, opendso-apps-db
 - **Core Services** (3): historian-svc, gms-api, openfmb-event-service
 - **Topology** (2): topology-genesis, topology-nodes
 - **DER** (2): der-dispatch-app, der-dispatch-svc
@@ -110,8 +109,6 @@ global:
     enabled: true
   nats:
     enabled: true
-  mongodb:
-    enabled: true
   # ... 39 more service flags
 ```
 
@@ -127,12 +124,6 @@ global:
       tag: "2.9.9"
       pullPolicy: IfNotPresent
       digest: ""                 # Optional: sha256 digest overrides tag
-
-    mongodb:
-      repository: mongo
-      tag: "7.0"
-      pullPolicy: IfNotPresent
-      digest: "sha256:abc123..."  # Use specific digest
 ```
 
 ### Component Enablement
@@ -150,8 +141,6 @@ global:
     enabled: true               # NEW: Monitoring
 
   # Databases
-  mongodb:
-    enabled: true
   keycloak-db:
     enabled: false              # Only for production
   opendso-apps-db:
@@ -189,13 +178,14 @@ configs/
     keycloak/realm/
       oes-realm.json            # 79KB - OpenDSO realm
       master-realm.json         # 78KB - Master realm
-    mongodb/
-      mongo-init.js             # Database initialization
     opendso-apps-db/schema/
-      00_create_databases.sql   # Creates ess_tester, ofmb_db, assets, and opendso databases
+      00_create_databases.sql   # Creates ess_tester, ofmb_db, assets, and settings_api databases
       05_historian.sql          # Historian partition helpers (ofmb_db)
       10_ess_tester.sql         # ESS testing tables
       20_asset_health.sql       # Asset health tables
+      30_gms_api.sql            # gms-api (settings_api) tables
+    opendso-apps-db/seed/
+      40_gms_api_seed.sql       # gms-api default auth/app-launcher rows (Helm-templated)
     cvr-genetic-algorithm-svc/
       IEEE13Nodeckt.dss         # Power flow model
       Load1.csv                 # 162KB - Load profiles
@@ -222,9 +212,6 @@ global:
 
 All sensitive data uses Kubernetes secrets. The chart no longer ships plaintext fallback passwords for production installs. Required credentials must be provided explicitly, or created by the deploy flow before install:
 
-- `mongodb.auth.rootPassword`
-- `mongodb.auth.username`
-- `mongodb.auth.password`
 - `keycloak.config.adminPassword`
 - `grafana.adminPassword` or `grafana.admin.existingSecret`
 - `opendso-apps-db.auth.password` (in-cluster) or `opendso-apps-db.externalDatabase.password` (Cloud SQL)
@@ -273,7 +260,6 @@ kubectl create secret docker-registry regsecret \
 kubectl create secret generic <release-name>-grafana-credentials \
   --from-literal=admin-user=admin \
   --from-literal=admin-password='secure-password' \
-  --from-literal=mongodb-password='mongopassword' \
   --from-literal=opendso-apps-db-password='esspassword' \
   -n <namespace>
 
@@ -295,9 +281,6 @@ The chart supports custom release names for multi-instance deployments:
 ```yaml
 # NATS connection (automatically adjusted)
 NATS_URL: {{ printf "nats://%s-nats-service:4222" .Release.Name }}
-
-# MongoDB connection
-MONGODB_URI: {{ printf "mongodb://%s-mongodb:27017" .Release.Name }}
 ```
 
 **Install with custom name**:
@@ -378,7 +361,7 @@ Full configuration with all 38 subcharts available.
 What it changes:
 
 - scales selected stateless services to 2-3 replicas
-- increases MongoDB and apps DB storage and resource requests
+- increases apps DB storage and resource requests
 - switches major database PVCs to `pd-ssd`
 - enables autoscaling for `gms-api`
 - adds nginx ingress rate-limit annotations

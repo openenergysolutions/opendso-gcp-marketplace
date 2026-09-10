@@ -13,21 +13,6 @@
 # Stateful components — production storage and resources
 # ============================================================================
 
-mongodb:
-  persistence:
-    size: 50Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 2Gi
-      cpu: 1000m
-    limits:
-      memory: 8Gi
-      cpu: 4000m
-  config:
-    wiredTiger:
-      cacheSizeGB: 4
-
 # ============================================================================
 # Stateless components — replica counts and resources
 # ============================================================================
