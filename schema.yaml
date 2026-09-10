@@ -255,10 +255,14 @@ properties:
   # ---------------------------------------------------------------------------
   global.imageRegistry:
     type: string
-    title: Image Registry
+    title: Image Registry (advanced — leave blank for standard installs)
     description: >
-      Artifact Registry prefix for all images,
-      e.g. us-central1-docker.pkg.dev/my-project/oesinc
+      Leave this blank. All application images are already mirrored and
+      injected automatically by Google Cloud Marketplace at deploy time —
+      you do not need to provide a registry for a standard installation.
+      Only set this if you are pointing at your own private image mirror
+      instead of the one Marketplace provides, e.g.
+      us-central1-docker.pkg.dev/my-project/oesinc
     default: ""
   
   # ---------------------------------------------------------------------------
