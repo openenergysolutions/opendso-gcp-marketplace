@@ -255,8 +255,6 @@ cat <<EOF
         "global.domain": "${DOMAIN}",
         "global.resourceProfile": "minimal",
         "keycloak.config.adminPassword": "changeme",
-        "mongodb.auth.rootPassword": "changeme",
-        "mongodb.auth.password": "changeme",
         "grafana.adminPassword": "changeme"
       }'
 EOF
@@ -275,8 +273,6 @@ cat <<EOF
         "global.domain": "${DOMAIN}",
         "global.resourceProfile": "minimal",
         "keycloak.config.adminPassword": "changeme",
-        "mongodb.auth.rootPassword": "changeme",
-        "mongodb.auth.password": "changeme",
         "grafana.adminPassword": "changeme"
       }'
 EOF

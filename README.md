@@ -270,7 +270,7 @@ mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0
 # Test install into a real cluster
 mpdev install \
   --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
-  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
+  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
 ```
 
 ---
@@ -283,12 +283,12 @@ mpdev install \
 - TLS is standardized around the release-scoped secret `<release-name>-tls-secret`; the chart can also create `root-ca`, `server-cert`, and `server-key` compatibility secrets for workloads that still mount those names
 - Backend services that support numeric non-root execution are configured to run with explicit non-root security contexts; stateful infrastructure components are hardened more conservatively where image startup still requires root-like filesystem initialization
 - `topology-nodes` validates `LICENSE_KEY` and `LICENSE_INSTALLATION_KEY` against the configured license API at startup and on a periodic revalidation interval
-- Third-party images (NATS, Keycloak, MongoDB, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
+- Third-party images (NATS, Keycloak, Postgres, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
 
 ## GKE Runtime Notes
 
-- `gms-api.config.dockerApi` is intentionally set to `http://127.0.0.1:2376` on GKE because GKE uses containerd and does not expose a Docker socket
-- orchestration features that assume direct Docker Engine access are therefore not expected to function on GKE in this package
+- `gms-api` manages pods (its orchestration feature) via the in-cluster Kubernetes API rather than a Docker daemon, since GKE uses containerd and does not expose a Docker socket
+- its RBAC is namespace-scoped (`orchestration.rbac.scope: namespace`) rather than cluster-wide, so orchestration is limited to pods in the app's own release namespace
 
 ---
 
