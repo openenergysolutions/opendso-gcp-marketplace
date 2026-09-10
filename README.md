@@ -15,7 +15,7 @@ A single Helm release installs the full OpenDSO stack into your GKE cluster:
 | Category | Components |
 | --- | --- |
 | **Infrastructure** | NATS (messaging), Keycloak (identity) |
-| **Databases** | MongoDB, Cloud SQL PostgreSQL (external — provisioned separately) |
+| **Databases** | Cloud SQL PostgreSQL (external — provisioned separately) |
 | **Core Services** | GMS API, Historian, OpenFMB Event Service, NATS Auth |
 | **Topology** | Topology Genesis, Topology Nodes |
 | **Grid Applications** | DER Dispatch, ESS Manager, ESS Tester, Asset Health |
@@ -42,7 +42,6 @@ After deployment, the following endpoints are available at your configured domai
    - **OpenDSO License Key** — obtained from OES; required to activate the application.
    - **OpenDSO Installation Key** — obtained from OES; required to activate the application.
    - **Keycloak Admin Password**
-   - **MongoDB Root Password** and **MongoDB App Password**
    - **Apps DB Host** — Cloud SQL private IP (provisioned in the Cloud SQL prerequisite step below)
    - **Apps DB Password** — password for the `essuser` database user
    - **Resource Profile** — `minimal`, `default`, or `production`

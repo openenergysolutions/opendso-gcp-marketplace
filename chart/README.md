@@ -1,13 +1,12 @@
 # OpenDSO Helm Chart
 
-An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 38 subcharts.
+An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 36 subcharts.
 
 ## Chart Information
 
 - **Version**: 0.1.0
 - **Type**: Umbrella Chart
-- **Components**: 38 subcharts (37 internal + 1 external)
-- **External Dependencies**: Grafana (10.5.14)
+- **Components**: 36 subcharts (all internal)
 
 ## Prerequisites
 
@@ -39,16 +38,15 @@ opendso/
 ├── Chart.yaml                    # Chart metadata and dependencies
 ├── Chart.lock                    # Dependency lock file
 ├── values.yaml                   # Default configuration
-├── charts/                       # 38 subcharts
+├── charts/                       # 36 subcharts
 │   ├── nats/                    # Infrastructure services
 │   ├── keycloak/
 │   ├── opendso-apps-db/         # Database services
 │   ├── historian-svc/          # Core services
 │   ├── gms-api/
-│   └── ...                      # 36 more charts
+│   └── ...                      # 31 more charts
 ├── templates/
 │   ├── _helpers.tpl            # Template helper functions
-│   ├── grafana-secret.yaml     # Grafana credentials secret
 │   ├── site-configmaps.yaml    # Site-specific configuration
 │   └── ingress.yaml            # Ingress resources
 └── configs/                     # Site-specific configurations
@@ -57,23 +55,11 @@ opendso/
 
 ## Dependencies
 
-### External Charts
-
-External dependencies are defined in `Chart.yaml` and downloaded via `helm dependency update`:
-
-```yaml
-dependencies:
-  - name: grafana
-    version: "10.5.14"
-    repository: "https://grafana.github.io/helm-charts"
-    condition: global.grafana.enabled
-```
+All 36 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there are no external chart dependencies.
 
 ### Internal Subcharts
 
-37 internal subcharts + 1 external (grafana) in the `charts/` directory:
-
-- **Infrastructure** (3): nats, keycloak, grafana
+- **Infrastructure** (2): nats, keycloak
 - **Databases** (2): keycloak-db, opendso-apps-db
 - **Core Services** (3): historian-svc, gms-api, openfmb-event-service
 - **Topology** (2): topology-genesis, topology-nodes
@@ -104,12 +90,10 @@ global:
   imagePullSecrets:
     - name: regsecret
 
-  # Component enablement (42 flags)
-  grafana:
-    enabled: true
+  # Component enablement — one flag per subchart, plus a few standalone toggles
   nats:
     enabled: true
-  # ... 39 more service flags
+  # ... more service flags
 ```
 
 ### Image Configuration
@@ -137,8 +121,6 @@ global:
     enabled: true
   keycloak:
     enabled: true
-  grafana:
-    enabled: true               # NEW: Monitoring
 
   # Databases
   keycloak-db:
@@ -152,7 +134,7 @@ global:
   gms-api:
     enabled: true
 
-  # Frontend Applications (12 total)
+  # Frontend Applications (10 total)
   genesis-node-app:
     enabled: true
   # ... enable as needed
@@ -213,18 +195,7 @@ global:
 All sensitive data uses Kubernetes secrets. The chart no longer ships plaintext fallback passwords for production installs. Required credentials must be provided explicitly, or created by the deploy flow before install:
 
 - `keycloak.config.adminPassword`
-- `grafana.adminPassword` or `grafana.admin.existingSecret`
 - `opendso-apps-db.auth.password` (in-cluster) or `opendso-apps-db.externalDatabase.password` (Cloud SQL)
-
-**Grafana Credentials** (auto-generated):
-
-```yaml
-grafana:
-  admin:
-    existingSecret: "{{ .Release.Name }}-grafana-credentials"
-    userKey: admin-user
-    passwordKey: admin-password
-```
 
 **TLS Certificates**:
 
@@ -256,11 +227,12 @@ kubectl create secret docker-registry regsecret \
 ### Creating Secrets Manually
 
 ```bash
-# Grafana credentials
-kubectl create secret generic <release-name>-grafana-credentials \
-  --from-literal=admin-user=admin \
-  --from-literal=admin-password='secure-password' \
-  --from-literal=opendso-apps-db-password='esspassword' \
+# Apps DB credentials (Cloud SQL — see scripts/provision-cloud-sql.sh, which
+# writes this secret automatically; shown here for a manual/in-cluster setup)
+kubectl create secret generic <release-name>-apps-db-credentials \
+  --from-literal=username=essuser \
+  --from-literal=password='esspassword' \
+  --from-literal=database=ess_tester \
   -n <namespace>
 
 # TLS certificate (using mkcert)
@@ -288,14 +260,15 @@ NATS_URL: {{ printf "nats://%s-nats-service:4222" .Release.Name }}
 ```bash
 helm install production . \
   --namespace production \
-  --set grafana.admin.existingSecret=production-grafana-credentials
+  --set global.keycloak.internalUrl=http://production-keycloak-svc:8080
 ```
 
 **Required overrides for custom names**:
 
+Most service references (NATS, apps DB, TLS secret) are parameterized from `{{ .Release.Name }}` automatically. `global.keycloak.internalUrl` is the one value that is not computed by the chart itself — `deployer/deploy.sh` sets it via `--set` at deploy time, but a plain `helm install`/`upgrade` with a non-default release name must set it explicitly:
+
 ```bash
---set grafana.admin.existingSecret=<release-name>-grafana-credentials
---set grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials
+--set global.keycloak.internalUrl=http://<release-name>-keycloak-svc:8080
 ```
 
 ## Network Configuration
@@ -310,11 +283,11 @@ ingress:
   enabled: true
   className: nginx
   hosts:
-    - host: grafana.your-domain.example.com
+    - host: api.your-domain.example.com
       paths:
         - path: /
-          service: {{ .Release.Name }}-grafana
-          port: 80
+          service: {{ .Release.Name }}-gms-api
+          port: 8000
 ```
 
 **Services use ClusterIP**:
@@ -352,7 +325,7 @@ The chart can also generate a self-signed fallback certificate in Marketplace-or
 
 ### values.yaml (Default)
 
-Full configuration with all 38 subcharts available.
+Full configuration with all 36 subcharts available.
 
 ### values-ha.yaml (High Availability Overlay)
 
@@ -424,7 +397,7 @@ helm uninstall <release-name> -n <namespace>
 kubectl delete pvc -l app.kubernetes.io/instance=<release-name> -n <namespace>
 
 # Clean up secrets
-kubectl delete secret <release-name>-grafana-credentials <release-name>-tls-secret root-ca regsecret -n <namespace>
+kubectl delete secret <release-name>-apps-db-credentials <release-name>-tls-secret root-ca regsecret -n <namespace>
 
 # Delete namespace
 kubectl delete namespace <namespace>
@@ -446,8 +419,8 @@ helm template <release-name> .
 
 # Render specific template
 helm template <release-name> . \
-  -s charts/grafana/templates/deployment.yaml \
-  --show-only charts/grafana/templates/deployment.yaml
+  -s charts/gms-api/templates/deployment.yaml \
+  --show-only charts/gms-api/templates/deployment.yaml
 
 # Debug mode
 helm template <release-name> . --debug
@@ -456,7 +429,7 @@ helm template <release-name> . --debug
 ### Dependency Management
 
 ```bash
-# Update dependencies (downloads Grafana chart)
+# Update dependencies (packages the internal file:// subcharts into charts/*.tgz)
 helm dependency update
 
 # Build dependencies
@@ -477,17 +450,7 @@ helm install <release-name> . --dry-run --debug -n <namespace>
 
 ### Common Issues
 
-**1. Grafana pod pending**
-
-```bash
-# Check for insufficient resources
-kubectl describe pod -l app.kubernetes.io/name=grafana -n <namespace>
-
-# Common: CPU/memory limits too high
-# Solution: Adjust in values or delete old pods
-```
-
-**2. Secret not found errors**
+**1. Secret not found errors**
 
 ```bash
 # Check secrets exist
@@ -496,7 +459,7 @@ kubectl get secrets -n <namespace>
 # Recreate secrets manually (see Security and Secrets section above)
 ```
 
-**2a. TLS secret alias errors**
+**1a. TLS secret alias errors**
 
 Some workloads still mount `server-cert`, `server-key`, or `root-ca`. Those secrets are created automatically only when the TLS configuration path is enabled correctly. Check:
 
@@ -515,17 +478,7 @@ global:
 
 Then upgrade the release.
 
-**3. Grafana redirect issues**
-
-Ensure correct configuration:
-
-```yaml
-env:
-  GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/"
-  GF_SERVER_SERVE_FROM_SUB_PATH: "false"
-```
-
-**4. Image pull errors**
+**2. Image pull errors**
 
 ```bash
 # Check image pull secret
@@ -540,7 +493,7 @@ kubectl create secret docker-registry regsecret \
   -n <namespace>
 ```
 
-**5. Helm dependency issues**
+**3. Helm dependency issues**
 
 ```bash
 # Clean and rebuild
@@ -548,7 +501,7 @@ rm -rf charts/*.tgz Chart.lock
 helm dependency update
 ```
 
-**6. `runAsNonRoot` failures**
+**4. `runAsNonRoot` failures**
 
 If a pod fails with `container has runAsNonRoot and image will run as root`, the issue is usually one of these:
 
@@ -568,7 +521,7 @@ kubectl get all -n <namespace>
 kubectl get pods -n <namespace> -o wide
 
 # View pod logs
-kubectl logs -l app.kubernetes.io/name=grafana -n <namespace>
+kubectl logs -l app.kubernetes.io/name=gms-api -n <namespace>
 
 # Check events
 kubectl get events -n <namespace> --sort-by='.lastTimestamp'
@@ -583,7 +536,7 @@ kubectl describe ingress <release-name>-ingress -n <namespace>
 # Test service connectivity
 kubectl run -it --rm debug --image=busybox --restart=Never -n <namespace> -- sh
 # Inside pod:
-# wget -O- http://<release-name>-grafana:80
+# wget -O- http://<release-name>-gms-api:8000
 ```
 
 ## Chart Publishing
@@ -607,51 +560,6 @@ helm repo index . --url https://charts.example.com
 ```
 
 ## Advanced Configuration
-
-### Grafana Datasources
-
-The chart includes three pre-configured PostgreSQL datasources, all connecting to `opendso-apps-db` (or Cloud SQL when external database is enabled):
-
-1. **Historian DB** — OpenFMB historian data in `ofmb_db`
-2. **OpenDSO Apps DB** — ESS testing data in `ess_tester` database
-3. **Assets DB** — Asset health monitoring data in `assets` database
-
-Configure in `values.yaml`:
-
-```yaml
-grafana:
-  datasources:
-    datasources.yaml:
-      datasources:
-        # Historian DB
-        - name: Historian DB
-          type: postgres
-          url: <release-name>-opendso-apps-db:5432
-          database: ofmb_db
-          user: essuser
-          secureJsonData:
-            password: $OPENDSO_APPS_DB_PASSWORD
-
-        # OpenDSO Apps DB - ESS Tester
-        - name: OpenDSO Apps DB
-          type: postgres
-          url: <release-name>-opendso-apps-db:5432
-          database: ess_tester
-          user: essuser
-          secureJsonData:
-            password: $OPENDSO_APPS_DB_PASSWORD
-
-        # Assets DB - Asset Health
-        - name: Assets DB
-          type: postgres
-          url: <release-name>-opendso-apps-db:5432
-          database: assets
-          user: essuser
-          secureJsonData:
-            password: $OPENDSO_APPS_DB_PASSWORD
-```
-
-**Note**: All three databases (`ofmb_db`, `ess_tester`, `assets`) are hosted on the same `opendso-apps-db` instance. On GCP, this is a Cloud SQL PostgreSQL instance provisioned via `scripts/provision-cloud-sql.sh`.
 
 ### Multi-Site Deployment
 
@@ -677,6 +585,6 @@ Override resources per service:
 
 ```bash
 helm install <release-name> . \
-  --set grafana.resources.requests.memory=512Mi \
-  --set grafana.resources.limits.memory=1Gi
+  --set gms-api.resources.requests.memory=512Mi \
+  --set gms-api.resources.limits.memory=1Gi
 ```

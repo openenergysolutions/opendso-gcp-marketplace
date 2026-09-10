@@ -19,7 +19,6 @@ COPY --from=nk-builder /go/bin/nk /usr/local/bin/nk
 #   /data/extracted/chart/chart/{Chart.yaml,values.yaml,configs/,...}
 COPY chart /tmp/build/chart
 RUN mkdir -p /data/chart \
-    && helm repo add grafana https://grafana.github.io/helm-charts \
     && helm dependency build /tmp/build/chart \
     && for archive in /tmp/build/chart/charts/*.tgz; do \
          chart_name="$(basename "$archive" | sed -E 's/-[0-9][^-]*\.tgz$//')"; \

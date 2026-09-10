@@ -86,7 +86,6 @@ check_http() {
 log ""
 log "=== Checking core infrastructure ==="
 
-wait_for_statefulset "${APP_INSTANCE_NAME}-mongodb"
 wait_for_deployment  "${APP_INSTANCE_NAME}-keycloak"
 wait_for_deployment  "${APP_INSTANCE_NAME}-nats"
 

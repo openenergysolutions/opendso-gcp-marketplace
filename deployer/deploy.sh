@@ -462,8 +462,6 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set historian-svc.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set keycloak.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
-    --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
-    --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.tls.createSecrets=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
 

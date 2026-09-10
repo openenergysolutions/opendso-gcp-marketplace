@@ -176,9 +176,9 @@ curl -s http://localhost:18081/api/health
 
 What to verify:
 
-- MongoDB credentials were rendered and mounted correctly
+- the `wait-for-postgres-data` init container completed (gms-api waits on the `settings_api` `auth_settings` default row before starting)
 - GMS API is using the internal Keycloak URL, not an external hostname
-- the Docker API warning is understood: `dockerApi` is stubbed on GKE and container orchestration features are not expected to work there
+- orchestration (pod list/delete) is scoped to the app's own namespace — cross-namespace orchestration calls are expected to fail by design (namespace-scoped RBAC, not cluster-wide)
 
 ## 9. Ingress and DNS Problems
 

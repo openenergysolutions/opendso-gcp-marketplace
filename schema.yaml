@@ -347,14 +347,6 @@ properties:
     title: Apps DB Name
     default: ess_tester
 
-  # Kept for schema backwards compatibility — was present in prior submissions as MASKED_FIELD.
-  # Grafana has been removed from the chart; this value is accepted but ignored.
-  grafana.adminPassword:
-    type: string
-    title: Grafana Admin Password (unused)
-    x-google-marketplace:
-      type: MASKED_FIELD
-
   # ---------------------------------------------------------------------------
   # Resource profile
   # ---------------------------------------------------------------------------

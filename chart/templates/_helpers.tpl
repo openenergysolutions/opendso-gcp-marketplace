@@ -250,9 +250,6 @@ Creates a comma-separated list of all service URLs
 {{- if (index .Values.global "schedule-dispatch-app").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s:%s" "scheduledispatch" $domain (toString $httpsPort)) -}}
 {{- end -}}
-{{- if (index .Values.global "grafana").enabled -}}
-{{- $origins = append $origins (printf "https://%s.%s:%s" "grafana" $domain (toString $httpsPort)) -}}
-{{- end -}}
 {{- if (index .Values.global "gms-api").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s:%s" "api" $domain (toString $httpsPort)) -}}
 {{- end -}}
@@ -299,9 +296,6 @@ Creates a comma-separated list of all service URLs
 {{- end -}}
 {{- if (index .Values.global "schedule-dispatch-app").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s" "scheduledispatch" $domain) -}}
-{{- end -}}
-{{- if (index .Values.global "grafana").enabled -}}
-{{- $origins = append $origins (printf "https://%s.%s" "grafana" $domain) -}}
 {{- end -}}
 {{- if (index .Values.global "gms-api").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s" "api" $domain) -}}

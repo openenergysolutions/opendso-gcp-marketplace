@@ -254,8 +254,7 @@ cat <<EOF
         "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
         "global.domain": "${DOMAIN}",
         "global.resourceProfile": "minimal",
-        "keycloak.config.adminPassword": "changeme",
-        "grafana.adminPassword": "changeme"
+        "keycloak.config.adminPassword": "changeme"
       }'
 EOF
 echo ""
@@ -272,8 +271,7 @@ cat <<EOF
         "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
         "global.domain": "${DOMAIN}",
         "global.resourceProfile": "minimal",
-        "keycloak.config.adminPassword": "changeme",
-        "grafana.adminPassword": "changeme"
+        "keycloak.config.adminPassword": "changeme"
       }'
 EOF
 echo "=========================================================================="

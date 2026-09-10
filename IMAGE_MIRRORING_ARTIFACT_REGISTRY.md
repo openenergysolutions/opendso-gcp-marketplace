@@ -169,7 +169,7 @@ Mirror at least the chart-managed default Marketplace image set:
 - infrastructure:
   - NATS
   - Keycloak
-  - MongoDB
+  - Postgres (client image used by gms-api's wait-for-postgres-data init container)
   - ESS Manager Redis
 - core OpenDSO services:
   - GMS API
@@ -197,7 +197,7 @@ Mirror at least the chart-managed default Marketplace image set:
   - ESS Tester app
   - Schedule Dispatch
 
-Also review dependency-chart images separately, especially Grafana and sidecar/helper images.
+Also review dependency-chart images separately, especially sidecar/helper images (e.g. envoy).
 
 ## 6. Point the Deployment at Artifact Registry
 
