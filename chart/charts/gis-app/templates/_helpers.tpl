@@ -68,7 +68,7 @@ Usage: {{ include "gis-app.image" (dict "imageRoot" .Values.global.images.gisApp
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag -}}
 {{- $digest := .imageRoot.digest -}}
-{{- if $registry -}}
+{{- if and $registry (not (hasPrefix $registry $repository)) -}}
 {{- $repository = printf "%s/%s" $registry $repository -}}
 {{- end -}}
 {{- if $digest -}}

@@ -13,9 +13,9 @@ This repository contains the GCP Marketplace deployer package.
 A single Helm release installs the full OpenDSO stack into your GKE cluster:
 
 | Category | Components |
-|---|---|
-| **Infrastructure** | NATS (messaging), Keycloak (identity), Grafana (monitoring) |
-| **Databases** | MongoDB, Citus (PostgreSQL), TimescaleDB |
+| --- | --- |
+| **Infrastructure** | NATS (messaging), Keycloak (identity) |
+| **Databases** | MongoDB, Cloud SQL PostgreSQL (external — provisioned separately) |
 | **Core Services** | GMS API, Historian, OpenFMB Event Service, NATS Auth |
 | **Topology** | Topology Genesis, Topology Nodes |
 | **Grid Applications** | DER Dispatch, ESS Manager, ESS Tester, Asset Health |
@@ -24,10 +24,9 @@ A single Helm release installs the full OpenDSO stack into your GKE cluster:
 After deployment, the following endpoints are available at your configured domain:
 
 | Service | URL |
-|---|---|
+| --- | --- |
 | GMS (One-Line) | `https://oneline.<domain>` |
 | Keycloak Admin | `https://keycloak.<domain>/admin` |
-| Grafana | `https://grafana.<domain>` |
 | GMS API | `https://api.<domain>` |
 | NATS WebSocket | `wss://nats.<domain>` |
 
@@ -44,7 +43,8 @@ After deployment, the following endpoints are available at your configured domai
    - **OpenDSO Installation Key** — obtained from OES; required to activate the application.
    - **Keycloak Admin Password**
    - **MongoDB Root Password** and **MongoDB App Password**
-   - **Grafana Admin Password**
+   - **Apps DB Host** — Cloud SQL private IP (provisioned in the Cloud SQL prerequisite step below)
+   - **Apps DB Password** — password for the `essuser` database user
    - **Resource Profile** — `minimal`, `default`, or `production`
 5. Click **Deploy**
 
@@ -67,7 +67,73 @@ Licensing note:
 ## Prerequisites
 
 The GCP Marketplace deployer assumes these are already in place before you click **Deploy**.
-It does **not** create GKE clusters, install ingress controllers, configure DNS, or manage TLS.
+It does **not** create GKE clusters, install ingress controllers, configure DNS, manage TLS, or provision Cloud SQL.
+
+### Cloud SQL
+
+OpenDSO requires a Cloud SQL PostgreSQL 16 instance with four databases initialized before deployment.
+Run the provisioning script once per environment:
+
+```bash
+./scripts/provision-cloud-sql.sh \
+  --project   my-gcp-project \
+  --region    us-central1 \
+  --instance  opendso-db \
+  --namespace opendso \
+  --release   opendso
+```
+
+The script:
+
+1. Creates the Cloud SQL instance (`--skip-create` to attach to an existing one)
+2. Creates the `ess_tester`, `ofmb_db`, `assets`, and `opendso` databases
+3. Applies the OpenDSO schema (via Cloud SQL Proxy + psql, or via `--run-in-cluster` for private-IP-only instances)
+4. Writes a `<release>-apps-db-credentials` Kubernetes Secret
+
+After the script completes, set the reported private IP in `values-gcp.yaml`:
+
+```yaml
+opendso-apps-db:
+  externalDatabase:
+    host: "<CLOUD-SQL-PRIVATE-IP>"
+    existingSecret: "<release>-apps-db-credentials"
+```
+
+**Prerequisites for the script:** `gcloud` authenticated with `roles/cloudsql.admin` + `roles/cloudsql.client`, `cloud-sql-proxy`, and `psql` in PATH.
+
+#### Materialized view refresh — pg_cron (recommended)
+
+The Asset Health service (`asset-health-svc`) uses four PostgreSQL materialized views in the `assets` database. These views must be refreshed periodically to reflect new data. The recommended approach on Cloud SQL is **pg_cron**, which schedules the refresh inside the database itself — no Kubernetes CronJob needed.
+
+Add `--pg-cron` when running the provisioning script:
+
+```bash
+./scripts/provision-cloud-sql.sh \
+  --project   my-gcp-project \
+  --region    us-central1 \
+  --instance  opendso-db \
+  --namespace opendso \
+  --release   opendso \
+  --pg-cron
+# prompts for both the essuser password and the postgres superuser password
+```
+
+With `--pg-cron` the script:
+
+1. Sets the `cloudsql.enable_pg_cron=on` database flag on the instance (at creation time, so no restart)
+2. Creates the `pg_cron` extension in the `postgres` database (requires the `postgres` superuser password)
+3. Grants the `essuser` application user the right to schedule cron jobs
+4. Schedules `ahs-matview-refresh` — a `*/15 * * * *` job that runs `REFRESH MATERIALIZED VIEW` on all four views (`common_metrics`, `breaker_metrics`, `generator_metrics`, `asset_health_daily`) in the `assets` database as `essuser`
+
+The job runs entirely inside Cloud SQL and persists across pod restarts. To inspect job history:
+
+```sql
+SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
+```
+
+If you're attaching to an **existing** instance (`--skip-create`), the script will patch the `cloudsql.enable_pg_cron=on` flag. Note that `--database-flags` replaces all existing flags on the instance — if you have other custom flags set, include them alongside `cloudsql.enable_pg_cron=on` manually after provisioning.
+
+The Cloud SQL instance must be on the same VPC as the GKE cluster (Private IP via VPC peering or Private Service Connect). The schema init scripts are in `chart/configs/ieee13/opendso-apps-db/schema/`.
 
 ### Cluster
 
@@ -136,12 +202,14 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 - Container images are served from GCP Artifact Registry. GKE nodes need pull access —
   configure Workload Identity or attach the Artifact Registry Reader role to the node service account.
 - See `IMAGE_MIRRORING_ARTIFACT_REGISTRY.md` for the mirroring workflow and registry expectations.
+- First-party OpenDSO app images can be mirrored with `scripts/mirror-app-images.sh`; that workflow can also add Marketplace annotations, add release tags, and refresh digests in `chart/values.yaml`.
 
 ### What the deployer does NOT handle
 
 | Responsibility | Who handles it |
-|---|---|
+| --- | --- |
 | GKE cluster creation | You (before installing) |
+| Cloud SQL provisioning and schema init | You — run `scripts/provision-cloud-sql.sh` |
 | nginx ingress controller | You (before installing) |
 | Application CRD (app.k8s.io) | You (before installing) |
 | cert-manager / TLS certificates | You (before installing) |
@@ -159,17 +227,22 @@ opendso-gcp-marketplace/
 │   ├── Chart.yaml
 │   ├── values.yaml         # Default values
 │   ├── values-gcp.yaml     # GCP-specific overrides
-│   ├── charts/             # 38 subcharts
+│   ├── charts/             # Subcharts
 │   ├── templates/          # Parent chart templates
 │   └── configs/            # Site-specific configuration (ieee13)
+│       └── ieee13/
+│           └── opendso-apps-db/schema/   # SQL init scripts for Cloud SQL
 ├── deployer/
 │   ├── Dockerfile              # Custom deployer image (extends deployer_helm)
 │   ├── deploy.sh               # NKey generation + Keycloak secret injection + helm install
 │   └── deploy_with_tests.sh    # Wraps deploy.sh + runs verify.sh (used by mpdev verify)
 ├── scripts/
-│   ├── verify.sh               # Post-deploy health checks (called by deploy_with_tests.sh)
-│   ├── mpdev.sh                # Helper to run mpdev verify locally
-│   └── provision-test-env.sh   # Provisions a local test cluster environment
+│   ├── provision-cloud-sql.sh    # Create Cloud SQL instance, databases, schema, K8s Secret
+│   ├── mirror-app-images.sh      # Mirror first-party app images into Artifact Registry
+│   ├── mirror-k8s-marketplace-images.sh  # Mirror third-party images into Artifact Registry
+│   ├── verify.sh                 # Post-deploy health checks (called by deploy_with_tests.sh)
+│   ├── mpdev.sh                  # Helper to run mpdev verify locally
+│   └── predeployment-setup.sh    # Automates cluster/DNS/TLS prerequisites
 ├── schema.yaml             # GCP Marketplace UI schema (parameters + images)
 └── README.md               # This file
 ```
@@ -197,7 +270,7 @@ mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0
 # Test install into a real cluster
 mpdev install \
   --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
-  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","grafana.adminPassword":"secret"}'
+  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
 ```
 
 ---

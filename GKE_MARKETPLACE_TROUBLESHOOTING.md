@@ -118,8 +118,9 @@ What to verify:
 
 Symptoms:
 
-- `CrashLoopBackOff` on `citus-db`, `opendso-apps-db`, or Redis
+- `CrashLoopBackOff` on `opendso-apps-db` (in-cluster) or Redis
 - permission errors such as `chmod ... Operation not permitted`
+- Cloud SQL connection errors (timeout, authentication failure) when using external database
 
 Checks:
 

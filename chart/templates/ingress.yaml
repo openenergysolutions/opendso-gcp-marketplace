@@ -241,18 +241,18 @@ spec:
                   number: 8094
     {{- end }}
 
-    # OpenDSO Docs App
-    {{- if (index .Values.global "opendso-docs-app").enabled }}
-    - host: docs.{{ $domain }}
+    # AHS App (Asset Health System)
+    {{- if (index .Values.global "ahs-app").enabled }}
+    - host: ahs.{{ $domain }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-opendso-docs-app
+                name: {{ .Release.Name }}-ahs-app
                 port:
-                  number: 8092
+                  number: 8100
     {{- end }}
 
     # Grafana - Monitoring & Dashboards

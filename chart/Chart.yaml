@@ -29,21 +29,13 @@ dependencies:
     repository: "file://charts/keycloak"
     condition: global.keycloak.enabled
 
-  # Monitoring & Observability
-  - name: grafana
-    version: "10.5.14"
-    repository: "https://grafana.github.io/helm-charts"
-    condition: global.grafana.enabled
+
 
   # Database Services
   - name: mongodb
     version: 0.1.0
     repository: "file://charts/mongodb"
     condition: global.mongodb.enabled
-  - name: citus-db
-    version: 0.1.0
-    repository: "file://charts/citus-db"
-    condition: global.citus-db.enabled
   - name: keycloak-db
     version: 0.1.0
     repository: "file://charts/keycloak-db"
@@ -115,10 +107,6 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/one-line-app"
     condition: global.one-line-app.enabled
-  - name: opendso-docs-app
-    version: 0.1.0
-    repository: "file://charts/opendso-docs-app"
-    condition: global.opendso-docs-app.enabled
   - name: openfmb-event-creator-app
     version: 0.1.0
     repository: "file://charts/openfmb-event-creator-app"
@@ -127,6 +115,10 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/schedule-dispatch-app"
     condition: global.schedule-dispatch-app.enabled
+  - name: ahs-app
+    version: 0.1.0
+    repository: "file://charts/ahs-app"
+    condition: global.ahs-app.enabled
 
   # ESS Applications
   - name: ess-manager-svc
@@ -183,8 +175,11 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/rpcdss-svc"
     condition: global.rpcdss-svc.enabled
+  - name: ods-svc
+    version: 0.1.0
+    repository: "file://charts/ods-svc"
+    condition: global.ods-svc.enabled
   - name: nats-auth-svc
     version: 0.1.0
     repository: "file://charts/nats-auth-svc"
     condition: global.nats-auth-svc.enabled
-

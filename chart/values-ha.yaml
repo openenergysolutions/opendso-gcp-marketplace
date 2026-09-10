@@ -28,46 +28,6 @@ mongodb:
     wiredTiger:
       cacheSizeGB: 4
 
-citus-db:
-  persistence:
-    size: 100Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 4Gi
-      cpu: 2000m
-    limits:
-      memory: 16Gi
-      cpu: 8000m
-  config:
-    maxConnections: 200
-    sharedBuffers: "2GB"
-    effectiveCacheSize: "8GB"
-
-keycloak-db:
-  persistence:
-    size: 10Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 512Mi
-      cpu: 250m
-    limits:
-      memory: 2Gi
-      cpu: 1000m
-
-opendso-apps-db:
-  persistence:
-    size: 20Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 1Gi
-      cpu: 500m
-    limits:
-      memory: 4Gi
-      cpu: 2000m
-
 # ============================================================================
 # Stateless components — replica counts and resources
 # ============================================================================
@@ -92,11 +52,6 @@ keycloak:
       memory: 4Gi
       cpu: 2000m
 
-grafana:
-  replicas: 2
-  persistence:
-    enabled: true
-    size: 10Gi
 
 gms-api:
   replicas: 3

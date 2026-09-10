@@ -7,8 +7,7 @@ This document describes practical backup and restore considerations for the stat
 The Marketplace package persists data in:
 
 - MongoDB
-- Citus DB
-- opendso-apps-db
+- Cloud SQL PostgreSQL (external — `ess_tester`, `ofmb_db`, `assets`, `opendso` databases)
 - Keycloak persistent volume
 - Grafana persistent volume
 - ESS Manager Redis
@@ -59,28 +58,32 @@ kubectl exec -n <namespace> <release>-mongodb-0 -- \
   /tmp/mongodump
 ```
 
-## 4. PostgreSQL-Derived Backups
+## 4. Cloud SQL Backups
 
-This applies to:
-
-- Citus DB
-- opendso-apps-db
-- keycloak-db if enabled
-
-Logical backup example:
+Cloud SQL is the external PostgreSQL provider for OpenDSO (`ess_tester`, `ofmb_db`, `assets`, `opendso` databases). Use Cloud SQL's built-in automated backups or export manually:
 
 ```bash
-kubectl exec -n <namespace> <release>-citus-db-0 -- \
-  pg_dump -U <user> -d <database> > citus.sql
+# Export a database to Cloud Storage
+gcloud sql export sql <instance-name> gs://<bucket>/opendso-backup.sql \
+  --project=<project-id> \
+  --database=ess_tester,ofmb_db,assets,opendso
 ```
-
-For `opendso-apps-db`, repeat per database such as `ess_tester` and `assets`.
 
 Restore example:
 
 ```bash
-cat citus.sql | kubectl exec -i -n <namespace> <release>-citus-db-0 -- \
-  psql -U <user> -d <database>
+gcloud sql import sql <instance-name> gs://<bucket>/opendso-backup.sql \
+  --project=<project-id> \
+  --database=ess_tester
+```
+
+Alternatively, connect via a temporary pod with the Cloud SQL private IP and use `pg_dump`/`psql` directly. See `scripts/provision-cloud-sql.sh` with `--run-in-cluster` for the pattern.
+
+For `keycloak-db` (if enabled as an in-cluster PostgreSQL instance):
+
+```bash
+kubectl exec -n <namespace> <release>-keycloak-db-0 -- \
+  pg_dump -U <user> -d keycloak > keycloak-db.sql
 ```
 
 ## 5. PVC Snapshot Strategy
@@ -108,8 +111,7 @@ Back up the following separately:
 - deployer-created secrets:
   - `<release>-nats-auth-keys`
   - `<release>-opendso-license`
-  - `<release>-opendso-apps-db-secret`
-  - `<release>-citus-db-secret`
+  - `<release>-apps-db-credentials`
   - `<release>-*-keycloak-env`
 - release TLS secret and TLS alias secrets if chart-managed
 - user-supplied values used for the deployment

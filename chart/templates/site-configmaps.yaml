@@ -332,21 +332,6 @@ data:
 {{ tpl $derDispatchConfig . | indent 4 }}
 {{- end }}
 
-# Citus DB Init Script ConfigMap
-{{- if and (index .Values.global "citus-db").enabled (not (dig "citus-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-citus-db-initdb
-  labels:
-    app.kubernetes.io/name: citus-db
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-{{ (.Files.Glob (printf "configs/%s/citus-db/*.sql" $site)).AsConfig | indent 2 }}
-{{- end }}
-
 # MongoDB Init Script ConfigMap
 {{- if (index .Values.global "mongodb").enabled }}
 ---
@@ -394,4 +379,21 @@ data:
   app.yaml: |
 {{- $assetHealthApp := .Files.Get (printf "configs/%s/asset-health-svc/app.yaml" $site) }}
 {{ tpl $assetHealthApp . | indent 4 }}
+{{- end }}
+
+# OpenDSO Data Service ConfigMap
+{{- if (index .Values.global "ods-svc").enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ods-svc-site-config
+  labels:
+    app.kubernetes.io/name: ods-svc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  app.yaml: |
+{{- $odsSvcApp := .Files.Get (printf "configs/%s/ods-svc/app.yaml" $site) }}
+{{ tpl $odsSvcApp . | indent 4 }}
 {{- end }}

@@ -38,8 +38,14 @@ static_resources:
                         expose_headers: grpc-status-details-bin,grpc-status,grpc-message
                 http_filters:
                   - name: envoy.filters.http.grpc_web
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
                   - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
                   - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
           # No TLS — nginx ingress terminates TLS externally; Envoy handles plain HTTP/gRPC internally
   clusters:
     - name: historian_service
@@ -55,4 +61,8 @@ static_resources:
                     socket_address:
                       address: 127.0.0.1
                       port_value: 50051
-      http2_protocol_options: {}
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}

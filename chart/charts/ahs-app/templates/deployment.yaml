@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "opendso-docs-app.fullname" . }}
+  name: {{ include "ahs-app.fullname" . }}
   labels:
-    {{- include "opendso-docs-app.labels" . | nindent 4 }}
+    {{- include "ahs-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "opendso-docs-app.selectorLabels" . | nindent 6 }}
+      {{- include "ahs-app.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "opendso-docs-app.selectorLabels" . | nindent 8 }}
+        {{- include "ahs-app.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
@@ -28,19 +28,18 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{ include "opendso-docs-app.image" (dict "imageRoot" .Values.global.images.opendsoDocsApp "registry" .Values.global.imageRegistry) | quote }}
-          imagePullPolicy: {{ .Values.global.images.opendsoDocsApp.pullPolicy }}
+          image: {{ include "ahs-app.image" (dict "imageRoot" .Values.global.images.ahsApp "registry" .Values.global.imageRegistry) | quote }}
+          imagePullPolicy: {{ .Values.global.images.ahsApp.pullPolicy }}
           ports:
             - name: web
               containerPort: {{ .Values.containerPort }}
               protocol: TCP
           volumeMounts:
+            - name: environment
+              mountPath: /usr/share/nginx/html/config
+              readOnly: true
             - name: config
               mountPath: /etc/nginx/conf.d
-              readOnly: true
-            - name: nginx-conf
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
               readOnly: true
             {{- if .Values.tls.enabled }}
             - name: cert-file
@@ -96,10 +95,10 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "opendso-docs-app.fullname" . }}-nginx
-        - name: nginx-conf
+            name: {{ include "ahs-app.fullname" . }}-nginx
+        - name: environment
           configMap:
-            name: {{ .Release.Name }}-frontend-nginx-conf
+            name: {{ .Release.Name }}-frontend-environment
         {{- if .Values.tls.enabled }}
         - name: cert-file
           secret:

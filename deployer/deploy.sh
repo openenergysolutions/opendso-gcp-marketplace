@@ -37,6 +37,73 @@
 
 set -euo pipefail
 
+CURRENT_STEP="startup"
+FAILED_COMMAND=""
+
+dump_debug_state() {
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Deployer failure diagnostics"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Step:      ${CURRENT_STEP:-unknown}"
+  echo "  Release:   ${APP_INSTANCE_NAME:-unknown}"
+  echo "  Namespace: ${NAMESPACE:-unknown}"
+  echo ""
+
+  if [[ -n "${NAMESPACE:-}" ]]; then
+    echo "== Namespace events =="
+    kubectl get events -n "$NAMESPACE" --sort-by=.lastTimestamp 2>/dev/null | tail -80 || true
+    echo ""
+    echo "== Pods =="
+    kubectl get pods -n "$NAMESPACE" -o wide 2>/dev/null || true
+    echo ""
+    echo "== Jobs =="
+    kubectl get jobs -n "$NAMESPACE" -o wide 2>/dev/null || true
+    echo ""
+    echo "== Helm releases =="
+    helm list -n "$NAMESPACE" 2>/dev/null || true
+  fi
+}
+
+emit_failure_event() {
+  [[ -n "${NAMESPACE:-}" ]] || return 0
+  local message="OpenDSO deployer failed during step '${CURRENT_STEP:-unknown}'"
+  if [[ -n "${FAILED_COMMAND:-}" ]]; then
+    message="${message}; command: ${FAILED_COMMAND}"
+  fi
+  python3 - "$APP_INSTANCE_NAME" "$NAMESPACE" "$message" <<'PYEOF' \
+    | kubectl create -f - >/dev/null 2>&1 || true
+import datetime
+import sys
+import yaml
+
+name, namespace, note = sys.argv[1:]
+now = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+event = {
+    "apiVersion": "events.k8s.io/v1",
+    "kind": "Event",
+    "metadata": {
+        "generateName": f"{name}-deployer-failed-",
+        "namespace": namespace,
+    },
+    "regarding": {
+        "apiVersion": "app.k8s.io/v1beta1",
+        "kind": "Application",
+        "name": name,
+        "namespace": namespace,
+    },
+    "reason": "OpenDSODeployerFailed",
+    "note": note[:1024],
+    "type": "Warning",
+    "action": "Deploy",
+    "reportingController": "opendso/deployer",
+    "reportingInstance": name,
+    "eventTime": now,
+}
+print(yaml.safe_dump(event, sort_keys=False))
+PYEOF
+}
+
 # Resolve NAME/NAMESPACE from the Marketplace config (injected via /data/values.yaml).
 # The deployer_helm base image sets these in its own deploy.sh; we must do it ourselves.
 APP_INSTANCE_NAME="$(/bin/print_config.py --xtype NAME --values_mode raw)"
@@ -44,9 +111,23 @@ NAMESPACE="$(/bin/print_config.py --xtype NAMESPACE --values_mode raw)"
 NAME="$APP_INSTANCE_NAME"
 export APP_INSTANCE_NAME NAMESPACE NAME
 
+# Expand the raw Marketplace inputs with schema defaults before reading user
+# values. This matches the base deployer_helm behavior and is required for test
+# verification, where the framework relies on defaults from /data-test/schema.yaml.
+APP_UID="$(kubectl get "applications.app.k8s.io/${APP_INSTANCE_NAME}" \
+  --namespace="${NAMESPACE}" \
+  --output=jsonpath='{.metadata.uid}')"
+/bin/expand_config.py --values_mode raw --app_uid "${APP_UID}"
+
 # Fail-safe: mark the Application as Failed on any unexpected exit.
+trap 'FAILED_COMMAND=${BASH_COMMAND}' ERR
 handle_failure() {
   code=$?
+  echo ""
+  echo "ERROR: OpenDSO deployer failed during step: ${CURRENT_STEP:-unknown} (exit ${code})" >&2
+  [[ -n "${FAILED_COMMAND:-}" ]] && echo "ERROR: Failed command: ${FAILED_COMMAND}" >&2
+  emit_failure_event
+  dump_debug_state >&2 || true
   patch_assembly_phase.sh --status="Failed" || true
   exit $code
 }
@@ -66,12 +147,11 @@ CHART_DIR="/data/extracted/chart/chart"
 
 # Generate user values in nested YAML format for helm -f.
 USER_VALUES=$(mktemp /tmp/user-values.XXXXXX.yaml)
-/bin/print_config.py --output=yaml --values_mode raw > "$USER_VALUES"
+/bin/print_config.py --output=yaml --values_mode expanded > "$USER_VALUES"
 
 NATS_AUTH_VALUES=$(mktemp /tmp/nats-auth-values.XXXXXX.yaml)
 NATS_KEYS_SECRET="${APP_INSTANCE_NAME}-nats-auth-keys"
 APPS_DB_SECRET="${APP_INSTANCE_NAME}-opendso-apps-db-secret"
-CITUS_DB_SECRET="${APP_INSTANCE_NAME}-citus-db-secret"
 
 # Derive domain and imageRegistry from user values for computed --set flags
 DOMAIN=$(python3 -c "
@@ -85,7 +165,10 @@ IMAGE_REGISTRY=$(python3 -c "
 import sys, yaml
 with open('${USER_VALUES}') as f:
     v = yaml.safe_load(f)
-print(v.get('global', {}).get('imageRegistry', ''))
+# global.imageRegistry takes precedence; fall back to __image_repo_prefix__
+# which the GCP Marketplace framework always injects into the deployer config.
+registry = v.get('global', {}).get('imageRegistry', '') or v.get('__image_repo_prefix__', '')
+print(registry)
 " 2>/dev/null || echo "")
 
 # Extract license keys from user values (stored in a K8s Secret, never in Helm values)
@@ -110,6 +193,7 @@ CLUSTER_ID=$(kubectl get namespace kube-system -o jsonpath='{.metadata.uid}' 2>/
 # 1. Generate NATS NKeys (reuse existing on re-runs to avoid NATS reconfiguration)
 # ---------------------------------------------------------------------------
 echo "[1/3] Generating NATS NKeys..."
+CURRENT_STEP="generate NATS NKeys"
 
 # Reuse existing seeds if the secret already exists so NATS and nats-auth-svc
 # continue to use the same keys across deployer re-runs.
@@ -141,6 +225,7 @@ echo "  XKey public key:    $XKEY_PUB"
 # ---------------------------------------------------------------------------
 echo ""
 echo "[2/3] Creating nats-auth-keys secret in namespace '$NAMESPACE'..."
+CURRENT_STEP="create deployer-managed secrets"
 
 kubectl create secret generic "$NATS_KEYS_SECRET" \
     --namespace="$NAMESPACE" \
@@ -158,30 +243,6 @@ if kubectl get secret "$APPS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1
 else
     OPENDSO_APPS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
 fi
-
-if kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" >/dev/null 2>&1; then
-    CITUS_DB_PASSWORD=$(kubectl get secret "$CITUS_DB_SECRET" --namespace="$NAMESPACE" \
-        -o jsonpath='{.data.password}' | base64 -d)
-else
-    CITUS_DB_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
-fi
-
-# Pre-create citus-db-secret with Helm ownership metadata so the
-# opendso.citusDb.settings helper can lookup the password at render time
-# (subcharts like historian-svc and der-dispatch-svc lack citus-db.auth.*
-# in their .Values scope). Helm labels prevent "invalid ownership" errors.
-kubectl create secret generic "$CITUS_DB_SECRET" \
-    --namespace="$NAMESPACE" \
-    --from-literal=password="${CITUS_DB_PASSWORD}" \
-    --dry-run=client -o yaml \
-  | kubectl annotate --local -f - \
-      "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
-      "meta.helm.sh/release-namespace=${NAMESPACE}" \
-      --overwrite -o yaml \
-  | kubectl label --local -f - \
-      "app.kubernetes.io/managed-by=Helm" \
-      --overwrite -o yaml \
-  | kubectl apply -f -
 
 # ---------------------------------------------------------------------------
 # 3. Write temporary Helm values overlay with derived public keys
@@ -212,10 +273,6 @@ nats-auth-svc:
 opendso-apps-db:
   auth:
     password: "${OPENDSO_APPS_DB_PASSWORD}"
-
-citus-db:
-  auth:
-    password: "${CITUS_DB_PASSWORD}"
 EOF
 
 # Resolve site name (used by both step 3a and 3b below)
@@ -239,6 +296,7 @@ print(v.get('global', {}).get('site', 'ieee13'))
 # ---------------------------------------------------------------------------
 echo ""
 echo "[3a/3] Pre-creating topology-genesis ConfigMap (server-side apply)..."
+CURRENT_STEP="pre-create topology-genesis ConfigMap"
 
 kubectl create configmap "${APP_INSTANCE_NAME}-topology-genesis-site-config" \
     --namespace="$NAMESPACE" \
@@ -257,6 +315,7 @@ echo "  ConfigMap '${APP_INSTANCE_NAME}-topology-genesis-site-config' applied."
 # LICENSE_INSTALLATION_KEY, LICENSE_ENVIRONMENT_NAME, and LICENSE_API_URL.
 # ---------------------------------------------------------------------------
 LICENSE_SECRET="${APP_INSTANCE_NAME}-opendso-license"
+CURRENT_STEP="create OpenDSO license secret"
 
 kubectl create secret generic "$LICENSE_SECRET" \
     --namespace="$NAMESPACE" \
@@ -279,6 +338,7 @@ echo "  Secret '${LICENSE_SECRET}' applied."
 # ---------------------------------------------------------------------------
 echo ""
 echo "[3b/3] Injecting Keycloak client secrets..."
+CURRENT_STEP="inject Keycloak client secrets"
 
 # Helm prefers oes-realm-generated.json over oes-realm.json (see site-configmaps.yaml).
 # Copy the source (with REPLACE_SECRET_* placeholders) to the generated path so that
@@ -372,6 +432,7 @@ PYEOF
 # ---------------------------------------------------------------------------
 echo ""
 echo "[3/3] Running helm upgrade --install..."
+CURRENT_STEP="helm upgrade --install"
 
 # Delete any existing Jobs from this release before upgrading.
 # Kubernetes Jobs have immutable specs; Helm cannot patch them on upgrade.
@@ -410,7 +471,6 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set historian-svc.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set keycloak.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
-    --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.tls.createSecrets=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
@@ -423,7 +483,8 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
 kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     --type merge \
-    --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null
+    --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null 2>&1 || \
+  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to 1.0.0)"
 
 # ---------------------------------------------------------------------------
 # 3d. Add Application ownerReferences to all Helm-managed resources
@@ -443,6 +504,7 @@ kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
 # ---------------------------------------------------------------------------
 echo ""
 echo "[3d/3] Wiring Application ownerReferences for cascade GC..."
+CURRENT_STEP="wire Application ownerReferences"
 
 APP_UID=$(kubectl get application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
@@ -505,6 +567,7 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "[4/4] Syncing Keycloak client secrets via Admin API..."
+CURRENT_STEP="sync Keycloak client secrets"
 
 KC_ADMIN_PASSWORD=$(python3 -c "
 import yaml

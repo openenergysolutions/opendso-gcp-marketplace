@@ -100,7 +100,7 @@ if [[ "$SKIP_CLUSTER" == "false" ]]; then
         --project="$PROJECT" \
         --zone="$ZONE" \
         --num-nodes=3 \
-        --machine-type=e2-standard-4 \
+        --machine-type=e2-standard-8 \
         --disk-size=50 \
         --no-enable-basic-auth \
         --workload-pool="${PROJECT}.svc.id.goog"
@@ -253,6 +253,7 @@ cat <<EOF
         "installation.key": "test",
         "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
         "global.domain": "${DOMAIN}",
+        "global.resourceProfile": "minimal",
         "keycloak.config.adminPassword": "changeme",
         "mongodb.auth.rootPassword": "changeme",
         "mongodb.auth.password": "changeme",
@@ -272,6 +273,7 @@ cat <<EOF
         "installation.key": "test",
         "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
         "global.domain": "${DOMAIN}",
+        "global.resourceProfile": "minimal",
         "keycloak.config.adminPassword": "changeme",
         "mongodb.auth.rootPassword": "changeme",
         "mongodb.auth.password": "changeme",

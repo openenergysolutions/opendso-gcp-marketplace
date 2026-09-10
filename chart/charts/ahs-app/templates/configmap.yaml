@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "opendso-docs-app.fullname" . }}-nginx
+  name: {{ include "ahs-app.fullname" . }}-nginx
   labels:
-    {{- include "opendso-docs-app.labels" . | nindent 4 }}
+    {{- include "ahs-app.labels" . | nindent 4 }}
 data:
   default.conf: |
 {{ include "opendso.frontend.nginx" . | indent 4 }}

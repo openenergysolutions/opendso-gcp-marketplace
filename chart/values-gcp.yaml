@@ -52,9 +52,6 @@ global:
     tls:
       enabled: false
 
-  citus-db:
-    enabled: true
-
   # topology-genesis: cim.xml is 367KB — exceeds the 262KB Kubernetes annotation limit
   # when using kubectl apply (client-side). The deployer pre-creates this ConfigMap via
   # kubectl apply --server-side and sets externalConfigMap=true so Helm skips creating it.
@@ -103,64 +100,19 @@ mongodb:
   #   usernameKey: "username"
   #   passwordKey: "password"
 
-# Citus DB (PostgreSQL) configuration
-citus-db:
-  enabled: true  # Set to false if using Cloud SQL
-  podSecurityContext: {}
-  securityContext: {}
-
-  persistence:
-    enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 50Gi  # Production size (dev: 10Gi)
-
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 4Gi
-    requests:
-      cpu: 1000m
-      memory: 2Gi
-
-  # External PostgreSQL configuration (if using Cloud SQL)
-  # Uncomment and configure if enabled: false
-  # externalDatabase:
-  #   enabled: true
-  #   host: "your-cloudsql-host"
-  #   port: 5432
-  #   database: "ofmb_db"
-  #   username: "citususer"
-  #   existingSecret: "citus-db-credentials"
-  #   usernameKey: "username"
-  #   passwordKey: "password"
-
-# OpenDSO Apps DB (TimescaleDB/PostgreSQL) configuration
+# OpenDSO Apps DB — Cloud SQL (external PostgreSQL)
+# The in-cluster postgres StatefulSet is disabled; configure your Cloud SQL instance below.
 opendso-apps-db:
-  enabled: true
-  podSecurityContext: {}
-  securityContext: {}
-
-  persistence:
+  externalDatabase:
     enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 10Gi
-
-  resources:
-    limits:
-      cpu: 500m
-      memory: 1Gi
-    requests:
-      cpu: 250m
-      memory: 512Mi
-
-  # External PostgreSQL configuration (if using Cloud SQL)
-  # externalDatabase:
-  #   enabled: true
-  #   host: "your-cloudsql-host"
-  #   port: 5432
-  #   database: "ess_tester"
-  #   username: "essuser"
-  #   existingSecret: "apps-db-credentials"
+    host: ""        # Cloud SQL private IP or proxy address
+    port: 5432
+    database: "ess_tester"
+    username: "essuser"
+    existingSecret: ""   # K8s Secret with credentials (recommended)
+    usernameKey: username
+    passwordKey: password
+    databaseKey: database
 
 # ============================================================================
 # Core Services
@@ -539,24 +491,6 @@ one-line-app:
       cpu: 100m
       memory: 128Mi
 
-# OpenDSO Docs App
-opendso-docs-app:
-  podSecurityContext:
-    seccompProfile:
-      type: RuntimeDefault
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-
 # OpenFMB Event Creator App
 openfmb-event-creator-app:
   podSecurityContext:
@@ -700,43 +634,6 @@ ingress:
     # cloud.google.com/neg: '{"ingress": true}'
     # cloud.google.com/backend-config: '{"default": "opendso-backend-config"}'
 
-# ============================================================================
-# Monitoring & Observability
-# ============================================================================
-
-# Grafana (Monitoring/Dashboards)
-grafana:
-  # Use namespace-scoped Role instead of ClusterRole/ClusterRoleBinding.
-  # The GCP Marketplace deployer SA only has namespace-scoped permissions.
-  rbac:
-    namespaced: true
-
-  persistence:
-    enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 10Gi
-
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  readinessProbe:
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-  livenessProbe:
-    initialDelaySeconds: 180
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-
-  # Admin credentials
-  # Default: admin / (auto-generated password in secret)
-  # Change this after first login!
 
 # ============================================================================
 # Optional Services (disabled by default)

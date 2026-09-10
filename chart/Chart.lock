@@ -5,14 +5,8 @@ dependencies:
 - name: keycloak
   repository: file://charts/keycloak
   version: 0.1.0
-- name: grafana
-  repository: https://grafana.github.io/helm-charts
-  version: 10.5.14
 - name: mongodb
   repository: file://charts/mongodb
-  version: 0.1.0
-- name: citus-db
-  repository: file://charts/citus-db
   version: 0.1.0
 - name: keycloak-db
   repository: file://charts/keycloak-db
@@ -62,14 +56,14 @@ dependencies:
 - name: one-line-app
   repository: file://charts/one-line-app
   version: 0.1.0
-- name: opendso-docs-app
-  repository: file://charts/opendso-docs-app
-  version: 0.1.0
 - name: openfmb-event-creator-app
   repository: file://charts/openfmb-event-creator-app
   version: 0.1.0
 - name: schedule-dispatch-app
   repository: file://charts/schedule-dispatch-app
+  version: 0.1.0
+- name: ahs-app
+  repository: file://charts/ahs-app
   version: 0.1.0
 - name: ess-manager-svc
   repository: file://charts/ess-manager-svc
@@ -110,8 +104,11 @@ dependencies:
 - name: rpcdss-svc
   repository: file://charts/rpcdss-svc
   version: 0.1.0
+- name: ods-svc
+  repository: file://charts/ods-svc
+  version: 0.1.0
 - name: nats-auth-svc
   repository: file://charts/nats-auth-svc
   version: 0.1.0
-digest: sha256:fe4759fbe7fa660170d727d7f98c9a0e914f374aa7ff9160e1046999ff414ee7
-generated: "2026-03-17T08:43:42.013698518-04:00"
+digest: sha256:d86c272907a876e205b71dd4054976b6ca37dea7c4eb9c70abe11f9892889b12
+generated: "2026-06-24T15:12:21.867070185-04:00"

@@ -17,10 +17,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl unzip && \
 #   /data/extracted/chart/chart/{Chart.yaml,values.yaml,configs/,...}
 COPY chart /tmp/build/chart
 RUN mkdir -p /data/chart \
+    && helm repo add grafana https://grafana.github.io/helm-charts \
+    && helm dependency build /tmp/build/chart \
+    && for archive in /tmp/build/chart/charts/*.tgz; do \
+         chart_name="$(basename "$archive" | sed -E 's/-[0-9][^-]*\.tgz$//')"; \
+         if [ -d "/tmp/build/chart/charts/${chart_name}" ]; then \
+           rm -f "$archive"; \
+         fi; \
+       done \
     && tar -czf /data/chart/chart.tar.gz -C /tmp/build chart \
     && rm -rf /tmp/build
 
 COPY schema.yaml /data/schema.yaml
+COPY data-test /data-test
 
 # Override default deploy script with custom NKey + Keycloak injection logic
 COPY deployer/deploy.sh /bin/deploy.sh

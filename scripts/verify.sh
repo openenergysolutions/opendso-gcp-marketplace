@@ -96,7 +96,6 @@ wait_for_deployment  "${APP_INSTANCE_NAME}-nats"
 log ""
 log "=== Checking databases ==="
 
-wait_for_statefulset "${APP_INSTANCE_NAME}-citus-db"       || true
 wait_for_statefulset "${APP_INSTANCE_NAME}-opendso-apps-db" || true
 # keycloak-db is optional — only check if the statefulset exists
 if kubectl get statefulset "${APP_INSTANCE_NAME}-keycloak-db" -n "$NAMESPACE" &>/dev/null; then

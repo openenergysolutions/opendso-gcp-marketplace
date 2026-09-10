@@ -13,3 +13,17 @@ chart/configs/*/nats-auth-svc/keys/
 
 # Local test Dockerfile (not for marketplace submission)
 deployer/Dockerfile.test
+
+# mpdev / deployer run logs — contain cluster internals and run artifacts
+output.txt
+*.mpdev.log
+
+# Terraform working files
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.auto.tfvars
+
+# jar file
+*.jar

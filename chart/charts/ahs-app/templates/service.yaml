@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "opendso-docs-app.fullname" . }}
+  name: {{ include "ahs-app.fullname" . }}
   labels:
-    {{- include "opendso-docs-app.labels" . | nindent 4 }}
+    {{- include "ahs-app.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +12,4 @@ spec:
       protocol: TCP
       name: web
   selector:
-    {{- include "opendso-docs-app.selectorLabels" . | nindent 4 }}
+    {{- include "ahs-app.selectorLabels" . | nindent 4 }}

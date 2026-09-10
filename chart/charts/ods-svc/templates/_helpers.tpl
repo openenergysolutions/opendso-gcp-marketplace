@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "citus-db.name" -}}
+{{- define "ods-svc.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "citus-db.fullname" -}}
+{{- define "ods-svc.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,16 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "citus-db.chart" -}}
+{{- define "ods-svc.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "citus-db.labels" -}}
-helm.sh/chart: {{ include "citus-db.chart" . }}
-{{ include "citus-db.selectorLabels" . }}
+{{- define "ods-svc.labels" -}}
+helm.sh/chart: {{ include "ods-svc.chart" . }}
+{{ include "ods-svc.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -43,39 +43,26 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "citus-db.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "citus-db.name" . }}
+{{- define "ods-svc.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ods-svc.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create image reference - supports digest override
-Usage: {{ include "citus-db.image" (dict "imageRoot" .Values.global.images.citusDb "registry" .Values.global.imageRegistry) }}
+Usage: {{ include "ods-svc.image" (dict "imageRoot" .Values.global.images.odsSvc "registry" .Values.global.imageRegistry) }}
 */}}
-{{- define "citus-db.image" -}}
+{{- define "ods-svc.image" -}}
 {{- $registry := .registry | default "" -}}
 {{- $repository := .imageRoot.repository -}}
 {{- $tag := .imageRoot.tag -}}
 {{- $digest := .imageRoot.digest -}}
-{{- if $registry -}}
+{{- if and $registry (not (hasPrefix $registry $repository)) -}}
 {{- $repository = printf "%s/%s" $registry $repository -}}
 {{- end -}}
 {{- if $digest -}}
 {{- printf "%s@%s" $repository $digest -}}
 {{- else -}}
 {{- printf "%s:%s" $repository $tag -}}
-{{- end -}}
-{{- end }}
-
-{{/*
-Get storage class
-*/}}
-{{- define "citus-db.storageClass" -}}
-{{- if .Values.persistence.storageClass -}}
-{{- .Values.persistence.storageClass -}}
-{{- else if .Values.global.storageClass -}}
-{{- .Values.global.storageClass -}}
-{{- else -}}
-standard
 {{- end -}}
 {{- end }}

@@ -17,10 +17,10 @@ envoy:
   adminPort: 9901
   resources:
     limits:
-      cpu: 200m
+      cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 100m
+      cpu: 50m
       memory: 64Mi
 
 imagePullSecrets: []
@@ -54,7 +54,7 @@ service:
 
 env:
   PLATFORM_NATS_SERVICE: ""
-  PGHOST: opendso-citus-db
+  PGHOST: opendso-opendso-apps-db
 
 # Service configuration
 config:

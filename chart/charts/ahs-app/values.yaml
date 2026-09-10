@@ -1,21 +1,12 @@
-# Global values inherited from parent chart
-global:
-  keycloak:
-    url: "" # empty string defaults to parent chart value
-    internalUrl: ""
-    realm: "oes"
-    clientIds:
-      ui: "gms"
-      api: "gms"
-      
 replicaCount: 1
 
 image:
-  repository: oesinc/opendso-docs-app
+  repository: oesinc/ahs-app
   pullPolicy: IfNotPresent
-  tag: "c6ab8cc0"
+  tag: ""
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: regcred
 
 nameOverride: ""
 fullnameOverride: ""
@@ -26,24 +17,19 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext:
-  seccompProfile:
-    type: RuntimeDefault
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 101
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
+podSecurityContext: {}
+securityContext: {}
 
 service:
   type: ClusterIP
-  port: 8092
+  port: 8100
 
-containerPort: 8092
+containerPort: 8100
 
-# No environment config needed for docs app
+# UI Environment Configuration
+environment:
+  apiUrl: "https://opendso-gms-api:8000"
+  natsUrl: "wss://opendso-nats-service-ws:9222"
 
 tls:
   enabled: false  # Set to true and provide secrets for TLS
@@ -66,7 +52,7 @@ affinity: {}
 livenessProbe:
   enabled: true
   tcpSocket:
-    port: 8092
+    port: 8100
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
@@ -75,7 +61,7 @@ livenessProbe:
 readinessProbe:
   enabled: true
   tcpSocket:
-    port: 8092
+    port: 8100
   initialDelaySeconds: 5
   periodSeconds: 5
   timeoutSeconds: 3

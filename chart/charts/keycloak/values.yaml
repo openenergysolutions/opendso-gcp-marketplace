@@ -52,8 +52,6 @@ admin:
   username: admin
   password: ""
 
-proxy: edge
-
 # Keycloak configuration
 config:
   httpEnabled: true
@@ -61,10 +59,8 @@ config:
   httpsPort: 8443
   hostname: ""  # defaults to keycloak.<global.domain> via template
   hostnameStrict: "true"
-  hostnameStrictHttps: "false"
-  hostnameBackchannelDynamic: "true"
   hostnamePort: "443"
-  httpsEnabled: false  # proxy=edge: nginx terminates TLS, Keycloak serves HTTP only
+  httpsEnabled: false  # KC_PROXY_HEADERS=xforwarded: nginx terminates TLS, Keycloak serves HTTP only
   httpsCertFile: "/opt/keycloak/conf/server.crt.pem"
   httpsKeyFile: "/opt/keycloak/conf/server.key.pem"
   importRealm: true  # Set to true to import realm files on startup

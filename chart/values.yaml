@@ -31,26 +31,26 @@ global:
   # Resource profiles provide platform-specific resource sizing presets
   # Options: minimal, default, production
   # Override individual service resources as needed
-  resourceProfile: default
+  resourceProfile: minimal
   resourceProfiles:
     minimal:
       databases:
         requests:
-          cpu: 100m
+          cpu: 75m
           memory: 256Mi
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: 250m
+          memory: 512Mi
       services:
         requests:
-          cpu: 100m
+          cpu: 75m
           memory: 128Mi
         limits:
-          cpu: 200m
+          cpu: 150m
           memory: 256Mi
       frontends:
         requests:
-          cpu: 100m
+          cpu: 50m
           memory: 64Mi
         limits:
           cpu: 100m
@@ -153,201 +153,196 @@ global:
     # Infrastructure images
     nats:
       repository: nats
-      tag: "2.12.5"
+      tag: "2.14.2"
       pullPolicy: IfNotPresent
-      digest: "sha256:6d12af36c7d6a6f597e7aa1cab9fbaee6d82598f4775231a446d658a61e4655b" # sha256:xxx - when set, overrides tag
+      digest: "sha256:c6f47817df8346dc8e13a08a39d86e6160e8b1a08d7c07f4297e4024d8d055ee" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
-      tag: "24.0"
+      tag: "26.6.3-patched"
       pullPolicy: IfNotPresent
-      digest: "sha256:e9e6b246be4efee5810511fc6b8c936decda8646b77185b85bf633c21bc68b21"
+      digest: "sha256:f606e42c630e7170a215b62c5e8fe14f0e493e5e6697d5fc5eb90e2c989a387b"
     envoy:
       repository: envoyproxy/envoy
-      tag: "v1.17.0"
+      tag: "v1.38.2"
       pullPolicy: IfNotPresent
-      digest: "sha256:750008950dece8be0f5afd93aa9507892cc7afc27020a1479098fd1569881678"
+      digest: "sha256:faee76995af40723f30beb51121a29515597be6e622101df70da840d109c1147"
     # Database images
     mongodb:
       repository: mongodb/mongodb-community-server
-      tag: "7.0.2-ubi8"
+      tag: "7.0.37-ubi8"
       pullPolicy: IfNotPresent
-      digest: "sha256:0a05651332edcb61924140b7c9878bc82500fa7cd6d6b95048f0cba7518eb805"
-    citusDb:
-      repository: citusdata/citus
-      tag: "12.1.2-alpine"
-      pullPolicy: IfNotPresent
-      digest: "sha256:5c0062c5feda67bdf0a027d087732ef111259cac116c371c49595ac4a8b94470"
-    keycloakDb:
-      repository: postgres
-      tag: "17.0-alpine3.20"
-      pullPolicy: IfNotPresent
-      digest: ""
-    appsDb:
-      repository: timescale/timescaledb
-      tag: "2.26.0-pg16"
-      pullPolicy: IfNotPresent
-      digest: "sha256:898b884159a49c77d08a508155eb42df3421dc1297c91512a8ee8ac0be76e05f"
+      digest: "sha256:6dfeef0f0f56f9ef3d9f915d2df50a4dbf95a139478ea41b855b9fee30d9eee4"
     # Core Services
     historianSvc:
       repository: historian
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:bd355066bc298c88bf9bb91a3b6aecd273e147cea42757b18035b9989e75e430"
+      digest: "sha256:df5598bb393dceae3ff510ec38a3391ad0cad6fae1728190866f18bba63e2b47"
     gmsApi:
       repository: gms-api
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:114c438291fd5345d1bdbd7a030bd82c977e35fb1939def77363d6b257368102"
+      digest: "sha256:cbaad65a52ba260b5108f4fe23b6c0b4ab967450732b2f35d8a73881bac48350"
     openfmbEventService:
       repository: openfmb-event-service
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:6898106f52cbcabe71143b6b64319df861c9153ac4510d5964a295fd7f7d1389"
+      digest: "sha256:feab3cd337f3217cc47eca2a9c98b876c7abf813370c0b7c46d7ceec89b08444"
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "pre-ods-356333c4"
+      tag: "8e25d06b"
       pullPolicy: IfNotPresent
-      digest: "sha256:2d494ddbcdd6581b74c9b428629b8e7e24e1e2f35988e63e35e2c293ee5ad3a7"
+      digest: "sha256:c33433336bc27ee3a6e380b04b4c5075409994375d6ba9b81a043806ca3d19ed"
     topologyNodes:
       repository: topology-nodes
-      tag: "local-licensed"
+      tag: "edfee6a8-licensed"
       pullPolicy: IfNotPresent
-      digest: "sha256:08d463108d5ea09f8a5a98f303110d03f0d696b3a3894988efc0c1f7cd2806dd"
+      digest: "sha256:5f8e1a00092fee24635f6d1ff885fb70856c40667be3ce673764c158cf2b6d11"
     derDispatchApp:
       repository: der-dispatch-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:98b3498bb52df9aa8eeb1fba348b7bbce8873e214733229c0c89da301baf1a84"
+      digest: "sha256:c7d9c367e3674051f9c5b747f26b0a16c917f9266a27d48f7272a11facf9eeff"
     derDispatchSvc:
       repository: der-dispatch
-      tag: "78226199"
+      tag: "b09232f6"
       pullPolicy: IfNotPresent
-      digest: "sha256:8c4cd467ad2357599b64b7d2740ad19df8f8b8144142ddead5d41a2e68e11647"
+      digest: "sha256:2de94a90a0ed5b713a0d0179886e4a56cbe15a58110791dcef932999a0199945"
     # Frontend Applications
     genesisNodeApp:
       repository: genesis-node-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:a3062e244214ea0b976a59c5b7a7c8c03bd7809279ec123ebcfd35fc672312f6"
+      digest: "sha256:e9f4604f0b9f317bead698a254d576feb2ad67867cb869ab35da3ede247cecb3"
     dataViewerApp:
       repository: data-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:f61df45ff5fb9ef6a462489174d5ef4c971820d56adb99d0736c2cd851b06336"
+      digest: "sha256:ade1cebff5ebc7705980a083e2cc86967f93fb0906f7cdc5594cd9c3ba887eac"
     scheduleDispatchApp:
       repository: edo-adr-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:da10f48e379934d5878e3021902f79326ac298778d174f4f14d381cf2a810d02"
+      digest: "sha256:6783a64f4c5fde35a2de0e0da06d048459a125a6bdd5f1d2faff5dbf5c7d7b1e"
+    ahsApp:
+      repository: ahs-app
+      tag: "latest"
+      pullPolicy: IfNotPresent
+      digest: "sha256:7e8034095c0b625ac7c9f9fabe5d484d1a0cdc0beaa3acd7179b07a2097dfa1b"
     eventViewerApp:
       repository: event-viewer-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:6e0bc9fdf1edf08b1aed44fde20ab04252fb38422d6bb3c71781869a63507d7f"
+      digest: "sha256:0f17dc2620efe599984203a21a09ddf85c59cca2e12d811c50cf1c05e40357dc"
     gisApp:
       repository: gis-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:7deaddd3b25519b1895ff14ce7a7039631f4d9ba81355016a521143df98653cc"
+      digest: "sha256:b54f3fecf381e40afc6f334fe62fa6b401625f1130e87ef868cf2b53b002f49e"
     historianApp:
       repository: historian-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:bdd2cde35e3c37ff280f89741828b611afc0e338be02b05e79d1671f2f708f88"
+      digest: "sha256:8fb80fc9719f87982f7302178aaa046d0abb2559c4ce2bc90f7b5831f9a4312b"
     inspectorApp:
       repository: inspector-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:6b0f5ea2883b621a638e65e2d1b4f397650d7d741a54d6b8637a96e18f069f46"
+      digest: "sha256:524d1e190361a181d0889e492c6d001d3606e7e7b8fda7b801fc09037a35b992"
     inventoryApp:
       repository: inventory-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:dca81232ad5bb1a8372089b847782d578fa1be61bccb283579f71a5189f2ed92"
+      digest: "sha256:2eeeca7032b1a483c929b74f762282002a0bcd4ff02a3c55b6e7a345392d0fa5"
     oneLineApp:
       repository: one-line-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:ee0916f78174e164e7cbb2e5377c084f7429ec91e6e9c21e8558882b89bb5be2"
-    opendsoDocsApp:
-      repository: opendso-docs
-      tag: "latest"
-      pullPolicy: IfNotPresent
-      digest: "sha256:8ae50e865ab82c351a1de20c87002a458581f12247e03fed4caee2cc665367ed"
+      digest: "sha256:6eb181e3721d0e2b45a4cb5c60bef9126175081cd6a9998a1b6fa93e21874050"
     openfmbEventCreatorApp:
       repository: openfmb-event-creator-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:decd4b211231477d3388c08bee6bbf424b0d99826f18f6f5f5b822c6da5c99e2"
+      digest: "sha256:9ff0b8dceed3ea9c6b0466213b001af2e354328eb7057a586ac9f241e12074a4"
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:3279c3ed57f64744a2a1b04afaf894c99b05ecf1c1cb342adb671d630eaf2c52"
+      digest: "sha256:66c9a8a26354f63abd059c99f06eec16e0313823d74597c367f903c1e7e6c14a"
     essManagerApp:
       repository: ess-manager-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:7b3ad1c90bbc0e87859e1f947da754aeed30ffc22799c17e4ae46a4338b3f67b"
+      digest: "sha256:b7ab9d88e0aaf2c50be52134d9be7de379bb926dbd7c54aa5afaf53f4c941126"
     essTesterSvc:
       repository: ess-tester
-      tag: "b8ce64a3"
+      tag: "3adda1cd"
       pullPolicy: IfNotPresent
-      digest: "sha256:45e6d226721cbe663ff650aed688da32e0c9952530b5701063dc61e875f61d4a"
+      digest: "sha256:4f8ab61a79944b6bdb1c4628d9804ff29b25ae43eb5d4560f42a985c358f2fbb"
     essTesterApp:
       repository: batt-testing-app
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:f439df62e932a2a5c25d40d5ac90d49d9012f68249caca38eac5d373086a2568"
+      digest: "sha256:9fe933bd74d7625e5cd834a52c101e6cc669b28bdbeed619235eee6f0f3b3d96"
     assetHealthSvc:
       repository: ahs
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:0d39e659f3fd34a1c665d59d352f5ab20e233496212eac0d91fa95b105f65cdb"
+      digest: "sha256:58bf93317b7c6e6464b334104974b7a0ac4a4e4d3e3cb71171d34f9ee6044e56"
     assetHealthSimSvc:
       repository: ahs-sim
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:fb556b25bc0858cd287f910fcb73945499928f0c787ccdc6f27283c0cbfd851f"
+      digest: "sha256:bb4f26dee051b1791dc4d14eed589d1a5247d947d97b20cb6b16227abe8bc9bf"
     essManagerRedis:
       repository: redis
-      tag: "7.0"
+      tag: "7.4.9-alpine"
       pullPolicy: IfNotPresent
-      digest: "sha256:89c859c034b2b7641227e68b052a8a3ac0292f1c5dd9d7b8e18659ff8967ef1d"
+      digest: "sha256:5da8151e855fdb6729d42a86f5fac27709d84b5a4bffedd2bcaa7cd72636ba21"
     # CVR Applications
     cvrSvc:
       repository: cvr
       tag: "latest"
       pullPolicy: IfNotPresent
-      digest: "sha256:ac2f7aaca06e7cacd7118aefa660ae606fea858e006612fbf26474a7c5ab103c"
+      digest: "sha256:8f0ee29f37705a9123077791ad997ce88dd167fd14b18ff7ac4cae3a895dffcd"
     cvrGeneticAlgorithmSvc:
       repository: genetic-cvr
-      tag: "latest"
+      tag: "8b70d773"
       pullPolicy: IfNotPresent
-      digest: "sha256:f5abffc4a6772edc72bb26d0cdd58473a6e459e0b544e063b9085f9758ef26c6"
+      digest: "sha256:4cb991fe5ad11598390955010cd527f88b7c63a416e5dc80f6af6b3bd7caab14"
     cvrOpenfmbServicesSvc:
       repository: openfmb-services
-      tag: "latest"
+      tag: "649c06dd"
       pullPolicy: IfNotPresent
-      digest: "sha256:311e14e9606c835e16e369a9fe4b98dcc3778b9bdfda4b38d3e09d818b23a402"
+      digest: "sha256:88fce57a9ae423a470f3eb204f35a0b30d264c962d66c843c9e859d70e8c7269"
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
-      tag: "2c8e8a04"
+      tag: "6cd7c4ef"
       pullPolicy: IfNotPresent
-      digest: "sha256:c955a6082223b554e998ea24533ed8c6469a3b42f793c74375cd80d20db6a3bc"
+      digest: "sha256:a3317ab982074a25b7f5806016d4198710f219d50bc794f80ad26c499efd6228"
     rpcdssSvc:
       repository: rpcdss
-      tag: "3d3b0e15"
+      tag: "61e9ad02"
       pullPolicy: IfNotPresent
-      digest: "sha256:39548abee9d4b6d2dbd005c8f8857138d5a8e94cd56276748bfaa1b951b61926"
+      digest: "sha256:3f4ec7c0050eff2f260eb59b19e8896417b98d94ffa85dedff525125895a5546"
+    odsSvc:
+      repository: opendso-data-service
+      tag: "0b8d3e0f"
+      pullPolicy: IfNotPresent
+      digest: "sha256:4e2a63e1c1941cab2f1dc14b37922ab32ce5d1f0f4284b3b26e7a732ec98c5a8"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "679a94b4"
+      tag: "ec044b57"
       pullPolicy: IfNotPresent
-      digest: "sha256:3b3d80ea21c08d8ae925d180de19f84ec0774d372b504ffa5b4717d2f05086fa"
+      digest: "sha256:b0a5d5190a792f56ee5cd43e90502b160159396134a3a193aaf600592f57a80d"
+    busybox:
+      repository: busybox
+      tag: "1.36"
+      pullPolicy: IfNotPresent
+      digest: "sha256:bcb6070e742bc56c414ba9e334180c83df064e272b141532c456b4eaedc012d3"
   # =============================================================================
   # Component Enable/Disable
   # =============================================================================
@@ -357,19 +352,18 @@ global:
     enabled: true
   nats-auth-svc:
     enabled: false
+  ods-svc:
+    enabled: true
   keycloak:
     enabled: true
-  # Monitoring & Observability
-  grafana:
-    enabled: true # Enable for monitoring/dashboards
   # Database Services
   mongodb:
     enabled: true
     tls:
       enabled: false
-  citus-db:
-    enabled: true
   keycloak-db:
+    enabled: false
+  opendso-apps-db:
     enabled: false
   # Core Services
   historian-svc:
@@ -404,11 +398,11 @@ global:
     enabled: true
   one-line-app:
     enabled: true
-  opendso-docs-app:
-    enabled: true
   openfmb-event-creator-app:
     enabled: true
   schedule-dispatch-app:
+    enabled: true
+  ahs-app:
     enabled: true
   ess-manager-app:
     enabled: true
@@ -436,9 +430,9 @@ global:
     enabled: false
   # OpenDSS Services
   omegadss-svc:
-    enabled: true
+    enabled: false
   rpcdss-svc:
-    enabled: true
+    enabled: false
 # =============================================================================
 # OpenDSO Apps Database (Shared)
 # =============================================================================
@@ -474,11 +468,11 @@ opendso-apps-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
+  historianDatabase: ofmb_db
   podSecurityContext: {}
   securityContext: {}
-  # BYO database (marketplace-friendly)
   externalDatabase:
-    enabled: false
+    enabled: true
     host: ""
     port: 5432
     database: ""
@@ -488,32 +482,6 @@ opendso-apps-db:
     usernameKey: username
     passwordKey: password
     databaseKey: database
-# =============================================================================
-# Historian Database (Citus)
-# =============================================================================
-citus-db:
-  auth:
-    username: citususer
-    password: ""
-    database: ofmb_db
-    existingSecret: ""
-    usernameKey: username
-    passwordKey: password
-    databaseKey: database
-  podSecurityContext: {}
-  securityContext: {}
-  externalDatabase:
-    enabled: false
-    host: ""
-    port: 5432
-    database: ""
-    username: ""
-    password: ""
-    existingSecret: ""
-    usernameKey: username
-    passwordKey: password
-    databaseKey: database
-
 omegadss-svc:
   podSecurityContext:
     runAsNonRoot: true
@@ -708,99 +676,3 @@ nats:
   websocketNodePort:
     enabled: false
     port: 30009
-# =============================================================================
-# Grafana - Monitoring & Dashboards
-# =============================================================================
-grafana:
-  # Admin credentials - using Kubernetes secret
-  # Secret is created by parent chart with name: {{ .Release.Name }}-grafana-credentials
-  # IMPORTANT: If using a custom release name, override with:
-  #   --set grafana.admin.existingSecret=<your-release-name>-grafana-credentials
-  admin:
-    existingSecret: "" # Override with: --set grafana.admin.existingSecret=<release-name>-grafana-credentials
-    userKey: admin-user
-    passwordKey: admin-password
-  # Admin user configuration (for reference, actual credentials in secret)
-  adminUser: admin
-  adminPassword: ""
-  # Persistence
-  persistence:
-    enabled: true
-    type: pvc
-    storageClassName: standard
-    size: 10Gi
-  # Disable init container that changes ownership (causes permission issues on upgrade)
-  initChownData:
-    enabled: false
-  # Service configuration
-  service:
-    type: ClusterIP
-    port: 80
-  # Ingress will be handled by parent chart
-  ingress:
-    enabled: false
-  readinessProbe:
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-  livenessProbe:
-    initialDelaySeconds: 180
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-  # Environment variables for datasource credentials
-  # Secret name follows pattern: {{ .Release.Name }}-grafana-credentials
-  # IMPORTANT: If using a custom release name, override with:
-  #   --set grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<your-release-name>-grafana-credentials
-  #   --set grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<your-release-name>-grafana-credentials
-  envValueFrom:
-    CITUS_PASSWORD:
-      secretKeyRef:
-        name: "" # Override with: --set "grafana.envValueFrom.CITUS_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
-        key: citus-password
-    OPENDSO_APPS_DB_PASSWORD:
-      secretKeyRef:
-        name: "" # Override with: --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=<release-name>-grafana-credentials"
-        key: opendso-apps-db-password
-  # Data sources are provisioned via grafana-datasources.yaml template (uses .Release.Name)
-  sidecar:
-    datasources:
-      enabled: true
-      label: grafana_datasource
-      labelValue: "1"
-  # Plugins to install
-  plugins: []
-  # Resource limits
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  # Environment variables
-  env:
-    GF_SECURITY_ALLOW_EMBEDDING: "true"
-    GF_AUTH_ANONYMOUS_ENABLED: "false"
-    GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/"
-    GF_SERVER_SERVE_FROM_SUB_PATH: "false"
-  # Default dashboards
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: 'default'
-          orgId: 1
-          folder: 'OpenDSO'
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
-  # Dashboard ConfigMaps (add your dashboards here)
-  dashboards:
-    default: {}
-    # Example: Add dashboard ConfigMaps
-    # system-metrics:
-    #   file: dashboards/system-metrics.json
