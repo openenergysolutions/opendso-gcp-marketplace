@@ -4,7 +4,7 @@
 # (fixed in go1.25.13 / go1.26.6). Building from source with a patched
 # toolchain fixes it regardless of which nkeys release tag is used.
 FROM golang:1.26.8 AS nk-builder
-ARG NK_VERSION=0.4.15
+ARG NK_VERSION=0.4.16
 RUN go install "github.com/nats-io/nkeys/nk@v${NK_VERSION}"
 
 FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
