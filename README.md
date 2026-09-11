@@ -252,8 +252,8 @@ opendso-gcp-marketplace/
 
 ```bash
 # From the repo root
-docker build -f deployer/Dockerfile -t gcr.io/<your-project>/opendso/deployer:1.0.0 .
-docker push gcr.io/<your-project>/opendso/deployer:1.0.0
+docker build -f deployer/Dockerfile -t gcr.io/<your-project>/opendso/deployer:2.0 .
+docker push gcr.io/<your-project>/opendso/deployer:2.0
 ```
 
 ---
@@ -264,11 +264,11 @@ Install [mpdev](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools
 
 ```bash
 # Verify the schema
-mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0
+mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:2.0
 
 # Test install into a real cluster
 mpdev install \
-  --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
+  --deployer=gcr.io/<your-project>/opendso/deployer:2.0 \
   --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
 ```
 

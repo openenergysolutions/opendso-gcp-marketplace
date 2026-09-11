@@ -153,9 +153,9 @@ global:
     # Infrastructure images
     nats:
       repository: nats
-      tag: "2.14.2"
+      tag: "2.14.6"
       pullPolicy: IfNotPresent
-      digest: "sha256:c6f47817df8346dc8e13a08a39d86e6160e8b1a08d7c07f4297e4024d8d055ee" # sha256:xxx - when set, overrides tag
+      digest: "sha256:02a89de69b13434ee2f5683647bad7b5d47e25929032ea390ab51f46aeae96db" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
       tag: "26.6.3-patched"
@@ -173,131 +173,131 @@ global:
       repository: postgres
       tag: "16-alpine"
       pullPolicy: IfNotPresent
-      digest: "" # TODO: pin after mirroring — see scripts/mirror-k8s-marketplace-images.sh --only postgres
+      digest: "sha256:6f85fa1a3cc8d3a99cb26b1563f6d8d4509c3afc5bbc298b1111ed1e1426fdf6" # TODO: pin after mirroring — see scripts/mirror-k8s-marketplace-images.sh --only postgres
     # Core Services
     historianSvc:
       repository: historian
-      tag: "latest"
+      tag: "3fa399e5"
       pullPolicy: IfNotPresent
-      digest: "sha256:df5598bb393dceae3ff510ec38a3391ad0cad6fae1728190866f18bba63e2b47"
+      digest: "sha256:3817e8a4414043bb6d9cd5af4667de86f9253ccbd8e95bafcb380b517a47a40e"
     gmsApi:
       repository: gms-api
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:cbaad65a52ba260b5108f4fe23b6c0b4ab967450732b2f35d8a73881bac48350"
+      digest: "sha256:74726438b6ac22fa174bbad4b6ea6a55b96873534a7e617a500438ed143e18fa"
     openfmbEventService:
       repository: openfmb-event-service
-      tag: "latest"
+      tag: "add383bc"
       pullPolicy: IfNotPresent
-      digest: "sha256:feab3cd337f3217cc47eca2a9c98b876c7abf813370c0b7c46d7ceec89b08444"
+      digest: "sha256:f8467d8f0ffcf0ad4531310a64aa7481a4e0d556ed022b4816b36790b51418de"
     # Topology Services
     topologyGenesis:
       repository: topology-genesis
-      tag: "8e25d06b"
+      tag: "d3eeedf4"
       pullPolicy: IfNotPresent
-      digest: "sha256:c33433336bc27ee3a6e380b04b4c5075409994375d6ba9b81a043806ca3d19ed"
+      digest: "sha256:4fd981fea1ac03e6a859e511d8a6e84fc60657b521dbc8fa1c6f40a3046a9faa"
     topologyNodes:
       repository: topology-nodes
-      tag: "edfee6a8-licensed"
+      tag: "b754a1c9-licensed"
       pullPolicy: IfNotPresent
-      digest: "sha256:5f8e1a00092fee24635f6d1ff885fb70856c40667be3ce673764c158cf2b6d11"
+      digest: "sha256:8956b1dd26d39dcffd1797ea56d49d71cb83986a643bd2c826f53bfd394c3ebd"
     derDispatchApp:
       repository: der-dispatch-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:c7d9c367e3674051f9c5b747f26b0a16c917f9266a27d48f7272a11facf9eeff"
+      digest: "sha256:f36a98b86974de3a5e0bb007e27f736932d278724d8f318d27b7da038a20525d"
     derDispatchSvc:
       repository: der-dispatch
-      tag: "b09232f6"
+      tag: "9c00bca0"
       pullPolicy: IfNotPresent
-      digest: "sha256:2de94a90a0ed5b713a0d0179886e4a56cbe15a58110791dcef932999a0199945"
+      digest: "sha256:dba1e45d6982f77362e0fe03b3f2fd756db1dd77bb3f7be447451cbc4512c181"
     # Frontend Applications
     genesisNodeApp:
       repository: genesis-node-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:e9f4604f0b9f317bead698a254d576feb2ad67867cb869ab35da3ede247cecb3"
+      digest: "sha256:7a40b414518637552e3085b41ed6e0e7c3597da9bcacd4470f3c541d33061411"
     dataViewerApp:
       repository: data-viewer-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:ade1cebff5ebc7705980a083e2cc86967f93fb0906f7cdc5594cd9c3ba887eac"
+      digest: "sha256:9bcf05e36decf64bfa763bd508aa0926d137b50c57d5c63b6ca049851f73933c"
     scheduleDispatchApp:
       repository: edo-adr-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:6783a64f4c5fde35a2de0e0da06d048459a125a6bdd5f1d2faff5dbf5c7d7b1e"
+      digest: "sha256:09df1f8131da6145e09fe4f5ad614216d2ccb5ae9d44f6f58c08d1d9d9346531"
     ahsApp:
       repository: ahs-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:7e8034095c0b625ac7c9f9fabe5d484d1a0cdc0beaa3acd7179b07a2097dfa1b"
+      digest: "sha256:d0dadd09b64fd2102da5df3e41e05ce9626433201ce2cc1a74c5b1c36c4107ee"
     eventViewerApp:
       repository: event-viewer-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:0f17dc2620efe599984203a21a09ddf85c59cca2e12d811c50cf1c05e40357dc"
+      digest: "sha256:57e5747a234a5aed38659e193263faf70fd3ada39552b20bc5fc83e9b7f3f972"
     gisApp:
       repository: gis-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:b54f3fecf381e40afc6f334fe62fa6b401625f1130e87ef868cf2b53b002f49e"
+      digest: "sha256:014d9df0d3c01fd2934a5879ae13c5cf6319150635830a1e7e18700855ebdea8"
     historianApp:
       repository: historian-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:8fb80fc9719f87982f7302178aaa046d0abb2559c4ce2bc90f7b5831f9a4312b"
+      digest: "sha256:3951e3b05f0986a406e7aec90381830bfb13eb161c933ad3b6923d9e6b2ab846"
     inspectorApp:
       repository: inspector-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:524d1e190361a181d0889e492c6d001d3606e7e7b8fda7b801fc09037a35b992"
+      digest: "sha256:60e59842403df6b2059689949b7460beca5a764b078d3deeaa84dfbdf34341a5"
     inventoryApp:
       repository: inventory-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:2eeeca7032b1a483c929b74f762282002a0bcd4ff02a3c55b6e7a345392d0fa5"
+      digest: "sha256:50a99f0d9976c58381990589ed55b8ddf52956e1ed7faf36f10583538c764cee"
     oneLineApp:
       repository: one-line-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:6eb181e3721d0e2b45a4cb5c60bef9126175081cd6a9998a1b6fa93e21874050"
+      digest: "sha256:25ec1865f6c3673ec345bc0fbabf74e2acbd9c1e1004425590da888861fc0eaf"
     openfmbEventCreatorApp:
       repository: openfmb-event-creator-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:9ff0b8dceed3ea9c6b0466213b001af2e354328eb7057a586ac9f241e12074a4"
+      digest: "sha256:cc577aa53380ad094c088653f683f81370d41e8383635cbf649643aabcd6453b"
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
-      tag: "latest"
+      tag: "4a2b18d9"
       pullPolicy: IfNotPresent
-      digest: "sha256:66c9a8a26354f63abd059c99f06eec16e0313823d74597c367f903c1e7e6c14a"
+      digest: "sha256:f2a3cb3ebc5fe492434aaac6df0d3b15b0bc14c08c60e4163eab93acee5c0255"
     essManagerApp:
       repository: ess-manager-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:b7ab9d88e0aaf2c50be52134d9be7de379bb926dbd7c54aa5afaf53f4c941126"
+      digest: "sha256:9b837f2c9a40c3547aa5578d47230a65d6f1fee2bfb9a2dd220c018f0375ffba"
     essTesterSvc:
       repository: ess-tester
-      tag: "3adda1cd"
+      tag: "219354c6"
       pullPolicy: IfNotPresent
-      digest: "sha256:4f8ab61a79944b6bdb1c4628d9804ff29b25ae43eb5d4560f42a985c358f2fbb"
+      digest: "sha256:7f2f8da68f67b158893c19ae77919c01e993876d463902f8e46f37e9eb99f7e7"
     essTesterApp:
       repository: batt-testing-app
-      tag: "latest"
+      tag: "v3-bad937d3"
       pullPolicy: IfNotPresent
-      digest: "sha256:9fe933bd74d7625e5cd834a52c101e6cc669b28bdbeed619235eee6f0f3b3d96"
+      digest: "sha256:30551de4b646540b84e7ab111a1dbe9b69206cc176ea0c177aa60752f533fe13"
     assetHealthSvc:
       repository: ahs
-      tag: "latest"
+      tag: "c73a483f"
       pullPolicy: IfNotPresent
-      digest: "sha256:58bf93317b7c6e6464b334104974b7a0ac4a4e4d3e3cb71171d34f9ee6044e56"
+      digest: "sha256:e0d1a9daf8e0c25bd56335368a7a50dc3a629f4f1221b5dd807ebbf22963ff00"
     assetHealthSimSvc:
       repository: ahs-sim
-      tag: "latest"
+      tag: "b04a4b73"
       pullPolicy: IfNotPresent
-      digest: "sha256:bb4f26dee051b1791dc4d14eed589d1a5247d947d97b20cb6b16227abe8bc9bf"
+      digest: "sha256:54909c0797be4922c910444361dd968e54912fab5a40a0b20709e4bad7fbd3b5"
     essManagerRedis:
       repository: redis
       tag: "7.4.9-alpine"
@@ -306,40 +306,40 @@ global:
     # CVR Applications
     cvrSvc:
       repository: cvr
-      tag: "latest"
+      tag: "d82e76f7"
       pullPolicy: IfNotPresent
-      digest: "sha256:8f0ee29f37705a9123077791ad997ce88dd167fd14b18ff7ac4cae3a895dffcd"
+      digest: "sha256:102e69c7489a3466a1ac60db3712e8bc14626eaf790fcf14aba414b6e4ce0e59"
     cvrGeneticAlgorithmSvc:
       repository: genetic-cvr
-      tag: "8b70d773"
+      tag: "3caaba18"
       pullPolicy: IfNotPresent
-      digest: "sha256:4cb991fe5ad11598390955010cd527f88b7c63a416e5dc80f6af6b3bd7caab14"
+      digest: "sha256:2217647b9d452b1fbdd9179c7e77c1a10f101b64f32a6cbdcb8111e7e3e7d95e"
     cvrOpenfmbServicesSvc:
       repository: openfmb-services
-      tag: "649c06dd"
+      tag: "983c2e4b"
       pullPolicy: IfNotPresent
-      digest: "sha256:88fce57a9ae423a470f3eb204f35a0b30d264c962d66c843c9e859d70e8c7269"
+      digest: "sha256:eb21e4e0d8597b085232a8c23080611236a1dd4ef693336f724dd16514286fee"
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
-      tag: "6cd7c4ef"
+      tag: "6251213e"
       pullPolicy: IfNotPresent
-      digest: "sha256:a3317ab982074a25b7f5806016d4198710f219d50bc794f80ad26c499efd6228"
+      digest: "sha256:90a2cb43684ddc8065c1e2fd421e1a78d7779e7193276a9e36042c0ee8936879"
     rpcdssSvc:
       repository: rpcdss
-      tag: "61e9ad02"
+      tag: "b205b0c7"
       pullPolicy: IfNotPresent
-      digest: "sha256:3f4ec7c0050eff2f260eb59b19e8896417b98d94ffa85dedff525125895a5546"
+      digest: "sha256:86b5640c9bafe0a67dd03e05a978c90de0fbc18d97ed768d11663b1a58fdc0a1"
     odsSvc:
       repository: opendso-data-service
-      tag: "0b8d3e0f"
+      tag: "78e5fdd7"
       pullPolicy: IfNotPresent
-      digest: "sha256:4e2a63e1c1941cab2f1dc14b37922ab32ce5d1f0f4284b3b26e7a732ec98c5a8"
+      digest: "sha256:1a0070d7b0c125d6da9e87ceaf13116b576b0cea20cfaf2af7a27f7c83839d02"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "ec044b57"
+      tag: "0efab2e2"
       pullPolicy: IfNotPresent
-      digest: "sha256:b0a5d5190a792f56ee5cd43e90502b160159396134a3a193aaf600592f57a80d"
+      digest: "sha256:75f18de4d6428dccfe83a46d45a5c22da362f62ea83ced5e264e633aa88020da"
     busybox:
       repository: busybox
       tag: "1.36"

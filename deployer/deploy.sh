@@ -473,8 +473,8 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
 kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     --type merge \
-    --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null 2>&1 || \
-  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to 1.0.0)"
+    --patch "{\"spec\":{\"descriptor\":{\"version\":\"2.0.0\"}}}" >/dev/null 2>&1 || \
+  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to 2.0.0)"
 
 # ---------------------------------------------------------------------------
 # 3d. Add Application ownerReferences to all Helm-managed resources
