@@ -55,6 +55,17 @@ global:
         limits:
           cpu: 100m
           memory: 128Mi
+      # Keycloak is a JVM/Quarkus app, not a lightweight microservice like the
+      # rest of "services" — it needs its own headroom, especially for the
+      # build-time re-augmentation Quarkus runs on first boot when runtime
+      # flags differ from the base image's baked-in build.
+      keycloak:
+        requests:
+          cpu: 150m
+          memory: 384Mi
+        limits:
+          cpu: 500m
+          memory: 768Mi
     default: # For dev/staging environments
       databases:
         requests:
@@ -77,6 +88,13 @@ global:
         limits:
           cpu: 200m
           memory: 256Mi
+      keycloak:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
     production: # For GKE/EKS production workloads
       databases:
         requests:
@@ -99,6 +117,13 @@ global:
         limits:
           cpu: 500m
           memory: 512Mi
+      keycloak:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2000m
+          memory: 2Gi
   # =============================================================================
   # Keycloak Configuration (Shared across all charts)
   # =============================================================================
@@ -166,12 +191,11 @@ global:
       tag: "v1.38.2"
       pullPolicy: IfNotPresent
       digest: "sha256:faee76995af40723f30beb51121a29515597be6e622101df70da840d109c1147"
-    # opendso-apps-db's in-cluster StatefulSet image (local/dev/HA only — not
-    # part of the Marketplace listing itself, since values-gcp.yaml always
-    # sets externalDatabase.enabled: true, which skips that StatefulSet
-    # entirely). Not declared in schema.yaml; not mirrored/annotated for
-    # submission. Point this at whatever registry your dev/HA deployment
-    # actually pulls from.
+    # opendso-apps-db's in-cluster StatefulSet image. Used whenever
+    # externalDatabase.host is blank (local/dev/HA, and Marketplace's own
+    # automated functionality test, which never supplies Cloud SQL params).
+    # Not declared in schema.yaml; not mirrored/annotated for submission.
+    # Point this at whatever registry your dev/HA deployment actually pulls from.
     appsDb:
       repository: postgres
       tag: "16-alpine"

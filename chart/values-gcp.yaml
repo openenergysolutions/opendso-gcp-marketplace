@@ -57,7 +57,9 @@ global:
 # ============================================================================
 
 # OpenDSO Apps DB — Cloud SQL (external PostgreSQL)
-# The in-cluster postgres StatefulSet is disabled; configure your Cloud SQL instance below.
+# Configure your Cloud SQL instance below. If externalDatabase.host is left blank,
+# the chart falls back to the in-cluster postgres StatefulSet instead (used by
+# Marketplace's own automated functionality test, which never supplies Cloud SQL params).
 opendso-apps-db:
   externalDatabase:
     enabled: true

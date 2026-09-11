@@ -48,7 +48,10 @@ spec:
             - name: PGUSER
               value: {{ $citus.user | quote }}
             - name: PGPASSWORD
-              value: {{ $citus.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-opendso-apps-db-secret" .Release.Name }}
+                  key: password
             - name: PGDATABASE
               value: {{ $citus.name | quote }}
             - name: RUST_BACKTRACE

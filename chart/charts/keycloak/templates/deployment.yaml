@@ -96,7 +96,7 @@ spec:
               mountPath: /opt/keycloak/data/h2
             {{- end }}
           resources:
-            {{- include "opendso.resources" (dict "root" . "category" "services" "explicit" .Values.resources) | nindent 12 }}
+            {{- include "opendso.resources" (dict "root" . "category" "keycloak" "explicit" .Values.resources) | nindent 12 }}
 
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:

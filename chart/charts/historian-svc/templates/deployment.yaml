@@ -69,7 +69,10 @@ spec:
             - name: PGDATABASE
               value: {{ $citus.name | quote }}
             - name: PGPASSWORD
-              value: {{ $citus.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-opendso-apps-db-secret" .Release.Name }}
+                  key: password
             - name: PGPORT
               value: {{ $citus.port | quote }}
           envFrom:

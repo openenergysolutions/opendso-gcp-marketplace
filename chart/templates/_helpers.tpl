@@ -11,7 +11,8 @@ Returns YAML with host, port, name, user, password.
 */}}
 {{- define "opendso.appsDb.settings" -}}
 {{- $vals := .Values | toYaml | fromYaml -}}
-{{- $external := dig "opendso-apps-db" "externalDatabase" "enabled" false $vals -}}
+{{- $externalHost := dig "opendso-apps-db" "externalDatabase" "host" "" $vals -}}
+{{- $external := and (dig "opendso-apps-db" "externalDatabase" "enabled" false $vals) $externalHost -}}
 {{- $nameOverride := dig "opendso-apps-db" "fullnameOverride" "" $vals -}}
 {{- $port := dig "opendso-apps-db" "service" "port" 5432 $vals -}}
 {{- $user := dig "opendso-apps-db" "auth" "username" "essuser" $vals -}}
@@ -64,7 +65,8 @@ opendso.appsDb.settings so a single existingSecret covers both.
 */}}
 {{- define "opendso.citusDb.settings" -}}
 {{- $vals := .Values | toYaml | fromYaml -}}
-{{- $external := dig "opendso-apps-db" "externalDatabase" "enabled" false $vals -}}
+{{- $externalHost := dig "opendso-apps-db" "externalDatabase" "host" "" $vals -}}
+{{- $external := and (dig "opendso-apps-db" "externalDatabase" "enabled" false $vals) $externalHost -}}
 {{- $nameOverride := dig "opendso-apps-db" "fullnameOverride" "" $vals -}}
 {{- $port := dig "opendso-apps-db" "service" "port" 5432 $vals -}}
 {{- $user := dig "opendso-apps-db" "auth" "username" "essuser" $vals -}}

@@ -1,7 +1,6 @@
 oes-app:
   log_level: info
-  log_file_enabled: false
-  log_file: ess-manager.log
+  app_name: "ess-manager"
 nats:
   connection_url: nats://{{ .Release.Name }}-nats-service:4222
   creds: ''

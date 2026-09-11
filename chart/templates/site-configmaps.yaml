@@ -271,7 +271,9 @@ data:
 {{- end }}
 
 # OpenDSO Apps DB Init Script ConfigMap
-{{- if and (index .Values.global "opendso-apps-db").enabled (not (dig "opendso-apps-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
+{{- $appsDbVals := .Values | toYaml | fromYaml -}}
+{{- $appsDbExternal := and (dig "opendso-apps-db" "externalDatabase" "enabled" false $appsDbVals) (dig "opendso-apps-db" "externalDatabase" "host" "" $appsDbVals) -}}
+{{- if and (index .Values.global "opendso-apps-db").enabled (not $appsDbExternal) }}
 ---
 apiVersion: v1
 kind: ConfigMap
