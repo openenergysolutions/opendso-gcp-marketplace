@@ -31,7 +31,10 @@ in-cluster DB fallback that Marketplace's own automated test relies on, a
 broken Keycloak CVE patch that invalidated the image's baked-in Quarkus
 build cache, and two services reading Postgres credentials that silently
 resolved to a placeholder string instead of the real generated password.
-None of these show up in `helm template` output.
+None of these show up in `helm template` output. A later round of testing
+found a more fundamental issue with how images get resolved at all — see
+[Section 7](#7-critical-gotcha-chartvaluesyaml-digests-win-over-tags-and-they-go-stale-silently)
+and [Section 8](#8-other-bugs-found-in-this-round-2026-09-11).
 
 ## 2. Choose a Test Project
 
@@ -72,7 +75,7 @@ Do **not** pass `--update-values` here — that patches the tracked
 mirror, not this throwaway test project. Passing `--tag-marketplace` alone
 just adds alias tags in Artifact Registry; it never touches files in the repo.
 
-The `opendso-apps-db` fallback path (see [Section 7](#7-testing-the-in-cluster-database-fallback))
+The `opendso-apps-db` fallback path (see [Section 9](#9-testing-the-in-cluster-database-fallback))
 uses a plain `postgres` image that isn't part of the Marketplace-scanned
 image set and isn't in either mirror script's `IMAGE_SPECS`. If you need it,
 mirror it separately:
@@ -155,7 +158,116 @@ crane tag "${LOCATION}-docker.pkg.dev/${PROJECT}/${REPO}/<image>:<new-tag>" "$VE
 crane tag "${LOCATION}-docker.pkg.dev/${PROJECT}/${REPO}/<image>:<new-tag>" "$TRACK"
 ```
 
-## 7. Testing the In-Cluster Database Fallback
+## 7. Critical Gotcha: `chart/values.yaml` Digests Win Over Tags, and They Go Stale Silently
+
+Every image in `chart/values.yaml` (first- and third-party alike) carries a
+`digest:` field alongside `tag:`. The `opendso.image` helper — and all 33
+near-identical per-subchart copies of it (`gms-api.image`, `keycloak.image`,
+etc.) — apply this rule unconditionally:
+
+```text
+if digest is set: image = "<repo>@<digest>"
+else:             image = "<repo>:<tag>"
+```
+
+Digest always wins when it's non-empty, **regardless of which registry
+`global.imageRegistry` points at**. Section 3 correctly tells you not to run
+the mirror scripts with `--update-values` against the test project, so the
+digests in `chart/values.yaml` never change during a live test — they stay
+pinned to whatever they were at the last real `--update-values` run against
+production. If that pinned digest doesn't exist in the *test* project's
+registry (it usually won't — a freshly mirrored image isn't guaranteed to
+land on the same digest, and the pin itself can simply go stale over time),
+every one of those pods fails with `ImagePullBackOff` / `ErrImagePull: ...
+not found`, even though the tag mirrored successfully and mpdev's tag-rewrite
+([Section 6](#6-critical-gotcha-mpdev-forces-every-image-to-the-publishedversion-tag))
+worked exactly as documented.
+
+This bit us in a 2026-09-11 round of testing: freshly re-mirroring every
+image and rebuilding the deployer from a clean checkout still produced 1 of
+29 pods healthy, because nearly every image in `chart/values.yaml` has a
+`digest:` pinned from an earlier point in time. Confirmed concretely for
+`busybox` — the digest pinned in `values.yaml` (`sha256:bcb6070e...`) matched
+neither the current `docker.io/busybox:1.36` manifest-list digest nor its
+`linux/amd64`-normalized digest; it didn't exist anywhere reachable.
+
+**This also silently swallows source-image fixes.** If you patch a
+Dockerfile (e.g. a Keycloak CVE patch), rebuild, and push a corrected image
+under the same tag, `chart/values.yaml`'s pinned digest still points at the
+*old* image — mpdev deploys the old, broken build every time, with no error
+and no indication the fix didn't take effect. That's exactly what happened
+re-validating the Keycloak `netty-resolver-dns` patch from
+[Section 1](#1-why-not-just-helm-template): the pod pulled fine (a valid
+digest, just the wrong one) and crash-looped with the *original* bug the
+patch was supposed to fix.
+
+**Confirmed fix / workaround**: [Section 11](#11-iterating-on-chart-fixes-without-a-full-mirror-cycle)'s
+blank-every-digest scratch build isn't just for fast template iteration — it
+is currently the *only* way to get a working live install against a freshly
+mirrored test registry at all. Redeploying the same otherwise-unmodified
+chart with every `digest:` field blanked took the install from 1 of 29 pods
+healthy to 28 of 29 (the sole remaining failure was the expected
+`topology-nodes` license-key limitation, see
+[Section 12](#12-known-test-only-limitations)).
+
+**Recommended long-term fix (not yet implemented)**: add a
+`global.imageResolveBy: "digest" | "tag"` value, default `digest`, and have
+all 33 `.image` helpers check it (`if digest is set AND resolveBy != "tag"`).
+Leave it out of `schema.yaml` so it's never exposed to real Marketplace
+customers — production always resolves by digest as required. Live testing
+would then pass `global.imageResolveBy=tag` as a parameter instead of
+maintaining a scratch chart copy.
+
+## 8. Other Bugs Found in This Round (2026-09-11)
+
+All three findings below were independently re-verified and the first two
+are now **fixed** in production. The third remains an open design question.
+
+- **FIXED — `gms-api`'s pinned tag didn't exist upstream.** `chart/values.yaml`
+  pinned `global.images.gmsApi.tag` to `v3-fc85c01d`, but
+  `docker.io/oesinc/gms-api:v3-fc85c01d` returned `MANIFEST_UNKNOWN` — that
+  tag was never published (it was an interim image manually pushed straight
+  to Artifact Registry earlier in development, bypassing Docker Hub
+  entirely). `scripts/mirror-app-images.sh`'s `IMAGE_SPECS` still mirrored
+  the older `v3-bad937d3`. By the time this was investigated, PR #57 in
+  `opendso-gms-applications` (the fix this interim image existed for) had
+  merged and CI had already published an official `v3-03d8fe65` build.
+  Reconciled by mirroring `v3-03d8fe65` into the production registry with
+  `--annotate --tag-marketplace --update-values`, and fixing
+  `mirror-app-images.sh`'s `IMAGE_SPECS` to match — retiring the interim
+  image entirely.
+
+- **OPEN — `opendso-apps-db` renders on the Marketplace path, but its image
+  doesn't exist there.** The in-cluster StatefulSet fallback (added earlier
+  this session, see the top-level bug list) correctly renders whenever
+  `externalDatabase.host` is blank — including for real Marketplace
+  customers who don't supply Cloud SQL params, not just Marketplace's own
+  automated test. But `postgres` is deliberately excluded from
+  `schema.yaml`/the production-mirrored image set (an earlier decision to
+  keep it off the Marketplace-scanned/CVE-tracked surface). Net effect: a
+  real customer hitting this fallback today gets `opendso-apps-db-0` stuck
+  in `ImagePullBackOff`, not a working database. This needs a decision:
+  either mirror `postgres` into production and declare it in `schema.yaml`
+  (re-adding it to the CVE-tracked surface), or gate the in-cluster fallback
+  so it never renders under `values-gcp.yaml` specifically (restoring "always
+  require external Cloud SQL" for real installs — which would also mean
+  Marketplace's own automated functionality test fails again, since it never
+  supplies Cloud SQL params either). Not yet resolved as of this writing.
+
+- **FIXED — Production's patched Keycloak image was stale and broken.**
+  `us-docker.pkg.dev/openenergysolutionsinc-public/oesinc/quay.io/keycloak/keycloak:26.6.3-patched`
+  still contained the *old*, broken (rename-based) `netty-resolver-dns`
+  patch — the Dockerfile fix in `patches/keycloak/Dockerfile` was committed
+  but never rebuilt and republished there. Independently reproduced the
+  exact crash (`netty-resolver-dns-4.1.133.Final.jar does not exist`)
+  directly against the live production image to confirm before fixing.
+  Rebuilt from the current Dockerfile, boot-tested locally, re-applied the
+  required `com.googleapis.cloudmarketplace.product.service.name` annotation
+  (present on the old image, lost on a plain rebuild) via the standard
+  `crane tag` → `crane mutate --annotation` → `crane copy` pattern, boot-tested
+  again, then pushed to production and updated `chart/values.yaml`'s digest.
+
+## 9. Testing the In-Cluster Database Fallback
 
 Marketplace's own automated functionality test (and `data-test/verification-defaults.yaml`)
 never supplies Cloud SQL connection parameters. The chart's `opendso-apps-db`
@@ -164,8 +276,10 @@ in-cluster StatefulSet when `externalDatabase.host` is blank — so a live test
 run without Cloud SQL params exercises that path, which the default `helm
 template` smoke test never does. If you're testing this path specifically,
 make sure the plain `postgres` image is mirrored per [Section 3](#3-mirror-images-into-the-test-project).
+See also the render-condition discrepancy noted in
+[Section 8](#8-other-bugs-found-in-this-round-2026-09-11).
 
-## 8. Run `mpdev verify` / `mpdev install`
+## 10. Run `mpdev verify` / `mpdev install`
 
 ```bash
 DEPLOYER="${LOCATION}-docker.pkg.dev/${PROJECT}/${REPO}/deployer:${TRACK}"
@@ -225,7 +339,7 @@ release without deleting the old job first fails with `field is immutable`:
 kubectl delete job <release>-deployer -n <namespace> --ignore-not-found=true
 ```
 
-## 9. Iterating on Chart Fixes Without a Full Mirror Cycle
+## 11. Iterating on Chart Fixes Without a Full Mirror Cycle
 
 Rebuilding a fix normally means: edit chart → re-mirror/re-tag images →
 rebuild deployer → redeploy. For fast iteration on a chart-only fix (no new
@@ -278,7 +392,7 @@ in `deployer/Dockerfile`) regenerates these from the live directories, so
 this only bites you if you ran `helm dependency build` yourself in the
 scratch copy first.
 
-## 10. Known Test-Only Limitations
+## 12. Known Test-Only Limitations
 
 - **`topology-nodes` license validation will fail** with the placeholder
   `"license.key": "test"` parameter — it needs a real license server over
@@ -291,9 +405,9 @@ scratch copy first.
   changed. If you need to reset a resource's state, prefer deleting the
   whole namespace and doing a clean `mpdev install`, which is also the only
   way to be confident you're seeing what a real first-time customer install
-  would look like (see [Section 8](#8-run-mpdev-verify--mpdev-install)).
+  would look like (see [Section 10](#10-run-mpdev-verify--mpdev-install)).
 
-## 11. Tearing Down
+## 13. Tearing Down
 
 The test cluster is a real, billable 3-node `e2-standard-8` GKE cluster.
 Tear it down when you're done testing:

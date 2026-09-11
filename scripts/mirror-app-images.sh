@@ -63,7 +63,7 @@ ANNOTATION=""
 
 IMAGE_SPECS=(
     "historian|3fa399e5|global.images.historianSvc"
-    "gms-api|v3-bad937d3|global.images.gmsApi"
+    "gms-api|v3-03d8fe65|global.images.gmsApi"
     "openfmb-event-service|add383bc|global.images.openfmbEventService"
     "topology-genesis|d3eeedf4|global.images.topologyGenesis"
     "topology-nodes|b754a1c9-licensed|global.images.topologyNodes"

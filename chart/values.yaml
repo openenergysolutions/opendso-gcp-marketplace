@@ -185,7 +185,7 @@ global:
       repository: quay.io/keycloak/keycloak
       tag: "26.6.3-patched"
       pullPolicy: IfNotPresent
-      digest: "sha256:f606e42c630e7170a215b62c5e8fe14f0e493e5e6697d5fc5eb90e2c989a387b"
+      digest: "sha256:bffaf24d2c3348fb08e3f7765ecb9ca699c65abc67d4eebf42171cb1a52fcdd0"
     envoy:
       repository: envoyproxy/envoy
       tag: "v1.38.2"
@@ -209,9 +209,9 @@ global:
       digest: "sha256:3817e8a4414043bb6d9cd5af4667de86f9253ccbd8e95bafcb380b517a47a40e"
     gmsApi:
       repository: gms-api
-      tag: "v3-fc85c01d"
+      tag: "v3-03d8fe65"
       pullPolicy: IfNotPresent
-      digest: "sha256:facdd294865f52866982e487f0d2ca98c0d6bfefa066b1af6d4550066c575f2a"
+      digest: "sha256:fce8d4314064e9657002a565a3b75f9a4b48b4a36896ddcf6ac8c1300e3b1b62"
     openfmbEventService:
       repository: openfmb-event-service
       tag: "add383bc"
