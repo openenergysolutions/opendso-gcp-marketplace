@@ -87,13 +87,21 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # BuildKit's own registry resolver sends a malformed (doubled-scope)
+      # anonymous token request for this specific image, which gcr.io
+      # rejects with 403 — a classic `docker pull` doesn't hit this and
+      # works fine. Pre-pull with the classic client and skip buildx's own
+      # pull check (pull: false) so it reuses this locally cached image.
+      - name: Pull deployer_helm base image
+        run: docker pull gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
+
       - name: Build image (scan only, no push)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: deployer/Dockerfile
           platforms: linux/amd64
-          pull: true
+          pull: false
           load: true
           push: false
           tags: deployer:scan
