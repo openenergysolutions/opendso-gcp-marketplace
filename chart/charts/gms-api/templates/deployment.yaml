@@ -28,37 +28,6 @@ spec:
       serviceAccountName: {{ include "gms-api.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-      # Wait until the settings_api schema is provisioned and seeded (the
-      # opendso-apps-db init scripts create the tables and the 'default'
-      # auth_settings row). Mirrors the former MongoDB authsettings gate.
-      - name: wait-for-postgres-data
-        image: {{ include "gms-api.image" (dict "imageRoot" .Values.global.images.appsDb "registry" .Values.global.imageRegistry) | quote }}
-        {{- $appsDb := include "opendso.appsDb.settings" . | fromYaml }}
-        command:
-        - sh
-        - -c
-        - |
-          echo "Waiting for settings_api auth_settings default row..."
-          until psql "host={{ $appsDb.host }} port={{ $appsDb.port }} dbname={{ .Values.config.postgres.database | default "settings_api" }} user={{ $appsDb.user }} password=$POSTGRES_PASSWORD" \
-            -tAc "SELECT 1 FROM auth_settings WHERE environment_id='default'" 2>/dev/null | grep -q 1; do
-            echo "auth_settings not ready yet, waiting..."
-            sleep 3
-          done
-          echo "auth_settings default row found! Proceeding with startup."
-        env:
-          - name: POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Release.Name }}-opendso-apps-db-secret
-                key: password
-        resources:
-          limits:
-            cpu: 200m
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 256Mi
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

@@ -13,7 +13,7 @@ x-google-marketplace:
   # All images share a single registry prefix (global.imageRegistry).
   # Image paths in values.yaml are relative to the registry:
   #   OES images:     gms-api, historian, ...
-  #   Third-party:    postgres, ...
+  #   Third-party:    nats, quay.io/keycloak/keycloak, ...
   #
   # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
@@ -35,12 +35,6 @@ x-google-marketplace:
         global.images.envoy.repository:
           type: REPO_WITH_REGISTRY
         global.images.envoy.tag:
-          type: TAG
-    postgres:
-      properties:
-        global.images.appsDb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.appsDb.tag:
           type: TAG
     historian:
       properties:

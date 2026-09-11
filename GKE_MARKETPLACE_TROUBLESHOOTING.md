@@ -176,7 +176,7 @@ curl -s http://localhost:18081/api/health
 
 What to verify:
 
-- the `wait-for-postgres-data` init container completed (gms-api waits on the `settings_api` `auth_settings` default row before starting)
+- gms-api starts even if Postgres is unreachable (it warns and falls back to `AUTH_*` env vars instead of crashing — see `opendso-gms-applications` PR #57); DB-backed routes will fail per-request until connectivity is restored
 - GMS API is using the internal Keycloak URL, not an external hostname
 - orchestration (pod list/delete) is scoped to the app's own namespace — cross-namespace orchestration calls are expected to fail by design (namespace-scoped RBAC, not cluster-wide)
 

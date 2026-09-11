@@ -166,14 +166,17 @@ global:
       tag: "v1.38.2"
       pullPolicy: IfNotPresent
       digest: "sha256:faee76995af40723f30beb51121a29515597be6e622101df70da840d109c1147"
-    # postgres client image (psql) used by gms-api's wait-for-postgres-data
-    # init container. Not the database server itself — opendso-apps-db runs
-    # against external Cloud SQL in values-gcp.yaml.
+    # opendso-apps-db's in-cluster StatefulSet image (local/dev/HA only — not
+    # part of the Marketplace listing itself, since values-gcp.yaml always
+    # sets externalDatabase.enabled: true, which skips that StatefulSet
+    # entirely). Not declared in schema.yaml; not mirrored/annotated for
+    # submission. Point this at whatever registry your dev/HA deployment
+    # actually pulls from.
     appsDb:
       repository: postgres
       tag: "16-alpine"
       pullPolicy: IfNotPresent
-      digest: "sha256:6f85fa1a3cc8d3a99cb26b1563f6d8d4509c3afc5bbc298b1111ed1e1426fdf6" # TODO: pin after mirroring — see scripts/mirror-k8s-marketplace-images.sh --only postgres
+      digest: "sha256:6f85fa1a3cc8d3a99cb26b1563f6d8d4509c3afc5bbc298b1111ed1e1426fdf6"
     # Core Services
     historianSvc:
       repository: historian
@@ -182,9 +185,9 @@ global:
       digest: "sha256:3817e8a4414043bb6d9cd5af4667de86f9253ccbd8e95bafcb380b517a47a40e"
     gmsApi:
       repository: gms-api
-      tag: "v3-bad937d3"
+      tag: "v3-fc85c01d"
       pullPolicy: IfNotPresent
-      digest: "sha256:74726438b6ac22fa174bbad4b6ea6a55b96873534a7e617a500438ed143e18fa"
+      digest: "sha256:facdd294865f52866982e487f0d2ca98c0d6bfefa066b1af6d4550066c575f2a"
     openfmbEventService:
       repository: openfmb-event-service
       tag: "add383bc"

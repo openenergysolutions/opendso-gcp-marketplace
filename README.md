@@ -70,7 +70,7 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
 ### Cloud SQL
 
-OpenDSO requires a Cloud SQL PostgreSQL 16 instance with four databases initialized before deployment.
+OpenDSO requires a Cloud SQL PostgreSQL 16 instance with five databases initialized before deployment.
 Run the provisioning script once per environment:
 
 ```bash
@@ -85,7 +85,7 @@ Run the provisioning script once per environment:
 The script:
 
 1. Creates the Cloud SQL instance (`--skip-create` to attach to an existing one)
-2. Creates the `ess_tester`, `ofmb_db`, `assets`, and `opendso` databases
+2. Creates the `ess_tester`, `ofmb_db`, `assets`, `settings_api`, and `opendso` databases
 3. Applies the OpenDSO schema (via Cloud SQL Proxy + psql, or via `--run-in-cluster` for private-IP-only instances)
 4. Writes a `<release>-apps-db-credentials` Kubernetes Secret
 
@@ -282,7 +282,7 @@ mpdev install \
 - TLS is standardized around the release-scoped secret `<release-name>-tls-secret`; the chart can also create `root-ca`, `server-cert`, and `server-key` compatibility secrets for workloads that still mount those names
 - Backend services that support numeric non-root execution are configured to run with explicit non-root security contexts; stateful infrastructure components are hardened more conservatively where image startup still requires root-like filesystem initialization
 - `topology-nodes` validates `LICENSE_KEY` and `LICENSE_INSTALLATION_KEY` against the configured license API at startup and on a periodic revalidation interval
-- Third-party images (NATS, Keycloak, Postgres, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
+- Third-party images (NATS, Keycloak, Envoy, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
 
 ## GKE Runtime Notes
 

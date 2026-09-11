@@ -44,7 +44,7 @@ There are two mirroring flows in this repo, both implemented as thin wrappers ov
 - `scripts/mirror-app-images.sh`
   Mirrors the pre-defined first-party OpenDSO app image set from Docker Hub into Artifact Registry. It can also annotate images for Marketplace, add release tags like `2.0.0` and `2.0`, and update `chart/values.yaml` tags and digests.
 - `scripts/mirror-k8s-marketplace-images.sh`
-  Mirrors the hardcoded Marketplace dependency/helper image set (nats, keycloak, envoy, postgres, redis, busybox) into Artifact Registry. Supports the same `--annotate`, `--tag-marketplace`, and `--update-values` flags as `mirror-app-images.sh`.
+  Mirrors the hardcoded Marketplace dependency/helper image set (nats, keycloak, envoy, redis, busybox) into Artifact Registry. Supports the same `--annotate`, `--tag-marketplace`, and `--update-values` flags as `mirror-app-images.sh`.
 
 ### First-party OpenDSO images
 
@@ -146,7 +146,7 @@ Mirror just a subset (without annotating — e.g. picking up a newer upstream bu
   --project <project-id> \
   --location us-central1 \
   --repo oesinc \
-  --only nats,postgres \
+  --only nats,redis \
   --update-values
 ```
 
@@ -157,7 +157,7 @@ Dry-run the dependency/helper flow first:
   --project <project-id> \
   --location us-central1 \
   --repo oesinc \
-  --only nats,postgres \
+  --only nats,redis \
   --update-values \
   --dry-run
 ```
@@ -171,7 +171,6 @@ Mirror at least the chart-managed default Marketplace image set:
 - infrastructure:
   - NATS
   - Keycloak
-  - Postgres (client image used by gms-api's wait-for-postgres-data init container)
   - ESS Manager Redis
 - core OpenDSO services:
   - GMS API
