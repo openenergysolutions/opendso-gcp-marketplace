@@ -11,7 +11,8 @@ Returns YAML with host, port, name, user, password.
 */}}
 {{- define "opendso.appsDb.settings" -}}
 {{- $vals := .Values | toYaml | fromYaml -}}
-{{- $external := dig "opendso-apps-db" "externalDatabase" "enabled" false $vals -}}
+{{- $externalHost := dig "opendso-apps-db" "externalDatabase" "host" "" $vals -}}
+{{- $external := and (dig "opendso-apps-db" "externalDatabase" "enabled" false $vals) $externalHost -}}
 {{- $nameOverride := dig "opendso-apps-db" "fullnameOverride" "" $vals -}}
 {{- $port := dig "opendso-apps-db" "service" "port" 5432 $vals -}}
 {{- $user := dig "opendso-apps-db" "auth" "username" "essuser" $vals -}}
@@ -64,7 +65,8 @@ opendso.appsDb.settings so a single existingSecret covers both.
 */}}
 {{- define "opendso.citusDb.settings" -}}
 {{- $vals := .Values | toYaml | fromYaml -}}
-{{- $external := dig "opendso-apps-db" "externalDatabase" "enabled" false $vals -}}
+{{- $externalHost := dig "opendso-apps-db" "externalDatabase" "host" "" $vals -}}
+{{- $external := and (dig "opendso-apps-db" "externalDatabase" "enabled" false $vals) $externalHost -}}
 {{- $nameOverride := dig "opendso-apps-db" "fullnameOverride" "" $vals -}}
 {{- $port := dig "opendso-apps-db" "service" "port" 5432 $vals -}}
 {{- $user := dig "opendso-apps-db" "auth" "username" "essuser" $vals -}}
@@ -97,57 +99,6 @@ opendso.appsDb.settings so a single existingSecret covers both.
 {{- if $rawUser }}{{- $user = ($rawUser | b64dec) }}{{- end -}}
 {{- $rawPass := index $secret.data $passKey -}}
 {{- if $rawPass }}{{- $pass = ($rawPass | b64dec) }}{{- end -}}
-{{- end -}}
-{{- end -}}
-host: {{ $host | quote }}
-port: {{ $port }}
-name: {{ $db | quote }}
-user: {{ $user | quote }}
-password: {{ $pass | quote }}
-{{- end }}
-{{/*
-Resolve MongoDB connection settings with BYO/secret support.
-Returns YAML with host, port, name, user, password.
-*/}}
-{{- define "opendso.mongodb.settings" -}}
-{{- $vals := .Values | toYaml | fromYaml -}}
-{{- $external := dig "mongodb" "externalDatabase" "enabled" false $vals -}}
-{{- $nameOverride := dig "mongodb" "fullnameOverride" "" $vals -}}
-{{- $port := dig "mongodb" "service" "port" 27017 $vals -}}
-{{- $user := dig "mongodb" "auth" "rootUsername" "root" $vals -}}
-{{- $pass := dig "mongodb" "auth" "rootPassword" "" $vals -}}
-{{- $db := dig "mongodb" "auth" "database" "settings_api" $vals -}}
-{{- $host := "" -}}
-{{- if $nameOverride -}}
-{{- $host = printf "%s.%s.svc.cluster.local" $nameOverride .Release.Namespace -}}
-{{- else -}}
-{{- $host = printf "%s-mongodb.%s.svc.cluster.local" .Release.Name .Release.Namespace -}}
-{{- end -}}
-{{- if $external -}}
-{{- $user = dig "mongodb" "externalDatabase" "username" "" $vals -}}
-{{- $pass = dig "mongodb" "externalDatabase" "password" "" $vals -}}
-{{- $db = dig "mongodb" "externalDatabase" "database" "" $vals -}}
-{{- $host = dig "mongodb" "externalDatabase" "host" "" $vals -}}
-{{- $port = dig "mongodb" "externalDatabase" "port" 27017 $vals -}}
-{{- end -}}
-{{- $secretName := "" -}}
-{{- if $external -}}
-{{- $secretName = dig "mongodb" "externalDatabase" "existingSecret" "" $vals -}}
-{{- else -}}
-{{- $secretName = dig "mongodb" "auth" "existingSecret" "" $vals -}}
-{{- end -}}
-{{- if $secretName -}}
-{{- $secret := lookup "v1" "Secret" .Release.Namespace $secretName -}}
-{{- if $secret -}}
-{{- $userKey := ternary (dig "mongodb" "externalDatabase" "usernameKey" "username" $vals) (dig "mongodb" "auth" "usernameKey" "username" $vals) $external -}}
-{{- $passKey := ternary (dig "mongodb" "externalDatabase" "passwordKey" "password" $vals) (dig "mongodb" "auth" "passwordKey" "password" $vals) $external -}}
-{{- $dbKey := ternary (dig "mongodb" "externalDatabase" "databaseKey" "database" $vals) (dig "mongodb" "auth" "databaseKey" "database" $vals) $external -}}
-{{- $rawUser := index $secret.data $userKey -}}
-{{- if $rawUser }}{{- $user = ($rawUser | b64dec) }}{{- end -}}
-{{- $rawPass := index $secret.data $passKey -}}
-{{- if $rawPass }}{{- $pass = ($rawPass | b64dec) }}{{- end -}}
-{{- $rawDb := index $secret.data $dbKey -}}
-{{- if $rawDb }}{{- $db = ($rawDb | b64dec) }}{{- end -}}
 {{- end -}}
 {{- end -}}
 host: {{ $host | quote }}
@@ -301,9 +252,6 @@ Creates a comma-separated list of all service URLs
 {{- if (index .Values.global "schedule-dispatch-app").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s:%s" "scheduledispatch" $domain (toString $httpsPort)) -}}
 {{- end -}}
-{{- if (index .Values.global "grafana").enabled -}}
-{{- $origins = append $origins (printf "https://%s.%s:%s" "grafana" $domain (toString $httpsPort)) -}}
-{{- end -}}
 {{- if (index .Values.global "gms-api").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s:%s" "api" $domain (toString $httpsPort)) -}}
 {{- end -}}
@@ -350,9 +298,6 @@ Creates a comma-separated list of all service URLs
 {{- end -}}
 {{- if (index .Values.global "schedule-dispatch-app").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s" "scheduledispatch" $domain) -}}
-{{- end -}}
-{{- if (index .Values.global "grafana").enabled -}}
-{{- $origins = append $origins (printf "https://%s.%s" "grafana" $domain) -}}
 {{- end -}}
 {{- if (index .Values.global "gms-api").enabled -}}
 {{- $origins = append $origins (printf "https://%s.%s" "api" $domain) -}}

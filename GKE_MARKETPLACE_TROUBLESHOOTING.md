@@ -176,9 +176,9 @@ curl -s http://localhost:18081/api/health
 
 What to verify:
 
-- MongoDB credentials were rendered and mounted correctly
+- gms-api starts even if Postgres is unreachable (it warns and falls back to `AUTH_*` env vars instead of crashing — see `opendso-gms-applications` PR #57); DB-backed routes will fail per-request until connectivity is restored
 - GMS API is using the internal Keycloak URL, not an external hostname
-- the Docker API warning is understood: `dockerApi` is stubbed on GKE and container orchestration features are not expected to work there
+- orchestration (pod list/delete) is scoped to the app's own namespace — cross-namespace orchestration calls are expected to fail by design (namespace-scoped RBAC, not cluster-wide)
 
 ## 9. Ingress and DNS Problems
 

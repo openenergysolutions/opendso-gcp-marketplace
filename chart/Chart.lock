@@ -5,9 +5,6 @@ dependencies:
 - name: keycloak
   repository: file://charts/keycloak
   version: 0.1.0
-- name: mongodb
-  repository: file://charts/mongodb
-  version: 0.1.0
 - name: keycloak-db
   repository: file://charts/keycloak-db
   version: 0.1.0
@@ -77,9 +74,6 @@ dependencies:
 - name: asset-health-sim-svc
   repository: file://charts/asset-health-sim-svc
   version: 0.1.0
-- name: cvr-svc
-  repository: file://charts/cvr-svc
-  version: 0.1.0
 - name: ess-manager-app
   repository: file://charts/ess-manager-app
   version: 0.1.0
@@ -88,12 +82,6 @@ dependencies:
   version: 0.1.0
 - name: omegadss-svc
   repository: file://charts/omegadss-svc
-  version: 0.1.0
-- name: cvr-openfmb-services-svc
-  repository: file://charts/cvr-openfmb-services-svc
-  version: 0.1.0
-- name: cvr-genetic-algorithm-svc
-  repository: file://charts/cvr-genetic-algorithm-svc
   version: 0.1.0
 - name: opendso-apps-db
   repository: file://charts/opendso-apps-db
@@ -110,5 +98,5 @@ dependencies:
 - name: nats-auth-svc
   repository: file://charts/nats-auth-svc
   version: 0.1.0
-digest: sha256:d86c272907a876e205b71dd4054976b6ca37dea7c4eb9c70abe11f9892889b12
-generated: "2026-06-24T15:12:21.867070185-04:00"
+digest: sha256:c3d774c17cb5136b887f215c1fe1be3d50e90df2eec119c440470abea2c618d4
+generated: "2026-09-11T09:23:09.447150983-04:00"

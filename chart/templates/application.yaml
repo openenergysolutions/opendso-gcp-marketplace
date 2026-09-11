@@ -30,8 +30,6 @@ spec:
         url: https://{{ index .Values.global "environment" | default dict | dig "apiUrl" "" | trimPrefix "https://api." | printf "oneline.%s" }}
       - description: Keycloak Admin Console
         url: {{ include "opendso.keycloakUrl" . }}/admin
-      - description: Grafana Dashboards
-        url: https://grafana.{{ .Values.global.domain }}
 
   # Selector matches all resources deployed by this release
   selector:
@@ -75,8 +73,6 @@ spec:
       value: {{ index .Values.global "environment" | default dict | dig "apiUrl" (printf "https://api.%s" .Values.global.domain) }}
     - name: NATS WebSocket URL
       value: wss://nats.{{ .Values.global.domain }}
-    - name: Grafana URL
-      value: https://grafana.{{ .Values.global.domain }}
     - name: Site Configuration
       value: {{ .Values.global.site }}
     - name: Resource Profile

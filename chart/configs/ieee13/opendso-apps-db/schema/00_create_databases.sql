@@ -8,6 +8,10 @@ CREATE DATABASE assets;
 -- Grant privileges to the default user
 GRANT ALL PRIVILEGES ON DATABASE assets TO essuser;
 
+-- Create settings_api database for the gms-api service
+CREATE DATABASE settings_api;
+GRANT ALL PRIVILEGES ON DATABASE settings_api TO essuser;
+
 -- Create historian database
 CREATE DATABASE ofmb_db;
 GRANT ALL PRIVILEGES ON DATABASE ofmb_db TO essuser;

@@ -56,10 +56,9 @@ DRY_RUN=false
 ANNOTATION=""
 
 IMAGE_SPECS=(
-    "nats|nats|2.14.2|global.images.nats|digest"
+    "nats|nats|2.14.6|global.images.nats|digest"
     "quay.io/keycloak/keycloak|us-docker.pkg.dev/openenergysolutionsinc-public/oesinc/quay.io/keycloak/keycloak|26.6.3-patched|global.images.keycloak|digest"
     "envoyproxy/envoy|envoyproxy/envoy|v1.38.2|global.images.envoy|digest"
-    "mongodb/mongodb-community-server|mongodb/mongodb-community-server|7.0.37-ubi8|global.images.mongodb|digest"
     "redis|redis|7.4.9-alpine|global.images.essManagerRedis|digest"
     "busybox|busybox|1.36|global.images.busybox|digest"
 )

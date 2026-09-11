@@ -86,6 +86,7 @@ fi
 step "Querying Artifact Registry vulnerability occurrences"
 LIST_ARGS=(
     "$REGISTRY"
+    "--project=$PROJECT"
     "--include-tags"
     "--show-occurrences"
     "--occurrence-filter=kind=\"VULNERABILITY\""
@@ -97,7 +98,13 @@ if [[ -n "$LIMIT" ]]; then
 fi
 
 TMP_JSON="$(mktemp)"
-gcloud artifacts docker images list "${LIST_ARGS[@]}" > "$TMP_JSON" 2>/dev/null
+TMP_ERR="$(mktemp)"
+if ! gcloud artifacts docker images list "${LIST_ARGS[@]}" > "$TMP_JSON" 2>"$TMP_ERR"; then
+    cat "$TMP_ERR" >&2
+    rm -f "$TMP_JSON" "$TMP_ERR"
+    fail "gcloud artifacts docker images list failed (see error above)"
+fi
+rm -f "$TMP_ERR"
 
 set +e
 python3 - "$REGISTRY" "$ONLY_PACKAGES" "$FAIL_ON" "$OUTPUT" "$INCLUDE_ALL" "$TMP_JSON" <<'PY'
