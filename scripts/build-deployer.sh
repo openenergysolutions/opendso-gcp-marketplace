@@ -82,6 +82,7 @@ run gcloud auth configure-docker "${LOCATION}-docker.pkg.dev" --quiet
 
 step "Building deployer image"
 run docker build \
+    --pull \
     --platform "$PLATFORM" \
     -f deployer/Dockerfile \
     -t "$IMAGE" \
