@@ -45,7 +45,8 @@ jobs:
             --set global.domain=example.com \
             --set keycloak.config.adminPassword=test \
             --set license.key=test \
-            --set installation.key=test
+            --set installation.key=test \
+            --set opendso-apps-db.auth.password=test
 
       - name: helm template (values-gcp.yaml)
         run: |
@@ -54,6 +55,7 @@ jobs:
             --set keycloak.config.adminPassword=test \
             --set license.key=test \
             --set installation.key=test \
+            --set opendso-apps-db.auth.password=test \
             --set global.imageRegistry=us-docker.pkg.dev/openenergysolutionsinc-public/oesinc \
             > /dev/null
 
