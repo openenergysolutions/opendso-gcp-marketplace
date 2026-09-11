@@ -1,12 +1,12 @@
 # OpenDSO Helm Chart
 
-An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 36 subcharts.
+An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 33 subcharts.
 
 ## Chart Information
 
 - **Version**: 0.1.0
 - **Type**: Umbrella Chart
-- **Components**: 36 subcharts (all internal)
+- **Components**: 33 subcharts (all internal)
 
 ## Prerequisites
 
@@ -38,13 +38,13 @@ opendso/
 ├── Chart.yaml                    # Chart metadata and dependencies
 ├── Chart.lock                    # Dependency lock file
 ├── values.yaml                   # Default configuration
-├── charts/                       # 36 subcharts
+├── charts/                       # 33 subcharts
 │   ├── nats/                    # Infrastructure services
 │   ├── keycloak/
 │   ├── opendso-apps-db/         # Database services
 │   ├── historian-svc/          # Core services
 │   ├── gms-api/
-│   └── ...                      # 31 more charts
+│   └── ...                      # 28 more charts
 ├── templates/
 │   ├── _helpers.tpl            # Template helper functions
 │   ├── site-configmaps.yaml    # Site-specific configuration
@@ -55,7 +55,7 @@ opendso/
 
 ## Dependencies
 
-All 36 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there are no external chart dependencies.
+All 33 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there are no external chart dependencies.
 
 ### Internal Subcharts
 
@@ -65,7 +65,6 @@ All 36 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there
 - **Topology** (2): topology-genesis, topology-nodes
 - **DER** (2): der-dispatch-app, der-dispatch-svc
 - **Frontend Apps** (10): genesis-node-app, data-viewer-app, event-viewer-app, gis-app, historian-app, inspector-app, inventory-app, one-line-app, openfmb-event-creator-app, schedule-dispatch-app
-- **CVR** (3): cvr-svc, cvr-openfmb-services-svc, cvr-genetic-algorithm-svc
 - **ESS** (5): ess-manager-svc, ess-tester-svc, ess-manager-app, ess-tester-app, ess-manager-redis
 - **Asset Health** (3): asset-health-svc, asset-health-sim-svc, ahs-app
 - **OpenDSS** (2): omegadss-svc, rpcdss-svc
@@ -140,8 +139,6 @@ global:
   # ... enable as needed
 
   # Energy Services
-  cvr-svc:
-    enabled: false
   ess-manager-svc:
     enabled: false
   der-dispatch-svc:
@@ -168,9 +165,6 @@ configs/
       30_gms_api.sql            # gms-api (settings_api) tables
     opendso-apps-db/seed/
       40_gms_api_seed.sql       # gms-api default auth/app-launcher rows (Helm-templated)
-    cvr-genetic-algorithm-svc/
-      IEEE13Nodeckt.dss         # Power flow model
-      Load1.csv                 # 162KB - Load profiles
     # ... more service configs
 ```
 
@@ -325,7 +319,7 @@ The chart can also generate a self-signed fallback certificate in Marketplace-or
 
 ### values.yaml (Default)
 
-Full configuration with all 36 subcharts available.
+Full configuration with all 33 subcharts available.
 
 ### values-ha.yaml (High Availability Overlay)
 

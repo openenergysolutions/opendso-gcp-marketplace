@@ -79,15 +79,6 @@ topology-nodes:
 der-dispatch-svc:
   replicas: 2
 
-cvr-svc:
-  replicas: 2
-
-cvr-genetic-algorithm-svc:
-  replicas: 2
-
-cvr-openfmb-services-svc:
-  replicas: 2
-
 ess-manager-svc:
   replicas: 2
 

@@ -198,24 +198,6 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.essManagerRedis.tag:
           type: TAG
-    cvr:
-      properties:
-        global.images.cvrSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrSvc.tag:
-          type: TAG
-    genetic-cvr:
-      properties:
-        global.images.cvrGeneticAlgorithmSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrGeneticAlgorithmSvc.tag:
-          type: TAG
-    openfmb-services:
-      properties:
-        global.images.cvrOpenfmbServicesSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrOpenfmbServicesSvc.tag:
-          type: TAG
     omegadss:
       properties:
         global.images.omegadssSvc.repository:

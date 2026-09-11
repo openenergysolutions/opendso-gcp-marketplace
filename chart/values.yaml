@@ -303,22 +303,6 @@ global:
       tag: "7.4.9-alpine"
       pullPolicy: IfNotPresent
       digest: "sha256:5da8151e855fdb6729d42a86f5fac27709d84b5a4bffedd2bcaa7cd72636ba21"
-    # CVR Applications
-    cvrSvc:
-      repository: cvr
-      tag: "d82e76f7"
-      pullPolicy: IfNotPresent
-      digest: "sha256:102e69c7489a3466a1ac60db3712e8bc14626eaf790fcf14aba414b6e4ce0e59"
-    cvrGeneticAlgorithmSvc:
-      repository: genetic-cvr
-      tag: "3caaba18"
-      pullPolicy: IfNotPresent
-      digest: "sha256:2217647b9d452b1fbdd9179c7e77c1a10f101b64f32a6cbdcb8111e7e3e7d95e"
-    cvrOpenfmbServicesSvc:
-      repository: openfmb-services
-      tag: "983c2e4b"
-      pullPolicy: IfNotPresent
-      digest: "sha256:eb21e4e0d8597b085232a8c23080611236a1dd4ef693336f724dd16514286fee"
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
@@ -419,13 +403,6 @@ global:
     enabled: true
   ess-manager-redis:
     enabled: true
-  # CVR
-  cvr-svc:
-    enabled: false
-  cvr-genetic-algorithm-svc:
-    enabled: false
-  cvr-openfmb-services-svc:
-    enabled: false
   # OpenDSS Services
   omegadss-svc:
     enabled: false

@@ -135,10 +135,6 @@ dependencies:
     condition: global.asset-health-sim-svc.enabled
 
   # Additional Services
-  - name: cvr-svc
-    version: 0.1.0
-    repository: "file://charts/cvr-svc"
-    condition: global.cvr-svc.enabled
   - name: ess-manager-app
     version: 0.1.0
     repository: "file://charts/ess-manager-app"
@@ -151,14 +147,6 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/omegadss-svc"
     condition: global.omegadss-svc.enabled
-  - name: cvr-openfmb-services-svc
-    version: 0.1.0
-    repository: "file://charts/cvr-openfmb-services-svc"
-    condition: global.cvr-openfmb-services-svc.enabled
-  - name: cvr-genetic-algorithm-svc
-    version: 0.1.0
-    repository: "file://charts/cvr-genetic-algorithm-svc"
-    condition: global.cvr-genetic-algorithm-svc.enabled
   - name: opendso-apps-db
     version: 0.1.0
     repository: "file://charts/opendso-apps-db"

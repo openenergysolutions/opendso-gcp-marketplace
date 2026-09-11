@@ -207,25 +207,8 @@ data:
 {{ .Files.Get (printf "configs/%s/historian-svc/envoy.yaml" $site) | indent 4 }}
 {{- end }}
 
-# CVR Service ConfigMap
-{{- if (index .Values.global "cvr-svc").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-cvr-svc-site-config
-  labels:
-    app.kubernetes.io/name: cvr-svc
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  app.yaml: |
-{{- $cvrApp := .Files.Get (printf "configs/%s/cvr-svc/app.yaml" $site) }}
-{{ tpl $cvrApp . | indent 4 }}
-{{- end }}
-
-# OmegaDSS ConfigMap (used by omegadss-svc and cvr-svc)
-{{- if or (index .Values.global "omegadss-svc").enabled (index .Values.global "cvr-svc").enabled }}
+# OmegaDSS ConfigMap
+{{- if (index .Values.global "omegadss-svc").enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -238,51 +221,6 @@ metadata:
 data:
   omegadss.json: |
 {{ .Files.Get (printf "configs/%s/omegadss/omegadss.json" $site) | indent 4 }}
-{{- end }}
-
-# CVR OpenFMB Services ConfigMap
-{{- if (index .Values.global "cvr-openfmb-services-svc").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-cvr-openfmb-services-svc-site-config
-  labels:
-    app.kubernetes.io/name: cvr-openfmb-services-svc
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  app.yaml: |
-{{- $cvrOpenfmbApp := .Files.Get (printf "configs/%s/cvr-openfmb-services-svc/app.yaml" $site) }}
-{{ tpl $cvrOpenfmbApp . | indent 4 }}
-{{- end }}
-
-# CVR Genetic Algorithm Service ConfigMap (DSS files)
-{{- if (index .Values.global "cvr-svc").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-cvr-genetic-algorithm-svc-site-config
-  labels:
-    app.kubernetes.io/name: cvr-genetic-algorithm-svc
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  IEEE13Nodeckt.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEE13Nodeckt.dss" $site) | indent 4 }}
-  IEEELineCodes.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEELineCodes.dss" $site) | indent 4 }}
-  LineConstantsCode.DSS: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/LineConstantsCode.DSS" $site) | indent 4 }}
-  PVsystem.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/PVsystem.dss" $site) | indent 4 }}
-  run.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/run.dss" $site) | indent 4 }}
-  Load1.csv: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/Load1.csv" $site) | indent 4 }}
-  IEEE13Node_BusXY.csv: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEE13Node_BusXY.csv" $site) | indent 4 }}
 {{- end }}
 
 # RPCDSS Service ConfigMap
