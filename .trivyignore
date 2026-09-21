@@ -1,37 +1,15 @@
 # Vulnerabilities in the deployer image that are genuinely blocked on an
-# upstream fix, not something we can patch ourselves. Everything here is
-# baked into gcr.io/cloud-marketplace-tools/k8s/deployer_helm's own
-# `kubectl` and `helm` binaries (Google's own build, not ours) or is a
-# transitive dependency with no published fixed release yet. Any NEW
-# finding not listed here still fails the scan.
+# upstream fix, not something we can patch ourselves. Any NEW finding not
+# listed here still fails the scan.
 #
-# Verified 2026-09-11 with `trivy image` directly against the built
-# deployer image — see chart repo GKE_LIVE_TESTING.md and
+# Google shipped a fix for the go1.26.5 stdlib CVEs on ~2026-09-21 — the
+# base image's kubectl (now v1.37) and helm are built with go1.26.6/1.27.1
+# respectively, confirmed clean by a full rescan. See
 # https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/issues/688
-# for the go1.26.5 stdlib finding, which affects every Marketplace deployer
-# built from this base image, not just ours.
+# (still open as of this cleanup; comment there tracked it as fixed).
 
-# stdlib (go1.26.5, baked into Google's own kubectl and helm binaries;
-# fixed in 1.25.13/1.26.6/1.27.0-rc.3 — Google hasn't republished the base
-# image with a patched toolchain yet)
-CVE-2026-33818
-CVE-2026-39821
-CVE-2026-46600
-CVE-2026-56853
-CVE-2026-56858
-CVE-2026-56859
-CVE-2026-56860
-CVE-2026-56862
-
-# golang.org/x/net / golang.org/x/text (kubectl v1.36, Google's own binary)
-CVE-2026-25681
-CVE-2026-27136
-CVE-2026-33814
-CVE-2026-56852
-
-# golang.org/x/crypto and oras-go (helm CLI, Google's own binary) — same
-# CVE-2026-56854 also remains in our own nk binary: nkeys v0.4.16 (the
-# latest published release) only pulls golang.org/x/crypto v0.52.0; the
-# fix needs 0.55.0, not yet available in any nkeys release.
+# usr/local/bin/nk (ours, built from source): nkeys v0.4.16 (the latest
+# published release) only pulls golang.org/x/crypto v0.52.0; this CVE's
+# fix needs 0.55.0, not yet available in any nkeys release. Also present
+# in Google's own helm binary as of the last scan that found it.
 CVE-2026-56854
-CVE-2026-50163
