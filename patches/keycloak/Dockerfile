@@ -1,21 +1,39 @@
-FROM quay.io/keycloak/keycloak:26.6.3
+# The Keycloak/RHEL base image has neither curl nor wget, so fetch the
+# replacement jar in a separate stage that does, then COPY it in.
+FROM curlimages/curl:8.11.1 AS fetch
+
+ARG NETTY_HANDLER_VERSION=4.1.137.Final
+ARG NETTY_HANDLER_SHA1=ac2cfd0501b38d1749cff5f40c6b7bc4ddf6d477
+RUN curl -sSL -o /tmp/netty-handler.jar \
+      "https://repo1.maven.org/maven2/io/netty/netty-handler/${NETTY_HANDLER_VERSION}/netty-handler-${NETTY_HANDLER_VERSION}.jar" \
+    && echo "${NETTY_HANDLER_SHA1}  /tmp/netty-handler.jar" | sha1sum -c -
+
+FROM quay.io/keycloak/keycloak:26.6.4
 
 USER root
 
-# Replace vulnerable netty-resolver-dns 4.1.133.Final (CVE-2026-45674, CVE-2026-47691)
-# with patched 4.1.135.Final, in place at the original filename/path.
+# 26.6.4 already ships netty-resolver-dns 4.1.135.Final natively (the CVE
+# this image used to patch on top of 26.6.3), so no override is needed for
+# that one anymore.
+#
+# Replace vulnerable netty-handler 4.1.135.Final (CVE-2026-75595) with
+# patched 4.1.137.Final, in place at the original filename/path.
 #
 # Quarkus's classpath is driven by a build-time dependency descriptor baked
 # into the base image (quarkus-application.dat, deployment-class-path.dat,
 # appmodel.dat), not a filesystem scan — it hardcodes this exact jar path.
-# Renaming the jar (as an earlier version of this patch did) leaves that
-# descriptor pointing at a file that no longer exists, and even `kc.sh build`
-# can't repair it, since that descriptor is what `build` itself consults.
-# Overwriting the jar's *contents* at its original path sidesteps this
-# entirely: 4.1.135.Final is a same-branch security-patch bump over
-# 4.1.133.Final (API/ABI-compatible), so the JVM loads the patched classes
-# without Quarkus ever noticing the classpath changed.
-COPY netty-resolver-dns-4.1.135.Final.jar \
-     /opt/keycloak/lib/lib/main/io.netty.netty-resolver-dns-4.1.133.Final.jar
+# Renaming the jar leaves that descriptor pointing at a file that no longer
+# exists, and even `kc.sh build` can't repair it, since that descriptor is
+# what `build` itself consults. Overwriting the jar's *contents* at its
+# original path sidesteps this entirely: 4.1.137.Final is a same-branch
+# security-patch bump over 4.1.135.Final (API/ABI-compatible), so the JVM
+# loads the patched classes without Quarkus ever noticing the classpath
+# changed.
+#
+# Fetched at build time (not vendored) so this Dockerfile is reproducible
+# from a fresh checkout without a binary blob in git — *.jar is globally
+# gitignored in this repo.
+COPY --from=fetch /tmp/netty-handler.jar \
+     /opt/keycloak/lib/lib/main/io.netty.netty-handler-4.1.135.Final.jar
 
 USER 1000

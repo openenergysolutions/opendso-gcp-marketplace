@@ -183,9 +183,9 @@ global:
       digest: "sha256:02a89de69b13434ee2f5683647bad7b5d47e25929032ea390ab51f46aeae96db" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
-      tag: "26.6.3-patched"
+      tag: "26.6.4-patched"
       pullPolicy: IfNotPresent
-      digest: "sha256:bffaf24d2c3348fb08e3f7765ecb9ca699c65abc67d4eebf42171cb1a52fcdd0"
+      digest: "sha256:49457bd42ffdcc247adffb8e7b461be8b3963222b44ea3895b111e7977fa5cd7"
     envoy:
       repository: envoyproxy/envoy
       tag: "v1.38.2"

@@ -57,7 +57,7 @@ ANNOTATION=""
 
 IMAGE_SPECS=(
     "nats|nats|2.14.6|global.images.nats|digest"
-    "quay.io/keycloak/keycloak|us-docker.pkg.dev/openenergysolutionsinc-public/oesinc/quay.io/keycloak/keycloak|26.6.3-patched|global.images.keycloak|digest"
+    "quay.io/keycloak/keycloak|us-docker.pkg.dev/openenergysolutionsinc-public/oesinc/quay.io/keycloak/keycloak|26.6.4-patched|global.images.keycloak|digest"
     "envoyproxy/envoy|envoyproxy/envoy|v1.38.2|global.images.envoy|digest"
     "redis|redis|7.4.9-alpine|global.images.essManagerRedis|digest"
     "busybox|busybox|1.36|global.images.busybox|digest"
