@@ -235,9 +235,9 @@ global:
       digest: "sha256:21d3f223cb989a19903db048b7eafdea6dce190316e152d60499e236144ae5ad"
     derDispatchSvc:
       repository: der-dispatch
-      tag: "9c00bca0"
+      tag: "9b0fb411"
       pullPolicy: IfNotPresent
-      digest: "sha256:dba1e45d6982f77362e0fe03b3f2fd756db1dd77bb3f7be447451cbc4512c181"
+      digest: "sha256:cfaacace0730dd9254bb9084f9b4a84bf8aa7df9c3c8f4c47ec910ee6ff46f82"
     # Frontend Applications
     genesisNodeApp:
       repository: genesis-node-app
@@ -297,9 +297,9 @@ global:
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
-      tag: "4a2b18d9"
+      tag: "e9928dc9"
       pullPolicy: IfNotPresent
-      digest: "sha256:f2a3cb3ebc5fe492434aaac6df0d3b15b0bc14c08c60e4163eab93acee5c0255"
+      digest: "sha256:71ad53d674dee44c1dbca253dde1a9726d16fda52c235d8577fe4a369569599b"
     essManagerApp:
       repository: ess-manager-app
       tag: "v3-03d8fe65"
@@ -317,9 +317,9 @@ global:
       digest: "sha256:0fccc6271849d2757b7c70bf2d8aa3e117c45d9357a566e5cf355ef43e926d78"
     assetHealthSvc:
       repository: ahs
-      tag: "c73a483f"
+      tag: "d4a8d81a"
       pullPolicy: IfNotPresent
-      digest: "sha256:e0d1a9daf8e0c25bd56335368a7a50dc3a629f4f1221b5dd807ebbf22963ff00"
+      digest: "sha256:47274a8ba6d5700b174009476b3860959f8ed34378e2a67893947fabfd45c762"
     assetHealthSimSvc:
       repository: ahs-sim
       tag: "b04a4b73"
@@ -333,9 +333,9 @@ global:
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
-      tag: "6251213e"
+      tag: "e9bd2654"
       pullPolicy: IfNotPresent
-      digest: "sha256:90a2cb43684ddc8065c1e2fd421e1a78d7779e7193276a9e36042c0ee8936879"
+      digest: "sha256:336cd0afda4dac6e53f5b73fcee35ad1ee39e2727781401f4071b2b1ea574cc7"
     rpcdssSvc:
       repository: rpcdss
       tag: "b205b0c7"
@@ -348,9 +348,9 @@ global:
       digest: "sha256:9f325a79028c9309b18f8468346fd23f2de511184987254a15a726e3d0a54445"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "0efab2e2"
+      tag: "ae17d298"
       pullPolicy: IfNotPresent
-      digest: "sha256:75f18de4d6428dccfe83a46d45a5c22da362f62ea83ced5e264e633aa88020da"
+      digest: "sha256:7239c63d8121b3be588508192ac99b581749761376caa7982a7e98a0103e667f"
     busybox:
       repository: busybox
       tag: "1.36"
