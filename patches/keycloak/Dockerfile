@@ -8,6 +8,12 @@ RUN curl -sSL -o /tmp/netty-handler.jar \
       "https://repo1.maven.org/maven2/io/netty/netty-handler/${NETTY_HANDLER_VERSION}/netty-handler-${NETTY_HANDLER_VERSION}.jar" \
     && echo "${NETTY_HANDLER_SHA1}  /tmp/netty-handler.jar" | sha1sum -c -
 
+ARG BCPROV_VERSION=1.85
+ARG BCPROV_SHA1=2320b854dffe134687f7266bb22021b779e576d3
+RUN curl -sSL -o /tmp/bcprov.jar \
+      "https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/${BCPROV_VERSION}/bcprov-jdk18on-${BCPROV_VERSION}.jar" \
+    && echo "${BCPROV_SHA1}  /tmp/bcprov.jar" | sha1sum -c -
+
 FROM quay.io/keycloak/keycloak:26.7.4
 
 USER root
@@ -35,5 +41,15 @@ USER root
 # gitignored in this repo.
 COPY --from=fetch /tmp/netty-handler.jar \
      /opt/keycloak/lib/lib/main/io.netty.netty-handler-4.1.136.Final.jar
+
+# Same in-place overwrite technique for bcprov-jdk18on 1.84 (CVE-2026-8763,
+# CVE-2026-13506), patched to 1.85. It ships in two independent locations:
+# the server classpath and the separate kcadm/kcreg admin-CLI bundle under
+# bin/client/lib, which has its own copy with a different filename (no
+# org.bouncycastle. group prefix) — both need patching.
+COPY --from=fetch /tmp/bcprov.jar \
+     /opt/keycloak/lib/lib/main/org.bouncycastle.bcprov-jdk18on-1.84.jar
+COPY --from=fetch /tmp/bcprov.jar \
+     /opt/keycloak/bin/client/lib/bcprov-jdk18on-1.84.jar
 
 USER 1000
