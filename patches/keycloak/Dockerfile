@@ -14,6 +14,12 @@ RUN curl -sSL -o /tmp/bcprov.jar \
       "https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/${BCPROV_VERSION}/bcprov-jdk18on-${BCPROV_VERSION}.jar" \
     && echo "${BCPROV_SHA1}  /tmp/bcprov.jar" | sha1sum -c -
 
+ARG NETTY_CODEC_HTTP_VERSION=4.1.137.Final
+ARG NETTY_CODEC_HTTP_SHA1=a0525968e918c2ca2f6e7f3b66c35de1542a09a5
+RUN curl -sSL -o /tmp/netty-codec-http.jar \
+      "https://repo1.maven.org/maven2/io/netty/netty-codec-http/${NETTY_CODEC_HTTP_VERSION}/netty-codec-http-${NETTY_CODEC_HTTP_VERSION}.jar" \
+    && echo "${NETTY_CODEC_HTTP_SHA1}  /tmp/netty-codec-http.jar" | sha1sum -c -
+
 FROM quay.io/keycloak/keycloak:26.7.4
 
 USER root
@@ -42,14 +48,29 @@ USER root
 COPY --from=fetch /tmp/netty-handler.jar \
      /opt/keycloak/lib/lib/main/io.netty.netty-handler-4.1.136.Final.jar
 
-# Same in-place overwrite technique for bcprov-jdk18on 1.84 (CVE-2026-8763,
-# CVE-2026-13506), patched to 1.85. It ships in two independent locations:
-# the server classpath and the separate kcadm/kcreg admin-CLI bundle under
-# bin/client/lib, which has its own copy with a different filename (no
-# org.bouncycastle. group prefix) — both need patching.
+# Same in-place overwrite for netty-codec-http (CVE-2026-59903), patched to
+# 4.1.137.Final.
+COPY --from=fetch /tmp/netty-codec-http.jar \
+     /opt/keycloak/lib/lib/main/io.netty.netty-codec-http-4.1.136.Final.jar
+
+# Same in-place overwrite technique for the server-side copy of
+# bcprov-jdk18on 1.84 (CVE-2026-8763, CVE-2026-13506), patched to 1.85.
 COPY --from=fetch /tmp/bcprov.jar \
      /opt/keycloak/lib/lib/main/org.bouncycastle.bcprov-jdk18on-1.84.jar
+
+# The separate kcadm/kcreg admin-CLI bundle under bin/client/lib ships its
+# own independent copy of bcprov-jdk18on. Unlike the server, this bundle has
+# no Quarkus classpath descriptor pinning an exact filename — kcadm.sh loads
+# every jar it finds under -Dkc.lib.dir via a plain directory scan (verified:
+# no Class-Path manifest entry, and kcadm.sh still starts and initializes TLS
+# correctly after the jar here is renamed). Google's Container Analysis
+# scanner has no pom.properties to read for BouncyCastle (it doesn't ship
+# one) and falls back to parsing the version out of the filename, so an
+# in-place content-only overwrite here — unlike the other jars in this
+# Dockerfile — would keep showing up as CVE-2026-8763/CVE-2026-13506 even
+# though the bytes are fixed. Renaming instead of overwriting is required.
+RUN rm /opt/keycloak/bin/client/lib/bcprov-jdk18on-1.84.jar
 COPY --from=fetch /tmp/bcprov.jar \
-     /opt/keycloak/bin/client/lib/bcprov-jdk18on-1.84.jar
+     /opt/keycloak/bin/client/lib/bcprov-jdk18on-1.85.jar
 
 USER 1000

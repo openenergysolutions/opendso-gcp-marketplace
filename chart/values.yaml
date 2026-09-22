@@ -185,7 +185,7 @@ global:
       repository: quay.io/keycloak/keycloak
       tag: "26.7.4-patched"
       pullPolicy: IfNotPresent
-      digest: "sha256:cb571b0a12525943da52192a0b11c855f4f8155902741b5412afbe0da18c43b1"
+      digest: "sha256:6bc3619ae18dba6850b470858dce44c4d9b37faf643201f7df9d7fc40f552d99"
     envoy:
       repository: envoyproxy/envoy
       tag: "v1.38.2"
