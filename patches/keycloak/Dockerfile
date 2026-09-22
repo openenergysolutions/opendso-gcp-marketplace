@@ -8,15 +8,15 @@ RUN curl -sSL -o /tmp/netty-handler.jar \
       "https://repo1.maven.org/maven2/io/netty/netty-handler/${NETTY_HANDLER_VERSION}/netty-handler-${NETTY_HANDLER_VERSION}.jar" \
     && echo "${NETTY_HANDLER_SHA1}  /tmp/netty-handler.jar" | sha1sum -c -
 
-FROM quay.io/keycloak/keycloak:26.6.4
+FROM quay.io/keycloak/keycloak:26.7.4
 
 USER root
 
-# 26.6.4 already ships netty-resolver-dns 4.1.135.Final natively (the CVE
-# this image used to patch on top of 26.6.3), so no override is needed for
-# that one anymore.
+# 26.7.4 fixes CVE-2026-18963 (keycloak-services) natively, and bumps most
+# netty jars to 4.1.136.Final, which resolves everything except
+# CVE-2026-75595 (fixed only in 4.1.137.Final+).
 #
-# Replace vulnerable netty-handler 4.1.135.Final (CVE-2026-75595) with
+# Replace vulnerable netty-handler 4.1.136.Final (CVE-2026-75595) with
 # patched 4.1.137.Final, in place at the original filename/path.
 #
 # Quarkus's classpath is driven by a build-time dependency descriptor baked
@@ -26,7 +26,7 @@ USER root
 # exists, and even `kc.sh build` can't repair it, since that descriptor is
 # what `build` itself consults. Overwriting the jar's *contents* at its
 # original path sidesteps this entirely: 4.1.137.Final is a same-branch
-# security-patch bump over 4.1.135.Final (API/ABI-compatible), so the JVM
+# security-patch bump over 4.1.136.Final (API/ABI-compatible), so the JVM
 # loads the patched classes without Quarkus ever noticing the classpath
 # changed.
 #
@@ -34,6 +34,6 @@ USER root
 # from a fresh checkout without a binary blob in git — *.jar is globally
 # gitignored in this repo.
 COPY --from=fetch /tmp/netty-handler.jar \
-     /opt/keycloak/lib/lib/main/io.netty.netty-handler-4.1.135.Final.jar
+     /opt/keycloak/lib/lib/main/io.netty.netty-handler-4.1.136.Final.jar
 
 USER 1000
