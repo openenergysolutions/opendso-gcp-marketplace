@@ -99,4 +99,4 @@ dependencies:
   repository: file://charts/nats-auth-svc
   version: 0.1.0
 digest: sha256:c3d774c17cb5136b887f215c1fe1be3d50e90df2eec119c440470abea2c618d4
-generated: "2026-09-11T09:23:09.447150983-04:00"
+generated: "2026-09-24T13:20:01.629488577-04:00"

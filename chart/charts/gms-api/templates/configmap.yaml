@@ -27,6 +27,11 @@ data:
     COOKIE_EXP=259200000
 
     # PostgreSQL (shared opendso-apps-db; gms-api uses the 'settings_api' database)
+    # POSTGRES_HOST/USER/PASSWORD below are placeholders only: this subchart
+    # can't correctly resolve opendso-apps-db.externalDatabase.* (see
+    # deployment.yaml), so the real values are injected as environment
+    # variables from the shared opendso-apps-db connection secret instead,
+    # which take precedence over this file at pre-start.
     {{- $appsDb := include "opendso.appsDb.settings" . | fromYaml }}
     POSTGRES_HOST={{ $appsDb.host }}
     POSTGRES_PORT={{ $appsDb.port }}

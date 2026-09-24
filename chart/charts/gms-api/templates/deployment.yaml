@@ -45,8 +45,24 @@ spec:
             - name: ORCHESTRATION_NAMESPACE
               value: {{ .Values.orchestration.namespace | quote }}
             {{- end }}
-            # PostgreSQL password from the shared opendso-apps-db secret.
-            # Host/port/db/user come from the mounted production.env configmap.
+            # POSTGRES_HOST/USER/PASSWORD from the shared opendso-apps-db
+            # connection secret (chart/templates) -- this subchart can't see
+            # the umbrella chart's opendso-apps-db.externalDatabase.* values
+            # directly (Helm only propagates values nested under `global`),
+            # so the host/user baked into production.env below can be wrong
+            # in external-database mode. These explicit env vars take
+            # precedence over the pre-start dotenv load (dotenv does not
+            # overwrite already-set process.env values), correcting it.
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-opendso-apps-db-secret
+                  key: host
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-opendso-apps-db-secret
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
