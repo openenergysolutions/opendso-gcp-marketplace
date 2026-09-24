@@ -6,6 +6,14 @@ metadata:
     {{- include "keycloak.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  # This Deployment mounts a single ReadWriteOnce PVC (embedded H2 database
+  # file), so RollingUpdate's default surge-before-terminate behavior
+  # deadlocks: the new pod can be scheduled onto the same node and mount the
+  # same disk, but can never actually start, since the still-running old pod
+  # holds an exclusive lock on the H2 file. Recreate avoids this by
+  # terminating the old pod first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "keycloak.selectorLabels" . | nindent 6 }}
