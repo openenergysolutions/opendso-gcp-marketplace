@@ -686,6 +686,25 @@
       }
     },
     {
+      "id": "b1000009-0000-4000-8000-000000000009",
+      "createdTimestamp": 0,
+      "username": "service-account-ods-svc",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": false,
+      "serviceAccountClientId": "ods-svc",
+      "credentials": [],
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": ["default-roles-oes"],
+      "notBefore": 0,
+      "groups": [],
+      "attributes": {
+        "allow_subs": ["_INBOX.>", "opendso.>", "openfmb.>"],
+        "allow_pubs": ["opendso.>", "openfmb.>"]
+      }
+    },
+    {
       "id": "b100000a-0000-4000-8000-00000000000a",
       "createdTimestamp": 0,
       "username": "service-account-der-dispatch-svc",
@@ -1428,6 +1447,41 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "REPLACE_SECRET_ess-tester-svc",
+      "redirectUris": ["/*"],
+      "webOrigins": ["/*"],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "attributes": {
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "display.on.consent.screen": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "defaultClientScopes": [
+        "web-origins", "acr", "audience", "nats_pub_sub", "roles", "profile", "email"
+      ],
+      "optionalClientScopes": [
+        "address", "phone", "offline_access", "microprofile-jwt"
+      ]
+    },
+    {
+      "id": "a1000008-0000-4000-8000-000000000008",
+      "clientId": "ods-svc",
+      "name": "ods-svc",
+      "description": "ods-svc service account for NATS auth",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "REPLACE_SECRET_ods-svc",
       "redirectUris": ["/*"],
       "webOrigins": ["/*"],
       "notBefore": 0,
