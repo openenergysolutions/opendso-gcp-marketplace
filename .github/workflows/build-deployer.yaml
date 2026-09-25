@@ -1,0 +1,165 @@
+name: Build deployer image
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'chart/**'
+      - 'schema.yaml'
+      - 'data-test/**'
+      - 'deployer/**'
+      - 'scripts/build-deployer.sh'
+      - '.github/workflows/build-deployer.yaml'
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Deployer image tag (default: MAJOR.MINOR track derived from schema.yaml publishedVersion)'
+        required: false
+
+env:
+  # Public identifier, not a secret — already embedded as a plaintext OCI
+  # annotation on every image in the public openenergysolutionsinc-public
+  # Artifact Registry repo, per GCP Marketplace's own requirements.
+  SERVICE_NAME: opendso-platform-byol.endpoints.openenergysolutionsinc-public.cloud.goog
+
+jobs:
+  validate:
+    name: helm lint + template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: helm dependency build
+        run: helm dependency build chart/
+
+      - name: helm lint (values-gcp.yaml)
+        run: |
+          helm lint chart/ -f chart/values-gcp.yaml \
+            --set global.domain=example.com \
+            --set keycloak.config.adminPassword=test \
+            --set license.key=test \
+            --set installation.key=test \
+            --set opendso-apps-db.auth.password=test
+
+      - name: helm template (values-gcp.yaml)
+        run: |
+          helm template test chart/ -f chart/values-gcp.yaml \
+            --set global.domain=example.com \
+            --set keycloak.config.adminPassword=test \
+            --set license.key=test \
+            --set installation.key=test \
+            --set opendso-apps-db.auth.password=test \
+            --set global.imageRegistry=us-docker.pkg.dev/openenergysolutionsinc-public/oesinc \
+            > /dev/null
+
+      - name: validate schema.yaml
+        run: python3 -c "import yaml; yaml.safe_load(open('schema.yaml'))"
+
+  build:
+    name: Build deployer image for scanning
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # for keyless GCP auth via Workload Identity Federation
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine tag
+        id: tag
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(python3 -c "
+          import yaml
+          v = yaml.safe_load(open('schema.yaml'))['x-google-marketplace']['publishedVersion']
+          print('.'.join(v.split('.')[:2]))
+          ")
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # gcr.io/cloud-marketplace-tools/k8s/deployer_helm (this Dockerfile's
+      # base image) requires an authenticated GCP identity to pull — it is
+      # not truly anonymous-public, confirmed by testing with a completely
+      # empty Docker config. github-image-puller has zero IAM roles granted
+      # anywhere; it exists purely to be "some real Google identity" for
+      # this pull, so it's safe to use even on pull_request runs from forks
+      # (it cannot read or write anything of ours).
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_IMAGE_PULLER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate Docker to gcr.io
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Pull deployer_helm base image
+        run: docker pull gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
+
+      - name: Build image (scan only, no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deployer/Dockerfile
+          platforms: linux/amd64
+          pull: false
+          load: true
+          push: false
+          tags: deployer:scan
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: deployer:scan
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+        env:
+          TRIVY_DB_REPOSITORY: 'ghcr.io/aquasecurity/trivy-db:2'
+
+  push:
+    name: Build, push, and annotate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # for keyless GCP auth via Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install crane
+        run: |
+          curl -sL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz | tar -xz crane
+          sudo mv crane /usr/local/bin/
+
+      - name: Build, push, and annotate
+        run: |
+          ./scripts/build-deployer.sh \
+            --service-name "$SERVICE_NAME" \
+            --tag "${{ needs.build.outputs.tag }}"

@@ -26,33 +26,33 @@ data:
     # expires in 3 days
     COOKIE_EXP=259200000
 
-    # MongoDB (legacy variable names for compatibility)
-    MONGO_URI={{ printf "mongodb://%s-mongodb:27017" .Release.Name }}{{- if (index .Values.global "mongodb").tls.enabled }}?tls=true&tlsCAFile=/etc/mongodb/tls/ca.crt&tlsAllowInvalidCertificates=true{{- end }}
-    MONGO_DB_NAME={{ .Values.config.mongodb.dbName }}
-    MONGODB_DOMAIN={{ printf "%s-mongodb:27017" .Release.Name }}
-    MONGODB_DBNAME={{ .Values.config.mongodb.dbName }}
-    # MONGODB_USERNAME and MONGODB_PASSWORD are loaded from Secret via environment variables
-    {{- if (index .Values.global "mongodb").tls.enabled }}
-    # MongoDB TLS Configuration
-    MONGODB_TLS_ENABLED=true
-    MONGODB_TLS_CA_FILE=/etc/mongodb/tls/ca.crt
-    MONGODB_TLS_ALLOW_INVALID_CERTIFICATES=true
-    {{- end }}
+    # PostgreSQL (shared opendso-apps-db; gms-api uses the 'settings_api' database)
+    # POSTGRES_HOST/USER/PASSWORD below are placeholders only: this subchart
+    # can't correctly resolve opendso-apps-db.externalDatabase.* (see
+    # deployment.yaml), so the real values are injected as environment
+    # variables from the shared opendso-apps-db connection secret instead,
+    # which take precedence over this file at pre-start.
+    {{- $appsDb := include "opendso.appsDb.settings" . | fromYaml }}
+    POSTGRES_HOST={{ $appsDb.host }}
+    POSTGRES_PORT={{ $appsDb.port }}
+    POSTGRES_DB={{ .Values.config.postgres.database | default "settings_api" }}
+    POSTGRES_USER={{ $appsDb.user }}
+    # POSTGRES_PASSWORD is loaded from the apps-db Secret via an environment variable
 
     # NATS
     NATS_URL={{ printf "nats://%s-nats-service:4222" .Release.Name }}
 
     # Keycloak
-    KEYCLOAK_URL={{ include "opendso.keycloakUrl" . }}
+    KEYCLOAK_URL={{ .Values.global.keycloak.url }}
     KEYCLOAK_REALM={{ .Values.global.keycloak.realm }}
     KEYCLOAK_CLIENT_ID={{ .Values.global.keycloak.clientIds.api }}
 
     # Auth (OpenID Connect)
     # Use internal URL for JWKS (server-to-server communication)
-    AUTH_JWKS_URI={{ include "opendso.keycloakInternalUrl" . }}/realms/{{ .Values.global.keycloak.realm }}/protocol/openid-connect/certs
+    AUTH_JWKS_URI={{ .Values.global.keycloak.internalUrl }}/realms/{{ .Values.global.keycloak.realm }}/protocol/openid-connect/certs
     AUTH_CLIENT_ID={{ .Values.global.keycloak.clientIds.api }}
     # Use external URL for issuer (must match token issuer claim)
-    AUTH_ISSUER={{ include "opendso.keycloakUrl" . }}/realms/{{ .Values.global.keycloak.realm }}
+    AUTH_ISSUER={{ .Values.global.keycloak.url }}/realms/{{ .Values.global.keycloak.realm }}
 
     # For dev use only
     ENABLE_CORS=true

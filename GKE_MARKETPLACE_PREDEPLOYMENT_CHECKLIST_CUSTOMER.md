@@ -342,7 +342,6 @@ If you are only testing a single hostname and are not using the full wildcard mo
 
 - `api.<domain>`
 - `keycloak.<domain>`
-- `grafana.<domain>`
 - `nats.<domain>`
 - UI app subdomains
 
@@ -466,9 +465,6 @@ When you click **Deploy**, you will be prompted for the following. Have these va
 | OpenDSO License Key | Provided by OES |
 | OpenDSO Installation Key | Provided by OES |
 | Keycloak Admin Password | Choose a strong password |
-| MongoDB Root Password | Choose a strong password |
-| MongoDB App Password | Choose a strong password |
-| Grafana Admin Password | Choose a strong password |
 | Resource Profile | `minimal` / `default` / `production` |
 | Image Registry | Model A: pre-populated by Marketplace. Model B: `us-central1-docker.pkg.dev/<PROJECT_ID>/oesinc` |
 
@@ -484,8 +480,8 @@ bash scripts/verify.sh <release-name> <namespace>
 
 The script checks:
 
-1. MongoDB StatefulSet readiness
-2. Keycloak and NATS Deployment readiness
+1. Keycloak and NATS Deployment readiness
+2. Apps DB (and Keycloak DB, if deployed) StatefulSet readiness
 3. GMS API, Historian, and NATS Auth Service readiness
 4. NATS auth keys secret existence
 5. Keycloak OIDC discovery endpoint (via port-forward)

@@ -15,7 +15,7 @@ A single Helm release installs the full OpenDSO stack into your GKE cluster:
 | Category | Components |
 | --- | --- |
 | **Infrastructure** | NATS (messaging), Keycloak (identity) |
-| **Databases** | MongoDB, Cloud SQL PostgreSQL (external — provisioned separately) |
+| **Databases** | Cloud SQL PostgreSQL (external — provisioned separately) |
 | **Core Services** | GMS API, Historian, OpenFMB Event Service, NATS Auth |
 | **Topology** | Topology Genesis, Topology Nodes |
 | **Grid Applications** | DER Dispatch, ESS Manager, ESS Tester, Asset Health |
@@ -42,7 +42,6 @@ After deployment, the following endpoints are available at your configured domai
    - **OpenDSO License Key** — obtained from OES; required to activate the application.
    - **OpenDSO Installation Key** — obtained from OES; required to activate the application.
    - **Keycloak Admin Password**
-   - **MongoDB Root Password** and **MongoDB App Password**
    - **Apps DB Host** — Cloud SQL private IP (provisioned in the Cloud SQL prerequisite step below)
    - **Apps DB Password** — password for the `essuser` database user
    - **Resource Profile** — `minimal`, `default`, or `production`
@@ -71,8 +70,40 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 
 ### Cloud SQL
 
-OpenDSO requires a Cloud SQL PostgreSQL 16 instance with four databases initialized before deployment.
-Run the provisioning script once per environment:
+OpenDSO requires a Cloud SQL PostgreSQL 16 instance with five databases initialized before deployment.
+It must be created with a **private IP only** — `scripts/provision-cloud-sql.sh` always passes
+`--no-assign-ip`, since the org-level constraint `constraints/sql.restrictPublicIp` is common in
+enterprise GCP orgs (including this one) and blocks a public IP outright. Even without that
+constraint, a private IP is required so the GKE cluster and Cloud SQL instance can talk to each
+other on the same VPC.
+
+**Before running the provisioning script**, Private Services Access must exist on the target VPC
+(the mechanism that gives Cloud SQL a private IP at all). Check first — most projects with any prior
+Cloud SQL/Memorystore usage already have this:
+
+```bash
+gcloud services vpc-peerings list --network=default --project=my-gcp-project
+```
+
+If that returns nothing, set it up once per project:
+
+```bash
+gcloud services enable servicenetworking.googleapis.com --project=my-gcp-project
+
+gcloud compute addresses create google-managed-services-default \
+  --project=my-gcp-project --global --purpose=VPC_PEERING --prefix-length=20 \
+  --network=default
+
+gcloud services vpc-peerings connect \
+  --project=my-gcp-project --service=servicenetworking.googleapis.com \
+  --ranges=google-managed-services-default --network=default
+```
+
+Pick a `--prefix-length=20` range that doesn't overlap your VPC's existing subnets (check with
+`gcloud compute networks subnets list --project=my-gcp-project`) — auto-mode networks typically use
+`10.128.0.0/9`, so `10.0.0.0/20` is usually safe.
+
+Once Private Services Access is in place, run the provisioning script:
 
 ```bash
 ./scripts/provision-cloud-sql.sh \
@@ -86,7 +117,7 @@ Run the provisioning script once per environment:
 The script:
 
 1. Creates the Cloud SQL instance (`--skip-create` to attach to an existing one)
-2. Creates the `ess_tester`, `ofmb_db`, `assets`, and `opendso` databases
+2. Creates the `ess_tester`, `ofmb_db`, `assets`, `settings_api`, and `opendso` databases
 3. Applies the OpenDSO schema (via Cloud SQL Proxy + psql, or via `--run-in-cluster` for private-IP-only instances)
 4. Writes a `<release>-apps-db-credentials` Kubernetes Secret
 
@@ -100,6 +131,31 @@ opendso-apps-db:
 ```
 
 **Prerequisites for the script:** `gcloud` authenticated with `roles/cloudsql.admin` + `roles/cloudsql.client`, `cloud-sql-proxy`, and `psql` in PATH.
+
+**Schema init with neither local VPC access nor a GKE cluster yet:** the script's two schema-init
+paths — a local `cloud-sql-proxy --private-ip` (needs your machine on the VPC, e.g. via VPN/Interconnect)
+or `--run-in-cluster` (needs a GKE cluster already running) — don't cover the gap between provisioning
+Cloud SQL and having either one. In that case, use a short-lived Compute Engine VM as an SSH jump host
+via IAP (no public IP or firewall changes needed beyond allowing IAP's range on port 22), and forward a
+local port straight to the Cloud SQL private IP through it:
+
+```bash
+gcloud compute firewall-rules create allow-iap-ssh \
+  --project=my-gcp-project --network=default --direction=INGRESS --action=ALLOW \
+  --rules=tcp:22 --source-ranges=35.235.240.0/20
+
+gcloud compute instances create sql-bastion-temp \
+  --project=my-gcp-project --zone=us-central1-a --machine-type=e2-micro \
+  --network=default --subnet=default --no-address \
+  --image-family=debian-12 --image-project=debian-cloud
+
+gcloud compute ssh sql-bastion-temp --project=my-gcp-project --zone=us-central1-a \
+  --tunnel-through-iap -- -L 15432:<CLOUD-SQL-PRIVATE-IP>:5432 -N &
+```
+
+Then point `psql`/the schema files at `127.0.0.1:15432` directly — no `cloud-sql-proxy` needed on
+either end, since the SSH tunnel is doing the routing. Delete the VM (`gcloud compute instances delete
+sql-bastion-temp ...`) once done; it's meant to be temporary.
 
 #### Materialized view refresh — pg_cron (recommended)
 
@@ -138,6 +194,24 @@ The Cloud SQL instance must be on the same VPC as the GKE cluster (Private IP vi
 ### Cluster
 
 - GKE cluster (Kubernetes 1.24+) with `kubectl` configured
+- **Cloud NAT** on the cluster's VPC/region — GKE nodes have no outbound internet access by default,
+  and at least one thing OpenDSO does needs it (`topology-nodes`'s license validation call to OES's
+  license API). Without it, that call fails at the TLS handshake in a way that looks like a
+  certificate problem rather than a routing one. Check first (`gcloud compute routers list
+  --project=my-gcp-project`); if nothing covers the cluster's region:
+
+  ```bash
+  gcloud compute routers create nat-router-<region> \
+    --project=my-gcp-project --network=default --region=<region>
+
+  gcloud compute routers nats create nat-config \
+    --router=nat-router-<region> --region=<region> --project=my-gcp-project \
+    --auto-allocate-nat-external-ips --nat-all-subnet-ip-ranges
+  ```
+
+  `--nat-all-subnet-ip-ranges` covers both the node subnet and the pod/service alias IP ranges on a
+  VPC-native cluster — a NAT covering only the primary range would still leave actual pod traffic
+  unrouted.
 - `nginx-ingress` controller installed:
 
   ```bash
@@ -253,8 +327,8 @@ opendso-gcp-marketplace/
 
 ```bash
 # From the repo root
-docker build -f deployer/Dockerfile -t gcr.io/<your-project>/opendso/deployer:1.0.0 .
-docker push gcr.io/<your-project>/opendso/deployer:1.0.0
+docker build -f deployer/Dockerfile -t gcr.io/<your-project>/opendso/deployer:2.0 .
+docker push gcr.io/<your-project>/opendso/deployer:2.0
 ```
 
 ---
@@ -265,12 +339,12 @@ Install [mpdev](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools
 
 ```bash
 # Verify the schema
-mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0
+mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:2.0
 
 # Test install into a real cluster
 mpdev install \
-  --deployer=gcr.io/<your-project>/opendso/deployer:1.0.0 \
-  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","mongodb.auth.rootPassword":"secret","mongodb.auth.password":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
+  --deployer=gcr.io/<your-project>/opendso/deployer:2.0 \
+  --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
 ```
 
 ---
@@ -283,12 +357,12 @@ mpdev install \
 - TLS is standardized around the release-scoped secret `<release-name>-tls-secret`; the chart can also create `root-ca`, `server-cert`, and `server-key` compatibility secrets for workloads that still mount those names
 - Backend services that support numeric non-root execution are configured to run with explicit non-root security contexts; stateful infrastructure components are hardened more conservatively where image startup still requires root-like filesystem initialization
 - `topology-nodes` validates `LICENSE_KEY` and `LICENSE_INSTALLATION_KEY` against the configured license API at startup and on a periodic revalidation interval
-- Third-party images (NATS, Keycloak, MongoDB, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
+- Third-party images (NATS, Keycloak, Envoy, etc.) should be mirrored to your Artifact Registry before submission to ensure supply chain control
 
 ## GKE Runtime Notes
 
-- `gms-api.config.dockerApi` is intentionally set to `http://127.0.0.1:2376` on GKE because GKE uses containerd and does not expose a Docker socket
-- orchestration features that assume direct Docker Engine access are therefore not expected to function on GKE in this package
+- `gms-api` manages pods (its orchestration feature) via the in-cluster Kubernetes API rather than a Docker daemon, since GKE uses containerd and does not expose a Docker socket
+- its RBAC is namespace-scoped (`orchestration.rbac.scope: namespace`) rather than cluster-wide, so orchestration is limited to pods in the app's own release namespace
 
 ---
 
@@ -299,5 +373,6 @@ mpdev install \
 - **Customer Checklist**: [GKE_MARKETPLACE_PREDEPLOYMENT_CHECKLIST_CUSTOMER.md](GKE_MARKETPLACE_PREDEPLOYMENT_CHECKLIST_CUSTOMER.md)
 - **Troubleshooting**: [GKE_MARKETPLACE_TROUBLESHOOTING.md](GKE_MARKETPLACE_TROUBLESHOOTING.md)
 - **Image Mirroring**: [IMAGE_MIRRORING_ARTIFACT_REGISTRY.md](IMAGE_MIRRORING_ARTIFACT_REGISTRY.md)
+- **Live GKE Testing**: [GKE_LIVE_TESTING.md](GKE_LIVE_TESTING.md)
 - **Backup / Restore**: [GKE_BACKUP_RESTORE.md](GKE_BACKUP_RESTORE.md)
 - **Email**: <info@openenergysolutions.com>

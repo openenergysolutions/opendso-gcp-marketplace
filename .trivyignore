@@ -1,0 +1,15 @@
+# Vulnerabilities in the deployer image that are genuinely blocked on an
+# upstream fix, not something we can patch ourselves. Any NEW finding not
+# listed here still fails the scan.
+#
+# Google shipped a fix for the go1.26.5 stdlib CVEs on ~2026-09-21 — the
+# base image's kubectl (now v1.37) and helm are built with go1.26.6/1.27.1
+# respectively, confirmed clean by a full rescan. See
+# https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/issues/688
+# (still open as of this cleanup; comment there tracked it as fixed).
+
+# usr/local/bin/nk (ours, built from source): nkeys v0.4.16 (the latest
+# published release) only pulls golang.org/x/crypto v0.52.0; this CVE's
+# fix needs 0.55.0, not yet available in any nkeys release. Also present
+# in Google's own helm binary as of the last scan that found it.
+CVE-2026-56854

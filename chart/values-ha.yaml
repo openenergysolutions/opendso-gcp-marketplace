@@ -13,21 +13,6 @@
 # Stateful components — production storage and resources
 # ============================================================================
 
-mongodb:
-  persistence:
-    size: 50Gi
-    storageClass: pd-ssd
-  resources:
-    requests:
-      memory: 2Gi
-      cpu: 1000m
-    limits:
-      memory: 8Gi
-      cpu: 4000m
-  config:
-    wiredTiger:
-      cacheSizeGB: 4
-
 # ============================================================================
 # Stateless components — replica counts and resources
 # ============================================================================
@@ -92,15 +77,6 @@ topology-nodes:
   replicas: 2
 
 der-dispatch-svc:
-  replicas: 2
-
-cvr-svc:
-  replicas: 2
-
-cvr-genetic-algorithm-svc:
-  replicas: 2
-
-cvr-openfmb-services-svc:
   replicas: 2
 
 ess-manager-svc:

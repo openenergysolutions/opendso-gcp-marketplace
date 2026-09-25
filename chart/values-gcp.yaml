@@ -46,12 +46,6 @@ global:
   tls:
     existingSecret: "opendso-tls"  # Created by create-certs.sh
 
-  # Database Services (global enable/disable flags)
-  mongodb:
-    enabled: true
-    tls:
-      enabled: false
-
   # topology-genesis: cim.xml is 367KB — exceeds the 262KB Kubernetes annotation limit
   # when using kubectl apply (client-side). The deployer pre-creates this ConfigMap via
   # kubectl apply --server-side and sets externalConfigMap=true so Helm skips creating it.
@@ -62,46 +56,10 @@ global:
 # Database Services (Subchart-specific configurations)
 # ============================================================================
 
-# MongoDB configuration
-mongodb:
-  enabled: true  # Set to false if using MongoDB Atlas
-
-  persistence:
-    enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    dataSize: 10Gi  # Production size 
-    logSize: 5Gi
-    deleteOnUpgrade: false  # IMPORTANT: Keep data on upgrades
-
-  initdb:
-    createConfigMap: false  # Parent chart provides the ConfigMap
-
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 4Gi
-    requests:
-      cpu: 1000m
-      memory: 2Gi
-
-  # MongoDB TLS disabled — internal ClusterIP traffic only
-  # tls:
-  #   enabled: true
-  #   existingSecret: "<release-name>-mongodb-tls"
-
-  # External MongoDB configuration (if using managed service)
-  # Uncomment and configure if enabled: false
-  # externalDatabase:
-  #   enabled: true
-  #   host: "your-mongodb-atlas-url"
-  #   port: 27017
-  #   database: "settings_api"
-  #   existingSecret: "mongodb-credentials"
-  #   usernameKey: "username"
-  #   passwordKey: "password"
-
 # OpenDSO Apps DB — Cloud SQL (external PostgreSQL)
-# The in-cluster postgres StatefulSet is disabled; configure your Cloud SQL instance below.
+# Configure your Cloud SQL instance below. If externalDatabase.host is left blank,
+# the chart falls back to the in-cluster postgres StatefulSet instead (used by
+# Marketplace's own automated functionality test, which never supplies Cloud SQL params).
 opendso-apps-db:
   externalDatabase:
     enabled: true
@@ -177,9 +135,10 @@ gms-api:
   tls:
     enabled: false
 
+  # No orchestration override needed: the gms-api subchart defaults to
+  # orchestration.backend=kubernetes (in-cluster API via the service account),
+  # which is correct for GKE. The old DOCKER_API workaround has been removed.
   config:
-    # GKE uses containerd — no Docker socket at /var/run/docker.sock, set to 127.0.0.1 to disable it
-    dockerApi: "http://127.0.0.1:2376"
     tls:
       enabled: false
 

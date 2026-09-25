@@ -1,13 +1,15 @@
+# Build nk (NATS NKey generation CLI) from source instead of using nats-io's
+# prebuilt release binary. The prebuilt v0.4.15/v0.4.16 releases embed
+# go1.24.12/go1.25.0 respectively — both vulnerable to CVE-2026-39821
+# (fixed in go1.25.13 / go1.26.6). Building from source with a patched
+# toolchain fixes it regardless of which nkeys release tag is used.
+FROM golang:1.26.8 AS nk-builder
+ARG NK_VERSION=0.4.16
+RUN go install "github.com/nats-io/nkeys/nk@v${NK_VERSION}"
+
 FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
 
-# Install nk CLI for NATS NKey generation
-ARG NK_VERSION=0.4.15
-RUN apt-get update && apt-get install -y --no-install-recommends curl unzip && \
-    curl -fsSL "https://github.com/nats-io/nkeys/releases/download/v${NK_VERSION}/nkeys-v${NK_VERSION}-linux-amd64.zip" \
-      -o /tmp/nkeys.zip && \
-    unzip -p /tmp/nkeys.zip "nkeys-v${NK_VERSION}-linux-amd64/nk" > /usr/local/bin/nk && \
-    chmod +x /usr/local/bin/nk && \
-    rm /tmp/nkeys.zip
+COPY --from=nk-builder /go/bin/nk /usr/local/bin/nk
 
 # Package chart in the format the deployer_helm runtime expects:
 #   /data/chart/chart.tar.gz  — tarball with chart/ at the top level
@@ -17,7 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl unzip && \
 #   /data/extracted/chart/chart/{Chart.yaml,values.yaml,configs/,...}
 COPY chart /tmp/build/chart
 RUN mkdir -p /data/chart \
-    && helm repo add grafana https://grafana.github.io/helm-charts \
     && helm dependency build /tmp/build/chart \
     && for archive in /tmp/build/chart/charts/*.tgz; do \
          chart_name="$(basename "$archive" | sed -E 's/-[0-9][^-]*\.tgz$//')"; \

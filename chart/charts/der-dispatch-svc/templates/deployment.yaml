@@ -41,14 +41,32 @@ spec:
               value: {{ .Values.env.PLATFORM_NATS_PORT | quote }}
             - name: POSTGRES_DB
               value: {{ $citus.name | quote }}
+            # PGHOST/PGPORT/PGUSER/PGPASSWORD come from the shared
+            # opendso-apps-db connection secret (chart/templates), not $citus
+            # directly: this subchart can't see the umbrella chart's
+            # opendso-apps-db.externalDatabase.* values (Helm only propagates
+            # values nested under `global`), so $citus.host/user/password
+            # only resolve correctly for the in-cluster default case.
             - name: PGHOST
-              value: {{ $citus.host | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-opendso-apps-db-secret" .Release.Name }}
+                  key: host
             - name: PGPORT
-              value: {{ $citus.port | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-opendso-apps-db-secret" .Release.Name }}
+                  key: port
             - name: PGUSER
-              value: {{ $citus.user | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-opendso-apps-db-secret" .Release.Name }}
+                  key: username
             - name: PGPASSWORD
-              value: {{ $citus.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-opendso-apps-db-secret" .Release.Name }}
+                  key: password
             - name: PGDATABASE
               value: {{ $citus.name | quote }}
             - name: RUST_BACKTRACE
