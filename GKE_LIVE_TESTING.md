@@ -474,14 +474,13 @@ specific to that combination and had never been exercised before.
   anyone editing the wrong occurrence later. Removed the first, keeping the effective value unchanged.
 
 - **Not a chart bug, but blocked this entire round for a while: DNS for the whole
-  `demo-gcp.oesinc.dev` zone (used by the OES licensing service, among other things) pointed at a
-  stale/wrong IP** — unrelated to anything in this repo, fixed at the Cloud DNS zone
-  (`opendso-endpoints-zone` in `opendso-dev`) rather than here. Manifested as `topology-nodes`'s
-  license check failing with a TLS peer-certificate error that looked like a missing Cloud NAT at
-  first (it wasn't — the fix in [Section 5](#5-provision-the-cluster)'s Cloud NAT note is still a
-  real, separate prerequisite; it just wasn't this bug). If you hit a similar TLS failure against an
-  `*.demo-gcp.oesinc.dev` host, verify DNS resolves to the actual `ingress-nginx-controller`
-  LoadBalancer IP before assuming it's a certificate problem.
+  `demo-gcp.oesinc.dev` zone pointed at a stale/wrong IP** — unrelated to anything in this repo, fixed
+  at the DNS provider rather than here. Manifested as `topology-nodes`'s license check failing with a
+  TLS peer-certificate error that looked like a missing Cloud NAT at first (it wasn't — the fix in
+  [Section 5](#5-provision-the-cluster)'s Cloud NAT note is still a real, separate prerequisite; it
+  just wasn't this bug). If you hit a similar TLS failure against an `*.demo-gcp.oesinc.dev` host,
+  verify DNS resolves to the actual `ingress-nginx-controller` LoadBalancer IP before assuming it's a
+  certificate problem.
 
 ## 14. Tearing Down
 
