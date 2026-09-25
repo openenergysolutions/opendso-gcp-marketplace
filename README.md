@@ -71,7 +71,39 @@ It does **not** create GKE clusters, install ingress controllers, configure DNS,
 ### Cloud SQL
 
 OpenDSO requires a Cloud SQL PostgreSQL 16 instance with five databases initialized before deployment.
-Run the provisioning script once per environment:
+It must be created with a **private IP only** — `scripts/provision-cloud-sql.sh` always passes
+`--no-assign-ip`, since the org-level constraint `constraints/sql.restrictPublicIp` is common in
+enterprise GCP orgs (including this one) and blocks a public IP outright. Even without that
+constraint, a private IP is required so the GKE cluster and Cloud SQL instance can talk to each
+other on the same VPC.
+
+**Before running the provisioning script**, Private Services Access must exist on the target VPC
+(the mechanism that gives Cloud SQL a private IP at all). Check first — most projects with any prior
+Cloud SQL/Memorystore usage already have this:
+
+```bash
+gcloud services vpc-peerings list --network=default --project=my-gcp-project
+```
+
+If that returns nothing, set it up once per project:
+
+```bash
+gcloud services enable servicenetworking.googleapis.com --project=my-gcp-project
+
+gcloud compute addresses create google-managed-services-default \
+  --project=my-gcp-project --global --purpose=VPC_PEERING --prefix-length=20 \
+  --network=default
+
+gcloud services vpc-peerings connect \
+  --project=my-gcp-project --service=servicenetworking.googleapis.com \
+  --ranges=google-managed-services-default --network=default
+```
+
+Pick a `--prefix-length=20` range that doesn't overlap your VPC's existing subnets (check with
+`gcloud compute networks subnets list --project=my-gcp-project`) — auto-mode networks typically use
+`10.128.0.0/9`, so `10.0.0.0/20` is usually safe.
+
+Once Private Services Access is in place, run the provisioning script:
 
 ```bash
 ./scripts/provision-cloud-sql.sh \
@@ -99,6 +131,31 @@ opendso-apps-db:
 ```
 
 **Prerequisites for the script:** `gcloud` authenticated with `roles/cloudsql.admin` + `roles/cloudsql.client`, `cloud-sql-proxy`, and `psql` in PATH.
+
+**Schema init with neither local VPC access nor a GKE cluster yet:** the script's two schema-init
+paths — a local `cloud-sql-proxy --private-ip` (needs your machine on the VPC, e.g. via VPN/Interconnect)
+or `--run-in-cluster` (needs a GKE cluster already running) — don't cover the gap between provisioning
+Cloud SQL and having either one. In that case, use a short-lived Compute Engine VM as an SSH jump host
+via IAP (no public IP or firewall changes needed beyond allowing IAP's range on port 22), and forward a
+local port straight to the Cloud SQL private IP through it:
+
+```bash
+gcloud compute firewall-rules create allow-iap-ssh \
+  --project=my-gcp-project --network=default --direction=INGRESS --action=ALLOW \
+  --rules=tcp:22 --source-ranges=35.235.240.0/20
+
+gcloud compute instances create sql-bastion-temp \
+  --project=my-gcp-project --zone=us-central1-a --machine-type=e2-micro \
+  --network=default --subnet=default --no-address \
+  --image-family=debian-12 --image-project=debian-cloud
+
+gcloud compute ssh sql-bastion-temp --project=my-gcp-project --zone=us-central1-a \
+  --tunnel-through-iap -- -L 15432:<CLOUD-SQL-PRIVATE-IP>:5432 -N &
+```
+
+Then point `psql`/the schema files at `127.0.0.1:15432` directly — no `cloud-sql-proxy` needed on
+either end, since the SSH tunnel is doing the routing. Delete the VM (`gcloud compute instances delete
+sql-bastion-temp ...`) once done; it's meant to be temporary.
 
 #### Materialized view refresh — pg_cron (recommended)
 
@@ -137,6 +194,24 @@ The Cloud SQL instance must be on the same VPC as the GKE cluster (Private IP vi
 ### Cluster
 
 - GKE cluster (Kubernetes 1.24+) with `kubectl` configured
+- **Cloud NAT** on the cluster's VPC/region — GKE nodes have no outbound internet access by default,
+  and at least one thing OpenDSO does needs it (`topology-nodes`'s license validation call to OES's
+  license API). Without it, that call fails at the TLS handshake in a way that looks like a
+  certificate problem rather than a routing one. Check first (`gcloud compute routers list
+  --project=my-gcp-project`); if nothing covers the cluster's region:
+
+  ```bash
+  gcloud compute routers create nat-router-<region> \
+    --project=my-gcp-project --network=default --region=<region>
+
+  gcloud compute routers nats create nat-config \
+    --router=nat-router-<region> --region=<region> --project=my-gcp-project \
+    --auto-allocate-nat-external-ips --nat-all-subnet-ip-ranges
+  ```
+
+  `--nat-all-subnet-ip-ranges` covers both the node subnet and the pod/service alias IP ranges on a
+  VPC-native cluster — a NAT covering only the primary range would still leave actual pod traffic
+  unrouted.
 - `nginx-ingress` controller installed:
 
   ```bash

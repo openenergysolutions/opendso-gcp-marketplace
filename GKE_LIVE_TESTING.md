@@ -124,6 +124,18 @@ script by hand: cert-manager install, namespace creation, the TLS secret,
 the Application CRD, and the IAM binding (read the script — each step is a
 plain `helm install`/`kubectl apply`/`gcloud` call you can run directly).
 
+If reusing an existing shared domain (e.g. `demo-gcp.oesinc.dev`) rather than a fresh one for this
+test, don't assume its DNS is actually correct — verify it resolves to the ingress IP you just
+provisioned before spending time debugging a TLS failure that's actually a stale DNS record elsewhere
+(see [Section 13](#13-bugs-found-in-this-round-2026-09-25)).
+
+**Cloud NAT and Private Services Access**: `provision-test-env.sh` does not set up either of these —
+you need both, separately, before the cluster and Cloud SQL are actually usable. See
+[README.md's Cluster](README.md#cluster) and [Cloud SQL](README.md#cloud-sql) prerequisites sections
+for the exact commands. Skipping Cloud NAT won't show up until something in the cluster actually needs
+outbound internet (e.g. `topology-nodes`'s license check) — everything else runs fine without it, since
+image pulls and Cloud SQL both go through Google-internal paths that don't need it.
+
 ## 6. Critical Gotcha: `mpdev` Forces Every Image to the `publishedVersion` Tag
 
 This is the single biggest time-sink in testing this chart, and it's not
@@ -407,7 +419,71 @@ scratch copy first.
   way to be confident you're seeing what a real first-time customer install
   would look like (see [Section 10](#10-run-mpdev-verify--mpdev-install)).
 
-## 13. Tearing Down
+## 13. Bugs Found in This Round (2026-09-25)
+
+This round used a real external Cloud SQL instance (not the in-cluster fallback) and a real
+GKE-hosted Keycloak for the first time end-to-end on `opendso-491115` — several of these bugs are
+specific to that combination and had never been exercised before.
+
+- **FIXED — `der-dispatch-svc`, `historian-svc`, and `gms-api` silently got the wrong Postgres
+  host/user/password in external-database mode.** All three hardcoded a reference to a Secret
+  (`<release>-opendso-apps-db-secret`) that only ever gets created by the in-cluster
+  `opendso-apps-db` subchart's own `secret.yaml` — never in external-DB mode, since that subchart's
+  templates correctly disable themselves when `externalDatabase.host` is set. Worse, even the
+  password-via-secret indirection aside, these three subcharts can't see
+  `opendso-apps-db.externalDatabase.*`/`.auth.*` at all: Helm only propagates values nested under
+  `global` across sibling subcharts, and this data isn't. `opendso.appsDb.settings`/
+  `opendso.citusDb.settings` (the two helpers meant to resolve this) only work correctly when called
+  from the umbrella chart's own templates — in-cluster mode "worked" by pure coincidence, since the
+  Go-template fallback defaults for host/user/password happen to match the real in-cluster values.
+  Fixed by adding one canonical connection Secret at umbrella-chart scope
+  (`chart/templates/opendso-apps-db-connection-secret.yaml`, resolves correctly in either mode) that
+  all three subcharts reference via `secretKeyRef`, and removing the now-redundant subchart-local
+  `secret.yaml` to avoid a duplicate resource. No `schema.yaml` changes.
+
+- **FIXED — Keycloak's `RollingUpdate` strategy deadlocks against its own singleton `ReadWriteOnce`
+  volume.** Keycloak's embedded H2 database lives on a single RWO PVC, but its Deployment used the
+  default `RollingUpdate` strategy. On any spec change, Kubernetes tries to bring up a new pod before
+  killing the old one (GCE PD allows the new pod to mount the same RWO disk on the same node) — but
+  the new Keycloak process can never actually start, since the still-running old pod holds an
+  exclusive lock on the H2 file. The old pod stays healthy, so Kubernetes never kills it, and the
+  rollout hangs forever; this doesn't self-resolve. Hit live: an unrelated `resourceProfile` change
+  triggered a routine Keycloak rollout and it deadlocked exactly this way. Fixed with
+  `strategy: type: Recreate` on Keycloak's Deployment.
+
+- **FIXED — `ods-svc` was never registered as a Keycloak client, so it silently ran with no NATS
+  auth.** `deployer/deploy.sh` derives the entire set of per-service Keycloak client secrets to
+  create by scanning `chart/configs/ieee13/keycloak/realm/oes-realm.json` for
+  `REPLACE_SECRET_<client-id>` placeholders — `ods-svc` simply had no entry there, unlike its 12
+  sibling NATS-connected services (there's a gap in the existing sequential client-ID scheme,
+  `a1000007`/`a1000009` with `a1000008` missing, exactly where it should have gone). Without a
+  `<release>-ods-svc-keycloak-env` secret, `di_common`'s `TokenManagerConfig::from_env()` fails, no
+  `TokenManager` gets created, and the NATS connector falls back to no-auth — which `nats-auth-svc`
+  then rejects outright (`no JWT token provided in connection`), forever, invisibly:  `ods-svc` (like
+  `ess-manager-svc`, `ess-tester-svc`, `asset-health-svc`) has health probes disabled (scratch image,
+  no shell), so `kubectl get pods` shows a healthy `Running` pod throughout. See
+  [`GKE_MARKETPLACE_TROUBLESHOOTING.md`'s NATS section](GKE_MARKETPLACE_TROUBLESHOOTING.md#5-nats-and-nats-auth-problems)
+  for the general version of this failure mode. Fixed by adding the missing `clients[]` entry (id
+  `a1000008`) and its `service-account-ods-svc` user (id `b1000009`, same gap pattern) to the realm
+  JSON, matching every sibling service's shape exactly.
+
+- **FIXED (minor) — duplicate `global.opendso-apps-db.enabled` key in `chart/values.yaml`.** Declared
+  twice (`false` near `keycloak-db`, `true` near `ess-manager-redis`); YAML's last-wins behavior made
+  `true` the effective value, which happened to be harmless since the subchart's own per-template
+  guards independently disable it in external-DB mode regardless of this flag. Still a landmine for
+  anyone editing the wrong occurrence later. Removed the first, keeping the effective value unchanged.
+
+- **Not a chart bug, but blocked this entire round for a while: DNS for the whole
+  `demo-gcp.oesinc.dev` zone (used by the OES licensing service, among other things) pointed at a
+  stale/wrong IP** — unrelated to anything in this repo, fixed at the Cloud DNS zone
+  (`opendso-endpoints-zone` in `opendso-dev`) rather than here. Manifested as `topology-nodes`'s
+  license check failing with a TLS peer-certificate error that looked like a missing Cloud NAT at
+  first (it wasn't — the fix in [Section 5](#5-provision-the-cluster)'s Cloud NAT note is still a
+  real, separate prerequisite; it just wasn't this bug). If you hit a similar TLS failure against an
+  `*.demo-gcp.oesinc.dev` host, verify DNS resolves to the actual `ingress-nginx-controller`
+  LoadBalancer IP before assuming it's a certificate problem.
+
+## 14. Tearing Down
 
 The test cluster is a real, billable 3-node `e2-standard-8` GKE cluster.
 Tear it down when you're done testing:

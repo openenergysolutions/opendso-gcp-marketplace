@@ -372,8 +372,6 @@ global:
   # Database Services
   keycloak-db:
     enabled: false
-  opendso-apps-db:
-    enabled: false
   # Core Services
   historian-svc:
     enabled: true

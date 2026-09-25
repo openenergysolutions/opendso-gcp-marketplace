@@ -114,6 +114,38 @@ What to verify:
 - the WebSocket ingress backend protocol matches the chart TLS mode
 - Keycloak client secret injection succeeded for `nats-auth-svc`
 
+**Silent failures — `kubectl get pods` shows `Running` but the service is not actually connected.**
+Several services (`ods-svc`, `ess-manager-svc`, `ess-tester-svc`, `asset-health-svc`) have health probes
+disabled (their base image has no shell to run one), so a NATS auth failure never shows up as a
+non-`Running` pod status or a restart count — you have to read the logs. Two distinct symptoms, same
+root cause (the service's Keycloak client secret for NATS auth was never created):
+
+```text
+No credentials file or token manager configured for NATS connection
+No auth for NATS connection
+Error connecting to NATS: authorization violation: nats: authorization violation
+```
+
+or, for a service that gets *some* NATS auth but is missing a peer's:
+
+```text
+wait_for_region: request failed: no responders: no responders, retrying in 5s...
+```
+
+Confirm on the `nats-auth-svc` side — cross-reference the pod's IP from `kubectl get pod -o wide`:
+
+```bash
+kubectl logs deploy/<release-name>-nats-auth-svc -n <namespace> --tail=200 | grep "no JWT token provided"
+kubectl get secret <release-name>-<service>-keycloak-env -n <namespace>
+```
+
+If the `-keycloak-env` secret for that service doesn't exist at all, the service was never registered
+as a Keycloak client in `chart/configs/ieee13/keycloak/realm/oes-realm.json` — `deployer/deploy.sh`
+derives the entire list of per-service Keycloak clients/secrets to create by scanning that file for
+`REPLACE_SECRET_<client-id>` placeholders, so a service missing from the realm JSON silently gets no
+secret, no error. Fix is to add a matching `clients[]` entry (and its `service-account-<id>` user, with
+`allow_subs`/`allow_pubs` attributes) to the realm JSON, following any sibling service's shape exactly.
+
 ## 6. Database Startup Failures
 
 Symptoms:
@@ -136,6 +168,13 @@ What to verify:
 - the storage class matches the cluster
 - the image is not being forced into a security context it cannot satisfy
 - mounted volumes are writable by the container startup path
+
+**`gcloud sql instances create` fails with `Organization Policy check failure:
+... constraints/sql.restrictPublicIp ...`.** This is a deliberate org-wide GCP policy, common in
+enterprise orgs — not something to request an exception for. It means the instance must be created
+with a private IP only. See [README.md's Cloud SQL prerequisites](README.md#cloud-sql) for the full
+Private Services Access setup this requires before `--no-assign-ip` will succeed (it's a separate,
+one-time-per-project step that `provision-cloud-sql.sh` assumes already exists).
 
 ## 7. Frontend App Failures
 
