@@ -8,21 +8,16 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
+    # The icon the GKE console's Applications page shows for this app.
     kubernetes-engine.cloud.google.com/icon: >-
-      data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
-    marketplace.cloud.google.com/deploy-info: '{"partner_id": "oesinc", "product_id": "opendso", "partner_name": "Open Energy Solutions Inc."}'
+      data:image/png;base64,{{ .Files.Get "assets/icon.png" | b64enc }}
+    # Links the deployed app to its Marketplace listing. partner_id is the
+    # Producer Portal Partner ID; product_id is the listing's product ID.
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "g2wzhtgDvm", "product_id": "opendso-platform-byol", "partner_name": "Open Energy Solutions, Inc."}'
 spec:
   descriptor:
     type: OpenDSO
     version: {{ .Chart.AppVersion | quote }}
-    {{- /* Shown next to the app on the GKE console's Applications page. Embedded as a
-         data URI so it doesn't depend on an external URL being reachable. */}}
-    {{- $icon := .Files.Get "assets/icon.png" }}
-    {{- if $icon }}
-    icons:
-      - src: {{ printf "data:image/png;base64,%s" ($icon | b64enc) | quote }}
-        type: image/png
-    {{- end }}
     description: >-
       OpenDSO is an open-source Distribution System Operator platform
       for managing grid-edge devices, distributed energy resources (DERs),

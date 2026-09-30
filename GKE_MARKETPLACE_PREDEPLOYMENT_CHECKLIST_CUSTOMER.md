@@ -47,6 +47,14 @@ kubectl version
 kubectl create namespace <namespace>
 ```
 
+- [ ] (Recommended) **GKE cost allocation** is enabled. Every OpenDSO pod carries the Marketplace
+  consumption-tracking label (`goog-partner-solution`). GKE only passes pod labels through to your
+  billing data when cost allocation is on. It doesn't disrupt running workloads:
+
+```bash
+gcloud container clusters update <cluster-name> --zone=<zone> --project=<project-id> --enable-cost-allocation
+```
+
 ---
 
 ## Step 1b — Cloud NAT and Cloud SQL
