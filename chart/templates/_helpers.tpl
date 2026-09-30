@@ -143,6 +143,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+GCP Marketplace consumption-tracking label, required on every Pod so Google
+can attribute the app's resource usage to its listing. Pod template labels
+only -- never selectors, which are immutable on existing Deployments.
+Rendered empty when global.partnerSolutionLabel is unset.
+*/}}
+{{- define "opendso.partnerLabels" -}}
+{{- with (.Values.global | default dict).partnerSolutionLabel }}
+goog-partner-solution: {{ . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "opendso.selectorLabels" -}}

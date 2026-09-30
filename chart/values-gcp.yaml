@@ -7,6 +7,10 @@ global:
     environment: production
     cloudProvider: gcp
 
+  # GCP Marketplace consumption-tracking label (Producer Portal > Overview >
+  # "Consumption tracking label"). Applied to every Pod as goog-partner-solution.
+  partnerSolutionLabel: isol_plb32_001kf00001fmp5riab_oq65wotdjqmsi5zhcnp577xl3chyad7h
+
   # Resource profile (minimal, default, production)
   resourceProfile: production
 

@@ -15,6 +15,14 @@ spec:
   descriptor:
     type: OpenDSO
     version: {{ .Chart.AppVersion | quote }}
+    {{- /* Shown next to the app on the GKE console's Applications page. Embedded as a
+         data URI so it doesn't depend on an external URL being reachable. */}}
+    {{- $icon := .Files.Get "assets/icon.png" }}
+    {{- if $icon }}
+    icons:
+      - src: {{ printf "data:image/png;base64,%s" ($icon | b64enc) | quote }}
+        type: image/png
+    {{- end }}
     description: >-
       OpenDSO is an open-source Distribution System Operator platform
       for managing grid-edge devices, distributed energy resources (DERs),

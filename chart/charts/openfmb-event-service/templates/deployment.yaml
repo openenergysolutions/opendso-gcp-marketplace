@@ -17,6 +17,7 @@ spec:
       {{- end }}
       labels:
         {{- include "openfmb-event-service.selectorLabels" . | nindent 8 }}
+        {{- include "opendso.partnerLabels" . | nindent 8 }}
     spec:
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:

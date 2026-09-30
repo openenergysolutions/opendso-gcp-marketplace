@@ -17,6 +17,7 @@ spec:
       {{- end }}
       labels:
         {{- include "genesis-node-app.selectorLabels" . | nindent 8 }}
+        {{- include "opendso.partnerLabels" . | nindent 8 }}
     spec:
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
