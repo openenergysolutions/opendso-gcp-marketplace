@@ -258,8 +258,11 @@ kubectl get events -n <namespace> --sort-by='.lastTimestamp'
 
 Important implementation details:
 
-- the deployer does not use `helm --wait`
-- readiness is checked by `scripts/verify.sh`
+- the deployer does not use `helm --wait` and does not check pod readiness itself; it marks the
+  Application successful once the manifests are applied, while pods are still starting
+- neither the deployer nor `mpdev verify` runs `scripts/verify.sh`. Run it yourself afterwards
+  (`scripts/verify.sh <release-name> <namespace>`), or check `kubectl get pods`
+- `mpdev verify` can report `PASSED` even while some pods are failing, so don't rely on its verdict alone
 - some failures reported during verify are transient probe or cache-sync warnings, while others are real container startup failures
 
 The critical distinction is whether the pod is still making progress or is in a steady failed state such as `CrashLoopBackOff`, `ImagePullBackOff`, or repeated mount errors.

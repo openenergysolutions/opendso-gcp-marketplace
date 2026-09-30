@@ -10,8 +10,8 @@ The Marketplace package persists data in:
 - Keycloak persistent volume
 - ESS Manager Redis
 - topology-genesis PVC-backed data
-- openfmb-event-service PVC-backed data
-- asset-health-sim-svc PVC-backed data
+- openfmb-event-service and asset-health-sim-svc PVC-backed data, only if you enabled them (both
+  are off by default: `openfmb-event-service.persistence.enabled` and `global.asset-health-sim-svc.enabled`)
 
 No repo-level automation currently performs coordinated application-consistent backups across all components. The guidance here is operational rather than fully automated.
 
@@ -57,14 +57,17 @@ For components that rely mainly on PVC-backed application state, use GKE volume 
 
 Candidates:
 
-- Keycloak
-- ESS Manager Redis
-- topology-genesis
-- openfmb-event-service
-- asset-health-sim-svc
+- Keycloak (`<release>-keycloak`)
+- ESS Manager Redis (`data-<release>-ess-manager-redis-0`)
+- topology-genesis (`<release>-topology-genesis`)
+- openfmb-event-service and asset-health-sim-svc, only if their persistence is enabled
 
 Important:
 
+- Keycloak's volume holds its embedded H2 database (users, clients, and any realm changes made
+  after the initial import). The in-cluster `keycloak-db` is disabled by default. Scale Keycloak to
+  zero before snapshotting (`kubectl scale deploy/<release>-keycloak -n <namespace> --replicas=0`),
+  then back to one. A snapshot of a live H2 file may not be consistent.
 - snapshot consistency depends on the application state at the time of capture
 - database-native exports are safer than raw snapshots when you need logical consistency
 
@@ -75,10 +78,16 @@ Back up the following separately:
 - deployer-created secrets:
   - `<release>-nats-auth-keys`
   - `<release>-opendso-license`
-  - `<release>-apps-db-credentials`
   - `<release>-*-keycloak-env`
+- `<release>-apps-db-credentials`, if you created it with `scripts/provision-cloud-sql.sh`
 - release TLS secret and TLS alias secrets if chart-managed
 - user-supplied values used for the deployment
+
+The `<release>-*-keycloak-env` secrets matter most when restoring Keycloak. Each one holds a
+per-service client secret that is also stored inside Keycloak's own database. A fresh install
+generates new values. If you restore Keycloak's data but not these secrets, services will fail to
+authenticate to Keycloak and NATS. The deployer reuses any of these secrets that already exist, so
+restore them before redeploying.
 
 Example:
 
@@ -92,7 +101,7 @@ kubectl get configmap <configmap-name> -n <namespace> -o yaml > <configmap-name>
 For a full environment rebuild, restore in this order:
 
 1. namespace and prerequisites
-2. TLS and required secrets
+2. TLS and required secrets, including the deployer-created secrets from section 5, so the deployer reuses them instead of generating new ones
 3. Helm release
 4. stateful database content
 5. Keycloak persistent data if restoring from PVC snapshot path

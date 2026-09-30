@@ -95,7 +95,13 @@ wait_for_deployment  "${APP_INSTANCE_NAME}-nats"
 log ""
 log "=== Checking databases ==="
 
-wait_for_statefulset "${APP_INSTANCE_NAME}-opendso-apps-db" || true
+# opendso-apps-db only exists as an in-cluster StatefulSet when no external
+# (Cloud SQL) database is configured; `|| true` can't skip it, since fail() exits.
+if kubectl get statefulset "${APP_INSTANCE_NAME}-opendso-apps-db" -n "$NAMESPACE" &>/dev/null; then
+    wait_for_statefulset "${APP_INSTANCE_NAME}-opendso-apps-db"
+else
+    log "  ${APP_INSTANCE_NAME}-opendso-apps-db — not deployed, external database in use (skipping)"
+fi
 # keycloak-db is optional — only check if the statefulset exists
 if kubectl get statefulset "${APP_INSTANCE_NAME}-keycloak-db" -n "$NAMESPACE" &>/dev/null; then
     wait_for_statefulset "${APP_INSTANCE_NAME}-keycloak-db"

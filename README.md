@@ -53,7 +53,12 @@ The deployer will:
 - Generate per-service Keycloak client secrets and pre-populate the realm
 - Create all `*-keycloak-env` Kubernetes secrets before services start
 - Deploy all services via Helm in a single pass (no post-install step required)
-- Run post-deploy verification checks after Helm applies the manifests; readiness is validated by `scripts/verify.sh`, not by `helm --wait`
+
+The deployer does not wait for pods to become ready. The Marketplace UI reports success as soon as
+the manifests are applied, and pods keep starting for about 5–10 more minutes. Most of that is
+Keycloak's first boot: it imports the realm, and its readiness probe waits 120 seconds before the
+first check. Services that depend on Keycloak sit in `Init` until it's ready. Confirm the install is
+healthy with `kubectl get pods -n <namespace>`, or run `scripts/verify.sh <release-name> <namespace>`.
 
 Licensing note:
 
@@ -110,9 +115,15 @@ Once Private Services Access is in place, run the provisioning script:
   --project   my-gcp-project \
   --region    us-central1 \
   --instance  opendso-db \
+  --domain    opendso.example.com \
   --namespace opendso \
   --release   opendso
 ```
+
+`--domain` is required, because the schema seed includes your service URLs. The script prompts for
+the `essuser` password if you don't pass `--db-password`. Record that password: Cloud SQL can't
+show an existing user's password later. It can only be reset
+(`gcloud sql users set-password essuser --instance=<instance> --password=<new>`).
 
 The script:
 
@@ -121,7 +132,11 @@ The script:
 3. Applies the OpenDSO schema (via Cloud SQL Proxy + psql, or via `--run-in-cluster` for private-IP-only instances)
 4. Writes a `<release>-apps-db-credentials` Kubernetes Secret
 
-After the script completes, set the reported private IP in `values-gcp.yaml`:
+**Marketplace installs:** enter the reported private IP as **Apps DB Host**, and the `essuser`
+password as **Apps DB Password**, in the Marketplace form. Nothing else is needed.
+
+**Direct Helm installs:** set the private IP, and reference the secret the script created, in
+`values-gcp.yaml`:
 
 ```yaml
 opendso-apps-db:
@@ -244,7 +259,7 @@ The Cloud SQL instance must be on the same VPC as the GKE cluster (Private IP vi
     ```bash
     helm repo add jetstack https://charts.jetstack.io
     helm install cert-manager jetstack/cert-manager -n cert-manager \
-      --create-namespace --set installCRDs=true
+      --create-namespace --set crds.enabled=true --set crds.keep=true
     ```
 
     Practical production guidance on GKE:
@@ -338,12 +353,20 @@ docker push gcr.io/<your-project>/opendso/deployer:2.0
 Install [mpdev](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools) (GCP Marketplace dev tools):
 
 ```bash
-# Verify the schema
-mpdev verify --deployer=gcr.io/<your-project>/opendso/deployer:2.0
+DEPLOYER=us-docker.pkg.dev/<your-project>/oesinc/deployer:2.0
 
-# Test install into a real cluster
+# mpdev runs in its own container without your Artifact Registry credentials,
+# so pull the deployer on the host first or mpdev's own pull fails as unauthenticated.
+docker pull "$DEPLOYER"
+
+# Verify the schema
+mpdev verify --deployer="$DEPLOYER"
+
+# Test install into a real cluster. Unlike the Marketplace UI, mpdev install
+# does not create the namespace.
+kubectl create namespace test
 mpdev install \
-  --deployer=gcr.io/<your-project>/opendso/deployer:2.0 \
+  --deployer="$DEPLOYER" \
   --parameters='{"name":"opendso-test","namespace":"test","license.key":"secret-license","installation.key":"secret-install","global.domain":"test.example.com","keycloak.config.adminPassword":"secret","opendso-apps-db.externalDatabase.host":"<CLOUD-SQL-IP>","opendso-apps-db.externalDatabase.password":"secret"}'
 ```
 
