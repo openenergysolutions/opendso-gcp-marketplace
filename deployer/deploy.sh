@@ -438,6 +438,15 @@ CURRENT_STEP="helm upgrade --install"
 # mpdev install creates the Application before the deployer job runs, without
 # Helm ownership labels. Without adoption, helm upgrade --install fails with
 # "invalid ownership metadata" on the Application resource.
+#
+# Adoption alone isn't enough, though: it only satisfies Helm's own
+# meta.helm.sh ownership check. Helm still applies via server-side apply, which
+# separately tracks *field* ownership per field manager. mpdev's own creation
+# of the Application already set fields Helm's chart template for it also
+# sets (e.g. .spec.componentKinds), under a field manager Helm doesn't
+# recognize -- so even a freshly-adopted, first-ever install hits a real SSA
+# conflict on every single deploy, not just re-installs. --force-conflicts on
+# the helm invocation below is what actually resolves it.
 kubectl annotate application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
@@ -451,6 +460,7 @@ kubectl label application.app.k8s.io "$APP_INSTANCE_NAME" \
 helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --namespace "$NAMESPACE" \
     --timeout 15m \
+    --force-conflicts \
     -f "$CHART_DIR/values-gcp.yaml" \
     -f "$USER_VALUES" \
     -f "$NATS_AUTH_VALUES" \
