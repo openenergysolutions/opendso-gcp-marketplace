@@ -11,9 +11,12 @@ metadata:
     # The icon the GKE console's Applications page shows for this app.
     kubernetes-engine.cloud.google.com/icon: >-
       data:image/png;base64,{{ .Files.Get "assets/icon.png" | b64enc }}
-    # Links the deployed app to its Marketplace listing. partner_id is the
-    # Producer Portal Partner ID; product_id is the listing's product ID.
-    marketplace.cloud.google.com/deploy-info: '{"partner_id": "g2wzhtgDvm", "product_id": "opendso-platform-byol", "partner_name": "Open Energy Solutions, Inc."}'
+    # Links the deployed app to its Marketplace listing. Per Marketplace
+    # support: partner_id is the provider ID and product_id the listing ID --
+    # the two segments of the listing URL
+    # (.../marketplace/.../openenergysolutionsinc-public/opendso-platform-byol),
+    # not the Producer Portal account Partner ID.
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "openenergysolutionsinc-public", "product_id": "opendso-platform-byol", "partner_name": "Open Energy Solutions, Inc."}'
 spec:
   descriptor:
     type: OpenDSO
