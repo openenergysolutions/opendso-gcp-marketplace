@@ -1,4 +1,4 @@
-{{- if not .Values.externalDatabase.enabled }}
+{{- if not (and .Values.externalDatabase.enabled .Values.externalDatabase.host) }}
 apiVersion: v1
 kind: Service
 metadata:

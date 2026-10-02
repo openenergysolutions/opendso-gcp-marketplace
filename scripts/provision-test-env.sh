@@ -74,7 +74,7 @@ done
 
 TLS_SECRET="${RELEASE}-tls-secret"
 AR_HOST="${REGION}-docker.pkg.dev"
-DEPLOYER_IMAGE="${AR_HOST}/${PROJECT}/${AR_REPO}/deployer:1.0.0"
+DEPLOYER_IMAGE="${AR_HOST}/${PROJECT}/${AR_REPO}/deployer:2.0"
 
 # ---------------------------------------------------------------------------
 # 1. Ensure default VPC network exists
@@ -254,10 +254,7 @@ cat <<EOF
         "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
         "global.domain": "${DOMAIN}",
         "global.resourceProfile": "minimal",
-        "keycloak.config.adminPassword": "changeme",
-        "mongodb.auth.rootPassword": "changeme",
-        "mongodb.auth.password": "changeme",
-        "grafana.adminPassword": "changeme"
+        "keycloak.config.adminPassword": "changeme"
       }'
 EOF
 echo ""
@@ -274,10 +271,7 @@ cat <<EOF
         "global.imageRegistry": "${AR_HOST}/${PROJECT}/${AR_REPO}",
         "global.domain": "${DOMAIN}",
         "global.resourceProfile": "minimal",
-        "keycloak.config.adminPassword": "changeme",
-        "mongodb.auth.rootPassword": "changeme",
-        "mongodb.auth.password": "changeme",
-        "grafana.adminPassword": "changeme"
+        "keycloak.config.adminPassword": "changeme"
       }'
 EOF
 echo "=========================================================================="

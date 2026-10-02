@@ -207,25 +207,8 @@ data:
 {{ .Files.Get (printf "configs/%s/historian-svc/envoy.yaml" $site) | indent 4 }}
 {{- end }}
 
-# CVR Service ConfigMap
-{{- if (index .Values.global "cvr-svc").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-cvr-svc-site-config
-  labels:
-    app.kubernetes.io/name: cvr-svc
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  app.yaml: |
-{{- $cvrApp := .Files.Get (printf "configs/%s/cvr-svc/app.yaml" $site) }}
-{{ tpl $cvrApp . | indent 4 }}
-{{- end }}
-
-# OmegaDSS ConfigMap (used by omegadss-svc and cvr-svc)
-{{- if or (index .Values.global "omegadss-svc").enabled (index .Values.global "cvr-svc").enabled }}
+# OmegaDSS ConfigMap
+{{- if (index .Values.global "omegadss-svc").enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -238,51 +221,6 @@ metadata:
 data:
   omegadss.json: |
 {{ .Files.Get (printf "configs/%s/omegadss/omegadss.json" $site) | indent 4 }}
-{{- end }}
-
-# CVR OpenFMB Services ConfigMap
-{{- if (index .Values.global "cvr-openfmb-services-svc").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-cvr-openfmb-services-svc-site-config
-  labels:
-    app.kubernetes.io/name: cvr-openfmb-services-svc
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  app.yaml: |
-{{- $cvrOpenfmbApp := .Files.Get (printf "configs/%s/cvr-openfmb-services-svc/app.yaml" $site) }}
-{{ tpl $cvrOpenfmbApp . | indent 4 }}
-{{- end }}
-
-# CVR Genetic Algorithm Service ConfigMap (DSS files)
-{{- if (index .Values.global "cvr-svc").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-cvr-genetic-algorithm-svc-site-config
-  labels:
-    app.kubernetes.io/name: cvr-genetic-algorithm-svc
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  IEEE13Nodeckt.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEE13Nodeckt.dss" $site) | indent 4 }}
-  IEEELineCodes.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEELineCodes.dss" $site) | indent 4 }}
-  LineConstantsCode.DSS: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/LineConstantsCode.DSS" $site) | indent 4 }}
-  PVsystem.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/PVsystem.dss" $site) | indent 4 }}
-  run.dss: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/run.dss" $site) | indent 4 }}
-  Load1.csv: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/Load1.csv" $site) | indent 4 }}
-  IEEE13Node_BusXY.csv: |
-{{ .Files.Get (printf "configs/%s/cvr-genetic-algorithm-svc/IEEE13Node_BusXY.csv" $site) | indent 4 }}
 {{- end }}
 
 # RPCDSS Service ConfigMap
@@ -332,25 +270,10 @@ data:
 {{ tpl $derDispatchConfig . | indent 4 }}
 {{- end }}
 
-# MongoDB Init Script ConfigMap
-{{- if (index .Values.global "mongodb").enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-mongodb-init
-  labels:
-    app.kubernetes.io/name: mongodb
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-data:
-  mongo-init.js: |
-{{- $mongoInit := .Files.Get (printf "configs/%s/mongodb/mongo-init.js" $site) }}
-{{ tpl $mongoInit . | indent 4 }}
-{{- end }}
-
 # OpenDSO Apps DB Init Script ConfigMap
-{{- if and (index .Values.global "opendso-apps-db").enabled (not (dig "opendso-apps-db" "externalDatabase" "enabled" false (.Values | toYaml | fromYaml))) }}
+{{- $appsDbVals := .Values | toYaml | fromYaml -}}
+{{- $appsDbExternal := and (dig "opendso-apps-db" "externalDatabase" "enabled" false $appsDbVals) (dig "opendso-apps-db" "externalDatabase" "host" "" $appsDbVals) -}}
+{{- if and (index .Values.global "opendso-apps-db").enabled (not $appsDbExternal) }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -362,6 +285,20 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
 {{ (.Files.Glob (printf "configs/%s/opendso-apps-db/schema/*.sql" $site)).AsConfig | indent 2 }}
+  # gms-api seed is templated (Helm values -> env-specific URLs) via tpl, unlike
+  # the verbatim schema files above. Keyed 40_* so the entrypoint runs it after
+  # the schema DDL (30_gms_api.sql). Values are resolved nil-safely with dig (the
+  # chart's existing idiom) and passed as a flat context, so the seed renders
+  # regardless of partial value sets (e.g. a clobbered global.keycloak block).
+  40_gms_api_seed.sql: |
+{{- $domain := .Values.global.domain | default (dig "domain" "" (.Values.ingress | default dict)) }}
+{{- $seedCtx := dict
+      "clientId" (dig "keycloak" "clientIds" "api" "gms" .Values.global)
+      "realm" (dig "keycloak" "realm" "oes" .Values.global)
+      "domain" $domain
+      "site" (.Values.global.site | default "ieee13")
+      "natsAuth" (dig "nats-auth-svc" "enabled" false .Values.global) }}
+{{ tpl (.Files.Get (printf "configs/%s/opendso-apps-db/seed/40_gms_api_seed.sql" $site)) (dict "ctx" $seedCtx) | indent 4 }}
 {{- end }}
 
 # Asset Health Service ConfigMap

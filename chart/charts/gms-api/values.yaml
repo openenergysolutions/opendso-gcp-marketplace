@@ -3,7 +3,7 @@
 global:
   keycloak:
     url: ""
-    internalUrl: ""
+    internalUrl: "" # computed as http://<release>-keycloak-svc:8080 when unset
     realm: "oes"
     clientIds:
       ui: "gms"
@@ -30,28 +30,55 @@ podAnnotations: {}
 podSecurityContext: {}
 securityContext: {}
 
+# OES license / entitlement. gms-api uses LICENSE_KEY, INSTALLATION_KEY and
+# ENTITLEMENT_SERVICE_URL at runtime to validate licenses and filter apps.
+# These are operator-provided secrets, not created by this chart.
+# Set license.secretName to the name of a Secret holding those keys;
+# it is added to the container's envFrom. Leave empty to skip.
+license:
+  secretName: ""
+
+# Entitlement service configuration (license validation endpoint).
+# Set entitlementServiceUrl to enable license-based app filtering.
+entitlement:
+  serviceUrl: ""
+  cacheTtlMs: ""
+
 service:
   type: ClusterIP
   port: 8000
 
 containerPort: 8000
 
+# Orchestration backend used by the /api/orchestration endpoints.
+orchestration:
+  # "kubernetes" queries the local API server in-cluster via the pod's service
+  # account; "docker" talks to a Docker daemon (legacy, not usable on GKE).
+  backend: kubernetes
+  # Namespace to scope pod queries to. Empty = all namespaces (requires the
+  # cluster-scoped RBAC below).
+  namespace: ""
+  rbac:
+    # Create the Role/ClusterRole + binding granting the service account access
+    # to pods and pod logs. Required for backend: kubernetes.
+    create: true
+    # "cluster" = ClusterRole/ClusterRoleBinding (all namespaces);
+    # "namespace" = Role/RoleBinding scoped to the release namespace.
+    # Namespace-scoped by default: this chart is distributed as a GCP
+    # Marketplace listing, and the deployer's service account is not granted
+    # permission to create cluster-scoped RBAC resources.
+    scope: namespace
+
 # Service configuration
 config:
   server:
     port: 8000
     host: "0.0.0.0"
-  mongodb:
-    uri: "mongodb://opendso-mongodb:27017"
-    dbName: "settings_api"
-    username: ""
-    password: ""
-    # Create a Secret for MongoDB credentials (recommended for production)
-    createSecret: false
-    # Use an existing Secret for MongoDB credentials
-    existingSecret: ""
-    usernameKey: "mongodb-username"
-    passwordKey: "mongodb-password"
+  postgres:
+    # Connection (host/port/user/password) is resolved from the shared
+    # opendso-apps-db via the opendso.appsDb.settings helper. Only the database
+    # name is gms-api-specific.
+    database: "settings_api"
   nats:
     url: ""
   tls:

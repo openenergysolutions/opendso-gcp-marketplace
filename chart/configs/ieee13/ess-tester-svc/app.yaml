@@ -1,7 +1,6 @@
 oes-app:
   log_level: info
-  log_file: ess-tester.log
-  log_file_enabled: false
+  app_name: "ess-testing"
 nats:
   connection_url: nats://{{ .Release.Name }}-nats-service:4222
   creds: ''

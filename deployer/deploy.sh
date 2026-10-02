@@ -434,18 +434,19 @@ echo ""
 echo "[3/3] Running helm upgrade --install..."
 CURRENT_STEP="helm upgrade --install"
 
-# Delete any existing Jobs from this release before upgrading.
-# Kubernetes Jobs have immutable specs; Helm cannot patch them on upgrade.
-# The mongodb-init job runs once on first install and is idempotent.
-kubectl delete jobs \
-    "${APP_INSTANCE_NAME}-mongodb-init" \
-    -n "$NAMESPACE" \
-    --ignore-not-found 2>/dev/null || true
-
 # Adopt any Application resource pre-created by mpdev into Helm management.
 # mpdev install creates the Application before the deployer job runs, without
 # Helm ownership labels. Without adoption, helm upgrade --install fails with
 # "invalid ownership metadata" on the Application resource.
+#
+# Adoption alone isn't enough, though: it only satisfies Helm's own
+# meta.helm.sh ownership check. Helm still applies via server-side apply, which
+# separately tracks *field* ownership per field manager. mpdev's own creation
+# of the Application already set fields Helm's chart template for it also
+# sets (e.g. .spec.componentKinds), under a field manager Helm doesn't
+# recognize -- so even a freshly-adopted, first-ever install hits a real SSA
+# conflict on every single deploy, not just re-installs. --force-conflicts on
+# the helm invocation below is what actually resolves it.
 kubectl annotate application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     "meta.helm.sh/release-name=${APP_INSTANCE_NAME}" \
@@ -459,6 +460,7 @@ kubectl label application.app.k8s.io "$APP_INSTANCE_NAME" \
 helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --namespace "$NAMESPACE" \
     --timeout 15m \
+    --force-conflicts \
     -f "$CHART_DIR/values-gcp.yaml" \
     -f "$USER_VALUES" \
     -f "$NATS_AUTH_VALUES" \
@@ -470,8 +472,6 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
     --set nats.tls.secretName="${APP_INSTANCE_NAME}-tls-secret" \
     --set historian-svc.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
     --set keycloak.tls.existingSecret="${APP_INSTANCE_NAME}-tls-secret" \
-    --set grafana.admin.existingSecret="${APP_INSTANCE_NAME}-grafana-credentials" \
-    --set "grafana.envValueFrom.OPENDSO_APPS_DB_PASSWORD.secretKeyRef.name=${APP_INSTANCE_NAME}-grafana-credentials" \
     --set global.tls.createSecrets=true \
     ${IMAGE_REGISTRY:+--set global.imageRegistry="${IMAGE_REGISTRY}"}
 
@@ -483,8 +483,8 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
 kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     --type merge \
-    --patch "{\"spec\":{\"descriptor\":{\"version\":\"1.0.0\"}}}" >/dev/null 2>&1 || \
-  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to 1.0.0)"
+    --patch "{\"spec\":{\"descriptor\":{\"version\":\"2.0.0\"}}}" >/dev/null 2>&1 || \
+  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to 2.0.0)"
 
 # ---------------------------------------------------------------------------
 # 3d. Add Application ownerReferences to all Helm-managed resources

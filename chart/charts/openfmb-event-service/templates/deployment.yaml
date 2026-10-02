@@ -17,6 +17,7 @@ spec:
       {{- end }}
       labels:
         {{- include "openfmb-event-service.selectorLabels" . | nindent 8 }}
+        {{- include "opendso.partnerLabels" . | nindent 8 }}
     spec:
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
@@ -44,6 +45,31 @@ spec:
                 sleep 5
               done
               echo "Keycloak is ready"
+        {{- if dig "nats-auth-svc" "enabled" false .Values.global }}
+        # openfmb-event-service's NATS client only uses its token handler on the
+        # first connect attempt; its retries fall back to no auth, which
+        # nats-auth-svc rejects forever. Hold startup until nats-auth-svc is
+        # actually connected so that first attempt succeeds.
+        - name: wait-for-nats-auth
+          image: {{ include "opendso.image" (dict "imageRoot" .Values.global.images.busybox "registry" .Values.global.imageRegistry) | quote }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for nats-auth-svc to connect to NATS (monitoring: {{ .Release.Name }}-nats-service-mon:8222)..."
+              until wget -qO - http://{{ .Release.Name }}-nats-service-mon:8222/connz 2>/dev/null | grep -qE '"num_connections": *[1-9]'; do
+                echo "nats-auth-svc not connected yet, retrying in 3s..."
+                sleep 3
+              done
+              echo "nats-auth-svc is connected and ready"
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

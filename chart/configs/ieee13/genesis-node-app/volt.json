@@ -18,10 +18,6 @@
       "value": {
         "options": [
         {
-          "label": "CVR",
-          "value": "CVR"
-        },
-        {
           "label": "Setpoint",
           "value": "Setpoint"
         }

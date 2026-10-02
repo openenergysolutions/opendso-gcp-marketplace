@@ -2,7 +2,7 @@
 
 **Purpose:** Step-by-step guide for preparing your GKE cluster before deploying OpenDSO from the GCP Marketplace. Complete every step and verify each checkpoint before clicking **Deploy** in the Marketplace UI.
 
-**Time estimate:** 30–60 minutes for a fresh cluster (mostly waiting on DNS propagation).
+**Time estimate:** 60–90 minutes for a fresh cluster (mostly waiting on Cloud SQL provisioning and DNS propagation).
 
 ---
 
@@ -25,22 +25,68 @@ Request the following from Open Energy Solutions before proceeding:
 ```bash
 # Verify cluster access
 kubectl cluster-info
-kubectl version --short
+kubectl version
 ```
 
 - [ ] Cluster has sufficient capacity for the chosen resource profile:
 
-| Profile | Approximate node requirement |
-|---|---|
-| `minimal` | 2× e2-standard-4 (8 vCPU / 32 GB total) |
-| `default` | 3× e2-standard-4 |
-| `production` | 4–6× e2-standard-8 (with autoscaling recommended) |
+| Profile | Total pod requests | Approximate node requirement |
+|---|---|---|
+| `minimal` | ~1.8 vCPU / ~3 GB | 2× e2-standard-4 (8 vCPU / 32 GB total) |
+| `default` | ~5 vCPU / ~6 GB | 3× e2-standard-4 |
+| `production` | ~8.5 vCPU / ~10 GB | 4–6× e2-standard-8 (with autoscaling recommended) |
+
+> Leave headroom beyond the total requests. Updates roll pods over by starting a new one before
+> stopping the old one, so an upgrade briefly needs more capacity than steady state. A cluster sized
+> exactly to the requests (or built from many very small nodes) can get stuck mid-rollout with pods
+> in `Pending`.
 
 - [ ] Target **namespace** created:
 
 ```bash
 kubectl create namespace <namespace>
 ```
+
+- [ ] (Recommended) **GKE cost allocation** is enabled. Every OpenDSO pod carries the Marketplace
+  consumption-tracking label (`goog-partner-solution`). GKE only passes pod labels through to your
+  billing data when cost allocation is on. It doesn't disrupt running workloads:
+
+```bash
+gcloud container clusters update <cluster-name> --zone=<zone> --project=<project-id> --enable-cost-allocation
+```
+
+---
+
+## Step 1b — Cloud NAT and Cloud SQL
+
+Full commands for this step are in the [README's Prerequisites](README.md#prerequisites) section.
+
+- [ ] **Cloud NAT** covers the cluster's VPC and region. GKE nodes have no outbound internet access
+  by default, and OpenDSO's license validation needs it. Without NAT, `topology-nodes` fails with a
+  TLS error that looks like a certificate problem. Check with:
+
+```bash
+gcloud compute routers nats list --router=<router> --region=<region> --project=<project-id>
+```
+
+- [ ] **Private Services Access** is set up on the cluster's VPC. Cloud SQL needs this to get a
+  private IP. Check with:
+
+```bash
+gcloud services vpc-peerings list --network=<network> --project=<project-id>
+```
+
+- [ ] A **Cloud SQL PostgreSQL 16** instance exists on the same VPC, with a **private IP only**, and
+  its databases and schema are initialized (`scripts/provision-cloud-sql.sh`). If instance creation
+  fails with `constraints/sql.restrictPublicIp`, your org requires private IP. That's expected, and
+  the provisioning script already handles it once Private Services Access is in place.
+- [ ] Record the connection details you'll enter in the Marketplace form:
+
+**Cloud SQL private IP:** `_______________________`
+**`essuser` password:** (keep it in your password manager, not here)
+
+> Cloud SQL can't show you an existing user's password. If you lose it, reset it with
+> `gcloud sql users set-password essuser --instance=<instance> --password=<new-password>`.
 
 ---
 
@@ -235,7 +281,7 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 helm install cert-manager jetstack/cert-manager \
   -n cert-manager --create-namespace \
-  --set installCRDs=true
+  --set crds.enabled=true --set crds.keep=true
 ```
 
 - [ ] Verify cert-manager pods are running:
@@ -342,7 +388,6 @@ If you are only testing a single hostname and are not using the full wildcard mo
 
 - `api.<domain>`
 - `keycloak.<domain>`
-- `grafana.<domain>`
 - `nats.<domain>`
 - UI app subdomains
 
@@ -384,7 +429,7 @@ All OpenDSO images are hosted by OES in their GCP Artifact Registry. Your GKE cl
 
 ### Model A — Deploying via GCP Marketplace listing (standard)
 
-No action required on your side for image access. When you deploy through the Marketplace UI, GCP automatically grants your cluster pull access to the OES image registry. The Image Registry field in the Marketplace UI will be pre-populated.
+No action required on your side for image access. When you deploy through the Marketplace UI, images are pulled from Google's Marketplace-managed copy of the OES registry, and GCP grants your cluster access automatically. Leave the **Image Registry** field in the Marketplace UI blank.
 
 - [ ] Confirm with OES that the Marketplace listing is active and your GCP project is authorized
 
@@ -413,8 +458,8 @@ gcloud container clusters describe <cluster-name> \
 - [ ] Once OES confirms, verify your node can pull a test image:
 
 ```bash
-gcloud auth configure-docker us-central1-docker.pkg.dev
-docker pull us-central1-docker.pkg.dev/<PROJECT_ID>/oesinc/nats:<tag>
+gcloud auth configure-docker us-docker.pkg.dev
+docker pull us-docker.pkg.dev/openenergysolutionsinc-public/oesinc/nats:<tag>
 ```
 
 ---
@@ -446,6 +491,8 @@ Run through this summary before clicking **Deploy** in the Marketplace UI:
 | License Key and Installation Key obtained from OES | ☐ |
 | GKE cluster running (Kubernetes 1.24+) | ☐ |
 | Target namespace created | ☐ |
+| Cloud NAT covers the cluster's VPC/region | ☐ |
+| Cloud SQL (private IP) provisioned and schema initialized; IP and `essuser` password on hand | ☐ |
 | nginx ingress controller installed, LoadBalancer IP assigned | ☐ |
 | Wildcard DNS `*.<domain>` → LoadBalancer IP, propagated | ☐ |
 | `<release-name>-tls-secret` exists in target namespace | ☐ |
@@ -464,13 +511,15 @@ When you click **Deploy**, you will be prompted for the following. Have these va
 | Namespace | Your target namespace |
 | Domain Name | Your base domain (e.g. `opendso.example.com`) |
 | OpenDSO License Key | Provided by OES |
-| OpenDSO Installation Key | Provided by OES |
+| OpenDSO Installation Key | Provided by OES. Use a fresh, unused key for each installation. A key is locked to the first environment that uses it |
+| Keycloak Admin Username | Defaults to `admin` |
 | Keycloak Admin Password | Choose a strong password |
-| MongoDB Root Password | Choose a strong password |
-| MongoDB App Password | Choose a strong password |
-| Grafana Admin Password | Choose a strong password |
-| Resource Profile | `minimal` / `default` / `production` |
-| Image Registry | Model A: pre-populated by Marketplace. Model B: `us-central1-docker.pkg.dev/<PROJECT_ID>/oesinc` |
+| Apps DB Host | Cloud SQL **private** IP from Step 1b |
+| Apps DB Username | Defaults to `essuser` |
+| Apps DB Password | The `essuser` password from Step 1b |
+| Apps DB Name | Defaults to `ess_tester`. Leave as-is |
+| Resource Profile | `minimal` / `default` / `production` (default: `default`) |
+| Image Registry | Model A: leave blank. Model B: `us-docker.pkg.dev/openenergysolutionsinc-public/oesinc` |
 
 ---
 
@@ -484,8 +533,8 @@ bash scripts/verify.sh <release-name> <namespace>
 
 The script checks:
 
-1. MongoDB StatefulSet readiness
-2. Keycloak and NATS Deployment readiness
+1. Keycloak and NATS Deployment readiness
+2. In-cluster Apps DB and Keycloak DB StatefulSet readiness, if deployed (skipped when using Cloud SQL)
 3. GMS API, Historian, and NATS Auth Service readiness
 4. NATS auth keys secret existence
 5. Keycloak OIDC discovery endpoint (via port-forward)

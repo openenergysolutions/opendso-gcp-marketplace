@@ -35,27 +35,6 @@ properties:
       type: MASKED_FIELD
     default: testpass
 
-  mongodb.auth.rootPassword:
-    type: string
-    title: MongoDB Root Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-    default: testpass
-
-  mongodb.auth.password:
-    type: string
-    title: MongoDB App Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-    default: testpass
-
-  grafana.adminPassword:
-    type: string
-    title: Grafana Admin Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-    default: testpass
-
   global.resourceProfile:
     type: string
     title: Resource Profile

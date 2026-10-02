@@ -8,9 +8,15 @@ metadata:
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
+    # The icon the GKE console's Applications page shows for this app.
     kubernetes-engine.cloud.google.com/icon: >-
-      data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
-    marketplace.cloud.google.com/deploy-info: '{"partner_id": "oesinc", "product_id": "opendso", "partner_name": "Open Energy Solutions Inc."}'
+      data:image/png;base64,{{ .Files.Get "assets/icon.png" | b64enc }}
+    # Links the deployed app to its Marketplace listing. Per Marketplace
+    # support: partner_id is the provider ID and product_id the listing ID --
+    # the two segments of the listing URL
+    # (.../marketplace/.../openenergysolutionsinc-public/opendso-platform-byol),
+    # not the Producer Portal account Partner ID.
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "openenergysolutionsinc-public", "product_id": "opendso-platform-byol", "partner_name": "Open Energy Solutions, Inc."}'
 spec:
   descriptor:
     type: OpenDSO
@@ -30,8 +36,6 @@ spec:
         url: https://{{ index .Values.global "environment" | default dict | dig "apiUrl" "" | trimPrefix "https://api." | printf "oneline.%s" }}
       - description: Keycloak Admin Console
         url: {{ include "opendso.keycloakUrl" . }}/admin
-      - description: Grafana Dashboards
-        url: https://grafana.{{ .Values.global.domain }}
 
   # Selector matches all resources deployed by this release
   selector:
@@ -75,8 +79,6 @@ spec:
       value: {{ index .Values.global "environment" | default dict | dig "apiUrl" (printf "https://api.%s" .Values.global.domain) }}
     - name: NATS WebSocket URL
       value: wss://nats.{{ .Values.global.domain }}
-    - name: Grafana URL
-      value: https://grafana.{{ .Values.global.domain }}
     - name: Site Configuration
       value: {{ .Values.global.site }}
     - name: Resource Profile

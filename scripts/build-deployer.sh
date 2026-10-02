@@ -22,7 +22,7 @@ set -euo pipefail
 PROJECT="openenergysolutionsinc-public"
 LOCATION="us"
 REPO="oesinc"
-TAG="0.1"
+TAG="2.0"
 SERVICE_NAME=""
 PLATFORM="linux/amd64"
 DRY_RUN=false
@@ -82,6 +82,7 @@ run gcloud auth configure-docker "${LOCATION}-docker.pkg.dev" --quiet
 
 step "Building deployer image"
 run docker build \
+    --pull \
     --platform "$PLATFORM" \
     -f deployer/Dockerfile \
     -t "$IMAGE" \

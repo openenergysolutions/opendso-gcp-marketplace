@@ -1,9 +1,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "1.0.0"
+  publishedVersion: "2.0.0"
   publishedVersionMetadata:
-    releaseNote: Initial GKE Marketplace release
+    releaseNote: Migrate gms-api from MongoDB to PostgreSQL and remove the MongoDB dependency; security patches to the deployer and nats-auth-service images
   managedUpdates:
     kalmSupported: false
 
@@ -13,7 +13,7 @@ x-google-marketplace:
   # All images share a single registry prefix (global.imageRegistry).
   # Image paths in values.yaml are relative to the registry:
   #   OES images:     gms-api, historian, ...
-  #   Third-party:    postgres, mongodb/mongodb-community-server, ...
+  #   Third-party:    nats, quay.io/keycloak/keycloak, ...
   #
   # All images must be present in the Artifact Registry repo before deploying.
   # ---------------------------------------------------------------------------
@@ -35,12 +35,6 @@ x-google-marketplace:
         global.images.envoy.repository:
           type: REPO_WITH_REGISTRY
         global.images.envoy.tag:
-          type: TAG
-    "mongodb/mongodb-community-server":
-      properties:
-        global.images.mongodb.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.mongodb.tag:
           type: TAG
     historian:
       properties:
@@ -198,24 +192,6 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.essManagerRedis.tag:
           type: TAG
-    cvr:
-      properties:
-        global.images.cvrSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrSvc.tag:
-          type: TAG
-    genetic-cvr:
-      properties:
-        global.images.cvrGeneticAlgorithmSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrGeneticAlgorithmSvc.tag:
-          type: TAG
-    openfmb-services:
-      properties:
-        global.images.cvrOpenfmbServicesSvc.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.cvrOpenfmbServicesSvc.tag:
-          type: TAG
     omegadss:
       properties:
         global.images.omegadssSvc.repository:
@@ -255,10 +231,14 @@ properties:
   # ---------------------------------------------------------------------------
   global.imageRegistry:
     type: string
-    title: Image Registry
+    title: Image Registry (advanced — leave blank for standard installs)
     description: >
-      Artifact Registry prefix for all images,
-      e.g. us-central1-docker.pkg.dev/my-project/oesinc
+      Leave this blank. All application images are already mirrored and
+      injected automatically by Google Cloud Marketplace at deploy time —
+      you do not need to provide a registry for a standard installation.
+      Only set this if you are pointing at your own private image mirror
+      instead of the one Marketplace provides, e.g.
+      us-central1-docker.pkg.dev/my-project/oesinc
     default: ""
   
   # ---------------------------------------------------------------------------
@@ -317,32 +297,6 @@ properties:
       type: MASKED_FIELD
 
   # ---------------------------------------------------------------------------
-  # MongoDB credentials
-  # ---------------------------------------------------------------------------
-  mongodb.auth.rootUsername:
-    type: string
-    title: MongoDB Root Username
-    default: root
-
-  mongodb.auth.rootPassword:
-    type: string
-    title: MongoDB Root Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-
-  mongodb.auth.username:
-    type: string
-    title: MongoDB App Username
-    default: opendso
-
-  mongodb.auth.password:
-    type: string
-    title: MongoDB App Password
-    x-google-marketplace:
-      type: MASKED_FIELD
-
-
-  # ---------------------------------------------------------------------------
   # Apps DB — Cloud SQL (external PostgreSQL)
   # ---------------------------------------------------------------------------
   opendso-apps-db.externalDatabase.host:
@@ -369,14 +323,6 @@ properties:
     title: Apps DB Name
     default: ess_tester
 
-  # Kept for schema backwards compatibility — was present in prior submissions as MASKED_FIELD.
-  # Grafana has been removed from the chart; this value is accepted but ignored.
-  grafana.adminPassword:
-    type: string
-    title: Grafana Admin Password (unused)
-    x-google-marketplace:
-      type: MASKED_FIELD
-
   # ---------------------------------------------------------------------------
   # Resource profile
   # ---------------------------------------------------------------------------
@@ -396,6 +342,4 @@ required:
   - installation.key
   - global.domain
   - keycloak.config.adminPassword
-  - mongodb.auth.rootPassword
-  - mongodb.auth.password
 

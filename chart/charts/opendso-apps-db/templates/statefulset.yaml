@@ -1,4 +1,4 @@
-{{- if not .Values.externalDatabase.enabled }}
+{{- if not (and .Values.externalDatabase.enabled .Values.externalDatabase.host) }}
 {{- $podSecurityContext := .Values.podSecurityContext | default dict -}}
 {{- $securityContext := .Values.securityContext | default dict -}}
 apiVersion: apps/v1
@@ -21,6 +21,7 @@ spec:
       {{- end }}
       labels:
         {{- include "opendso-apps-db.selectorLabels" . | nindent 8 }}
+        {{- include "opendso.partnerLabels" . | nindent 8 }}
     spec:
       {{- with .Values.global.imagePullSecrets }}
       imagePullSecrets:
