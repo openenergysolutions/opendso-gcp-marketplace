@@ -9,6 +9,13 @@ RUN go install "github.com/nats-io/nkeys/nk@v${NK_VERSION}"
 
 FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
 
+# The base image's Ubuntu 22.04 openssl 3.0.2-0ubuntu1.29 is vulnerable to
+# CVE-2026-84782 (fixed in 0ubuntu1.30). Upgrade the OS openssl packages
+# rather than waiting on a base image rebuild.
+RUN apt-get update \
+    && apt-get install -y --only-upgrade --no-install-recommends libssl3 openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=nk-builder /go/bin/nk /usr/local/bin/nk
 
 # Package chart in the format the deployer_helm runtime expects:
