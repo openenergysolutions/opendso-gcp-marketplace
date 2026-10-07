@@ -325,11 +325,6 @@ global:
       tag: "b04a4b73"
       pullPolicy: IfNotPresent
       digest: "sha256:54909c0797be4922c910444361dd968e54912fab5a40a0b20709e4bad7fbd3b5"
-    essManagerRedis:
-      repository: redis
-      tag: "7.4.9-alpine"
-      pullPolicy: IfNotPresent
-      digest: "sha256:5da8151e855fdb6729d42a86f5fac27709d84b5a4bffedd2bcaa7cd72636ba21"
     # OpenDSS Simulation Services
     omegadssSvc:
       repository: omegadss
@@ -425,8 +420,6 @@ global:
   asset-health-sim-svc:
     enabled: false
   opendso-apps-db:
-    enabled: true
-  ess-manager-redis:
     enabled: true
   # OpenDSS Services
   omegadss-svc:

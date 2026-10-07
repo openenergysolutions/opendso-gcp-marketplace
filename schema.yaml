@@ -186,12 +186,6 @@ x-google-marketplace:
           type: REPO_WITH_REGISTRY
         global.images.ahsApp.tag:
           type: TAG
-    redis:
-      properties:
-        global.images.essManagerRedis.repository:
-          type: REPO_WITH_REGISTRY
-        global.images.essManagerRedis.tag:
-          type: TAG
     omegadss:
       properties:
         global.images.omegadssSvc.repository:

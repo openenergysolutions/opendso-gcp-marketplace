@@ -86,9 +86,6 @@ dependencies:
 - name: opendso-apps-db
   repository: file://charts/opendso-apps-db
   version: 0.1.0
-- name: ess-manager-redis
-  repository: file://charts/ess-manager-redis
-  version: 0.1.0
 - name: rpcdss-svc
   repository: file://charts/rpcdss-svc
   version: 0.1.0
@@ -98,5 +95,5 @@ dependencies:
 - name: nats-auth-svc
   repository: file://charts/nats-auth-svc
   version: 0.1.0
-digest: sha256:c3d774c17cb5136b887f215c1fe1be3d50e90df2eec119c440470abea2c618d4
-generated: "2026-09-24T13:20:01.629488577-04:00"
+digest: sha256:2860694f6608e29a96a0fce45f81a006be9178aabcfcd1463f311124b16cfef8
+generated: "2026-10-07T13:12:50.14247436-04:00"

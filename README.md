@@ -128,7 +128,7 @@ show an existing user's password later. It can only be reset
 The script:
 
 1. Creates the Cloud SQL instance (`--skip-create` to attach to an existing one)
-2. Creates the `ess_tester`, `ofmb_db`, `assets`, `settings_api`, and `opendso` databases
+2. Creates the `ess_tester`, `ofmb_db`, `assets`, `settings_api`, `opendso`, and `ess_manager` databases
 3. Applies the OpenDSO schema (via Cloud SQL Proxy + psql, or via `--run-in-cluster` for private-IP-only instances)
 4. Writes a `<release>-apps-db-credentials` Kubernetes Secret
 

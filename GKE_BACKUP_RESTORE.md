@@ -6,9 +6,8 @@ This document describes practical backup and restore considerations for the stat
 
 The Marketplace package persists data in:
 
-- Cloud SQL PostgreSQL (external — `ess_tester`, `ofmb_db`, `assets`, `settings_api`, `opendso` databases)
+- Cloud SQL PostgreSQL (external — `ess_tester`, `ofmb_db`, `assets`, `settings_api`, `opendso`, `ess_manager` databases)
 - Keycloak persistent volume
-- ESS Manager Redis
 - topology-genesis PVC-backed data
 - openfmb-event-service and asset-health-sim-svc PVC-backed data, only if you enabled them (both
   are off by default: `openfmb-event-service.persistence.enabled` and `global.asset-health-sim-svc.enabled`)
@@ -25,13 +24,13 @@ Preferred options:
 
 ## 3. Cloud SQL Backups
 
-Cloud SQL is the external PostgreSQL provider for OpenDSO (`ess_tester`, `ofmb_db`, `assets`, `settings_api`, `opendso` databases). Use Cloud SQL's built-in automated backups or export manually:
+Cloud SQL is the external PostgreSQL provider for OpenDSO (`ess_tester`, `ofmb_db`, `assets`, `settings_api`, `opendso`, `ess_manager` databases). Use Cloud SQL's built-in automated backups or export manually:
 
 ```bash
 # Export a database to Cloud Storage
 gcloud sql export sql <instance-name> gs://<bucket>/opendso-backup.sql \
   --project=<project-id> \
-  --database=ess_tester,ofmb_db,assets,settings_api,opendso
+  --database=ess_tester,ofmb_db,assets,settings_api,opendso,ess_manager
 ```
 
 Restore example:
@@ -58,7 +57,6 @@ For components that rely mainly on PVC-backed application state, use GKE volume 
 Candidates:
 
 - Keycloak (`<release>-keycloak`)
-- ESS Manager Redis (`data-<release>-ess-manager-redis-0`)
 - topology-genesis (`<release>-topology-genesis`)
 - openfmb-event-service and asset-health-sim-svc, only if their persistence is enabled
 
@@ -111,4 +109,4 @@ For a full environment rebuild, restore in this order:
 
 - Keycloak realm import from config is not the same as restoring a live Keycloak stateful environment
 - deployer-generated secrets are not deleted by `helm uninstall`, so backup/restore plans should account for them separately from Helm state
-- no repo-provided orchestration exists today for point-in-time recovery across PostgreSQL-derived databases and Redis as one consistent unit
+- no repo-provided orchestration exists today for point-in-time recovery across PostgreSQL-derived databases and PVC-backed volumes as one consistent unit

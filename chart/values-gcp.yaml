@@ -214,23 +214,6 @@ historian-svc:
       cpu: 250m
       memory: 256Mi
 
-# ESS Manager Redis (Cache)
-ess-manager-redis:
-  podSecurityContext: {}
-  securityContext: {}
-  persistence:
-    enabled: true
-    # storageClass: standard-rwo  # Uses global.storageClass
-    size: 1Gi
-
-  resources:
-    limits:
-      cpu: 250m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-
 # ESS Manager Service
 ess-manager-svc:
   env:

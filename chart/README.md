@@ -1,12 +1,12 @@
 # OpenDSO Helm Chart
 
-An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 33 subcharts.
+An umbrella Helm chart for deploying the OpenDSO platform on Kubernetes with 32 subcharts.
 
 ## Chart Information
 
 - **Version**: 0.1.0
 - **Type**: Umbrella Chart
-- **Components**: 33 subcharts (all internal)
+- **Components**: 32 subcharts (all internal)
 
 ## Prerequisites
 
@@ -38,7 +38,7 @@ opendso/
 ├── Chart.yaml                    # Chart metadata and dependencies
 ├── Chart.lock                    # Dependency lock file
 ├── values.yaml                   # Default configuration
-├── charts/                       # 33 subcharts
+├── charts/                       # 32 subcharts
 │   ├── nats/                    # Infrastructure services
 │   ├── keycloak/
 │   ├── opendso-apps-db/         # Database services
@@ -55,7 +55,7 @@ opendso/
 
 ## Dependencies
 
-All 33 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there are no external chart dependencies.
+All 32 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there are no external chart dependencies.
 
 ### Internal Subcharts
 
@@ -65,7 +65,7 @@ All 33 subcharts are internal (`file://charts/<name>` in `Chart.yaml`) — there
 - **Topology** (2): topology-genesis, topology-nodes
 - **DER** (2): der-dispatch-app, der-dispatch-svc
 - **Frontend Apps** (10): genesis-node-app, data-viewer-app, event-viewer-app, gis-app, historian-app, inspector-app, inventory-app, one-line-app, openfmb-event-creator-app, schedule-dispatch-app
-- **ESS** (5): ess-manager-svc, ess-tester-svc, ess-manager-app, ess-tester-app, ess-manager-redis
+- **ESS** (4): ess-manager-svc, ess-tester-svc, ess-manager-app, ess-tester-app
 - **Asset Health** (3): asset-health-svc, asset-health-sim-svc, ahs-app
 - **OpenDSS** (2): omegadss-svc, rpcdss-svc
 - **Additional** (2): nats-auth-svc, ods-svc
@@ -158,11 +158,12 @@ configs/
       oes-realm.json            # 79KB - OpenDSO realm
       master-realm.json         # 78KB - Master realm
     opendso-apps-db/schema/
-      00_create_databases.sql   # Creates ess_tester, ofmb_db, assets, and settings_api databases
+      00_create_databases.sql   # Creates ess_tester, ofmb_db, assets, settings_api, opendso, and ess_manager databases
       05_historian.sql          # Historian partition helpers (ofmb_db)
       10_ess_tester.sql         # ESS testing tables
       20_asset_health.sql       # Asset health tables
       30_gms_api.sql            # gms-api (settings_api) tables
+      35_ess_manager.sql        # ess-manager-svc app-config kv_store (ess_manager)
     opendso-apps-db/seed/
       40_gms_api_seed.sql       # gms-api default auth/app-launcher rows (Helm-templated)
     # ... more service configs
@@ -319,7 +320,7 @@ The chart can also generate a self-signed fallback certificate in Marketplace-or
 
 ### values.yaml (Default)
 
-Full configuration with all 33 subcharts available.
+Full configuration with all 32 subcharts available.
 
 ### values-ha.yaml (High Availability Overlay)
 
@@ -354,7 +355,7 @@ The chart now applies a mixed hardening model based on what each image can actua
 
 - Backend services and init containers that are known to support numeric non-root execution are configured with explicit `runAsNonRoot`, `runAsUser`, and `runAsGroup` settings.
 - Frontend images should be built to run as a non-root numeric UID. The recommended nginx-based pattern is an explicit image `USER` plus matching Kubernetes `runAsUser`.
-- Stateful and infrastructure images such as PostgreSQL-derived services, Redis, and NATS may still need image-default startup permissions. For those workloads, the chart keeps a more conservative posture instead of forcing non-root and breaking initialization.
+- Stateful and infrastructure images such as PostgreSQL-derived services and NATS may still need image-default startup permissions. For those workloads, the chart keeps a more conservative posture instead of forcing non-root and breaking initialization.
 
 Baseline hardening that remains in place where compatible includes:
 

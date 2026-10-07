@@ -217,7 +217,7 @@ fi
 # ---------------------------------------------------------------------------
 step "Creating application databases"
 
-for DB in ess_tester ofmb_db assets settings_api opendso; do
+for DB in ess_tester ofmb_db assets settings_api opendso ess_manager; do
     log "database: ${DB}"
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "  [dry-run] gcloud sql databases create ${DB} --project=${PROJECT} --instance=${INSTANCE}"
@@ -265,7 +265,8 @@ if [[ "$SKIP_SCHEMA" != "true" ]]; then
                 "${SCHEMA_DIR}/05_historian.sql" \
                 "${SCHEMA_DIR}/10_ess_tester.sql" \
                 "${SCHEMA_DIR}/20_asset_health.sql" \
-                "${SCHEMA_DIR}/30_gms_api.sql"; do
+                "${SCHEMA_DIR}/30_gms_api.sql" \
+                "${SCHEMA_DIR}/35_ess_manager.sql"; do
                 log "  $(basename "$sql")"
                 kubectl exec -i -n "$NAMESPACE" "$INIT_POD" -- \
                     env PGPASSWORD="${DB_PASSWORD}" \
@@ -350,6 +351,7 @@ PGSQL
                 -f "${SCHEMA_DIR}/10_ess_tester.sql" \
                 -f "${SCHEMA_DIR}/20_asset_health.sql" \
                 -f "${SCHEMA_DIR}/30_gms_api.sql" \
+                -f "${SCHEMA_DIR}/35_ess_manager.sql" \
                 -f "${RENDERED_SEED}"
             unset PGPASSWORD
 
