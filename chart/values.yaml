@@ -297,9 +297,9 @@ global:
     # ESS Applications
     essManagerSvc:
       repository: ess-manager
-      tag: "e9928dc9"
+      tag: "4314655a"
       pullPolicy: IfNotPresent
-      digest: "sha256:71ad53d674dee44c1dbca253dde1a9726d16fda52c235d8577fe4a369569599b"
+      digest: "sha256:4164d90ec37320312ed5902d683a7899c22dc146c60410e3547b8b7542211cdc"
     essManagerApp:
       repository: ess-manager-app
       tag: "v3-03d8fe65"

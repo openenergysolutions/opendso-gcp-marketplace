@@ -79,7 +79,7 @@ IMAGE_SPECS=(
     "inventory-app|v3-03d8fe65|global.images.inventoryApp"
     "one-line-app|v3-03d8fe65|global.images.oneLineApp"
     "openfmb-event-creator-app|v3-03d8fe65|global.images.openfmbEventCreatorApp"
-    "ess-manager|e9928dc9|global.images.essManagerSvc"
+    "ess-manager|4314655a|global.images.essManagerSvc"
     "ess-manager-app|v3-03d8fe65|global.images.essManagerApp"
     "ess-tester|219354c6|global.images.essTesterSvc"
     "batt-testing-app|v3-03d8fe65|global.images.essTesterApp"
