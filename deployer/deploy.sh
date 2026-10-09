@@ -480,11 +480,18 @@ helm upgrade --install "$APP_INSTANCE_NAME" "$CHART_DIR" \
 # spec and omit .spec.descriptor.version, which causes patch_assembly_phase.sh
 # to fail the install with "Application's version 'null' does not match...".
 # Force the published app version onto the live resource after Helm completes.
+# The version comes from the schema baked into this deployer image, so it
+# can't drift from publishedVersion between releases.
+APP_VERSION=$(python3 -c "
+import yaml
+with open('/data/schema.yaml') as f:
+    print(yaml.safe_load(f)['x-google-marketplace']['publishedVersion'])
+")
 kubectl patch application.app.k8s.io "$APP_INSTANCE_NAME" \
     -n "$NAMESPACE" \
     --type merge \
-    --patch "{\"spec\":{\"descriptor\":{\"version\":\"2.0.0\"}}}" >/dev/null 2>&1 || \
-  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to 2.0.0)"
+    --patch "{\"spec\":{\"descriptor\":{\"version\":\"${APP_VERSION}\"}}}" >/dev/null 2>&1 || \
+  echo "  WARNING: could not pre-patch Application version (non-fatal; Helm template sets it to ${APP_VERSION})"
 
 # ---------------------------------------------------------------------------
 # 3d. Add Application ownerReferences to all Helm-managed resources

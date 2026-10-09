@@ -150,7 +150,7 @@ secret, no error. Fix is to add a matching `clients[]` entry (and its `service-a
 
 Symptoms:
 
-- `CrashLoopBackOff` on `opendso-apps-db` (in-cluster) or Redis
+- `CrashLoopBackOff` on `opendso-apps-db` (in-cluster)
 - permission errors such as `chmod ... Operation not permitted`
 - Cloud SQL connection errors (timeout, authentication failure) when using external database
 

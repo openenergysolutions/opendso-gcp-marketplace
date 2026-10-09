@@ -60,6 +60,10 @@ spec:
             - secretRef:
                 name: {{ printf "%s-ess-manager-svc-keycloak-env" .Release.Name }}
                 optional: true
+            # ESS_MANAGER_STORAGE_URL, referenced by app.yaml's storage_url
+            # (created by the umbrella chart's ess-manager-storage-secret.yaml).
+            - secretRef:
+                name: {{ printf "%s-ess-manager-storage" .Release.Name }}
           volumeMounts:
             - name: config
               mountPath: /etc/ess

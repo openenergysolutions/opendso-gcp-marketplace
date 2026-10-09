@@ -19,3 +19,7 @@ GRANT ALL PRIVILEGES ON DATABASE ofmb_db TO essuser;
 -- OpenDSO Data Service database (schema managed by SeaORM migrations on startup)
 CREATE DATABASE opendso;
 GRANT ALL PRIVILEGES ON DATABASE opendso TO essuser;
+
+-- ESS Manager app-config storage database (kv_store table, see 35_ess_manager.sql)
+CREATE DATABASE ess_manager;
+GRANT ALL PRIVILEGES ON DATABASE ess_manager TO essuser;

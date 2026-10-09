@@ -12,7 +12,11 @@ app_settings:
   app_id: 74c879a1-d42e-4043-926d-4063eefcde5f
   region: #290347ae-a0a6-4036-8d0c-0b45bd052376
   process_interval_ms: 1000
-  storage_url: redis://{{ .Release.Name }}-ess-manager-redis:6379
+  # Postgres app-config storage (ess_manager database on opendso-apps-db).
+  # {{ "{{ESS_MANAGER_STORAGE_URL}}" }} is left for ess-manager to fill from
+  # the <release>-ess-manager-storage Secret at startup, so the credentials
+  # never land in this ConfigMap.
+  storage_url: '{{ "{{ESS_MANAGER_STORAGE_URL}}" }}'
 #units: []
 units:
   - mrid: 3bda2cb0-6e39-40ca-84de-d58b99e7e40e

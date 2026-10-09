@@ -3,7 +3,7 @@ name: opendso
 description: OpenDSO - Umbrella Helm Chart
 type: application
 version: 0.1.0
-appVersion: "2.0.0"
+appVersion: "2.0.1"
 keywords:
   - opendso
   - electric-vehicle
@@ -151,10 +151,6 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/opendso-apps-db"
     condition: global.opendso-apps-db.enabled
-  - name: ess-manager-redis
-    version: 0.1.0
-    repository: "file://charts/ess-manager-redis"
-    condition: global.ess-manager-redis.enabled
   - name: rpcdss-svc
     version: 0.1.0
     repository: "file://charts/rpcdss-svc"
