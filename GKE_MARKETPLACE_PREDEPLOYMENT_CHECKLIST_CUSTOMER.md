@@ -32,9 +32,9 @@ kubectl version
 
 | Profile | Total pod requests | Approximate node requirement |
 |---|---|---|
-| `minimal` | ~1.8 vCPU / ~3 GB | 2× e2-standard-4 (8 vCPU / 32 GB total) |
-| `default` | ~5 vCPU / ~6 GB | 3× e2-standard-4 |
-| `production` | ~8.5 vCPU / ~10 GB | 4–6× e2-standard-8 (with autoscaling recommended) |
+| `minimal` | ~1.7 vCPU / ~2.7 GB | 2× e2-standard-4 (8 vCPU / 32 GB total) |
+| `default` | ~4.5 vCPU / ~5 GB | 3× e2-standard-4 |
+| `production` | ~7.5 vCPU / ~8.3 GB | 4–6× e2-standard-8 (with autoscaling recommended) |
 
 > Leave headroom beyond the total requests. Updates roll pods over by starting a new one before
 > stopping the old one, so an upgrade briefly needs more capacity than steady state. A cluster sized
