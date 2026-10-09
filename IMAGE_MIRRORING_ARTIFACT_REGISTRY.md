@@ -75,7 +75,7 @@ Mirror the full set, annotate for Marketplace, add release tags, and refresh tag
   --annotate \
   --service-name services/opendso-platform-byol.endpoints.<project-id>.cloud.goog \
   --tag-marketplace \
-  --version 2.0.0 \
+  --version 2.0.1 \
   --track 2.0 \
   --update-values
 ```
@@ -102,7 +102,7 @@ The script performs operations in this order:
 
 This order matters because annotation changes the image manifest, and therefore changes the digest. This order — and the four-step behavior — is identical in `mirror-k8s-marketplace-images.sh`.
 
-Temporary `tmp-marketplace-*` tags created during annotation are now deleted automatically after the real tag has been updated.
+Temporary `tmp-marketplace-*` tags created during annotation are deleted automatically after the real tag has been updated. If a run is interrupted mid-annotation (for example by a network drop), the temporary tag stays behind and the version tag may point at an unannotated copy; delete the leftover `tmp-marketplace-*` tag and re-run that image with `--annotate`.
 
 **Important — step 1 always re-copies from the original upstream source**, unconditionally, on every run of either script. If you re-run one of these scripts later with only `--tag-marketplace` (forgot it the first time, say) but without `--annotate`, step 1 silently overwrites the already-annotated image in Artifact Registry with a fresh, unannotated copy pulled straight from upstream again — then tags *that* as the release version. The annotation is gone, and nothing errors.
 
@@ -110,7 +110,7 @@ If all you need is to add or fix release tags on images that are already correct
 
 ```bash
 ./scripts/tag-k8s-marketplace-images.sh \
-  --version 2.0.0 \
+  --version 2.0.1 \
   --track 2.0
 ```
 
@@ -134,7 +134,7 @@ Mirror the full set, annotate for Marketplace, add release tags, and refresh tag
   --annotate \
   --service-name services/opendso-platform-byol.endpoints.<project-id>.cloud.goog \
   --tag-marketplace \
-  --version 2.0.0 \
+  --version 2.0.1 \
   --track 2.0 \
   --update-values
 ```
@@ -233,7 +233,7 @@ For a specific image, inspect tags and digest:
 ```bash
 gcloud artifacts docker tags list \
   us-central1-docker.pkg.dev/<project-id>/oesinc/gms-api
-crane digest us-central1-docker.pkg.dev/<project-id>/oesinc/gms-api:2.0.0
+crane digest us-central1-docker.pkg.dev/<project-id>/oesinc/gms-api:2.0.1
 ```
 
 Check Artifact Registry vulnerability findings:

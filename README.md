@@ -340,10 +340,18 @@ opendso-gcp-marketplace/
 
 ## Building the Deployer Image
 
+`scripts/build-deployer.sh` builds the deployer, pushes it to Artifact Registry and adds the
+Marketplace service annotation. Build it once with the full version from `schema.yaml`
+(`publishedVersion`), then point the release track tag (MAJOR.MINOR) at the same digest;
+Marketplace expects both tags, and building twice would produce two different digests.
+
 ```bash
-# From the repo root
-docker build -f deployer/Dockerfile -t gcr.io/<your-project>/opendso/deployer:2.0 .
-docker push gcr.io/<your-project>/opendso/deployer:2.0
+# From the repo root, with schema.yaml publishedVersion set to the release (e.g. 2.0.1)
+./scripts/build-deployer.sh \
+  --service-name opendso-platform-byol.endpoints.<project-id>.cloud.goog \
+  --tag 2.0.1
+
+crane tag us-docker.pkg.dev/<project-id>/oesinc/deployer:2.0.1 2.0
 ```
 
 ---
