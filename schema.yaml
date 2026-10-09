@@ -1,9 +1,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "2.0.0"
+  publishedVersion: "2.0.1"
   publishedVersionMetadata:
-    releaseNote: Migrate gms-api from MongoDB to PostgreSQL and remove the MongoDB dependency; security patches to the deployer and nats-auth-service images
+    releaseNote: Remove Redis; ESS Manager now stores its configuration in PostgreSQL. Upgrade Keycloak to 26.8.0 and Envoy to v1.38.6. Rebuild application and service images with patched OS packages (zlib, OpenSSL, libtiff, expat), and patch the deployer image's OpenSSL.
   managedUpdates:
     kalmSupported: false
 
