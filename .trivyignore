@@ -13,3 +13,13 @@
 # fix needs 0.55.0, not yet available in any nkeys release. Also present
 # in Google's own helm binary as of the last scan that found it.
 CVE-2026-56854
+
+# opt/kubectl/v1.37/kubectl (go1.26.8) and usr/local/bin/helm (go1.27.1),
+# both from Google's deployer_helm base image: Go stdlib net/http and
+# crypto/tls DoS, fixed in go1.26.9 / go1.27.2. The latest base (13.0.12,
+# 2026-10-01) still ships these builds, so this is blocked on Google
+# rebuilding deployer_helm. Our own nk binary is built with go1.26.9 and
+# is not affected. Remove this entry once a rescan of a newer base image
+# comes back clean.
+CVE-2026-78667
+CVE-2026-97031
