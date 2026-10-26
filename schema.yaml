@@ -1,9 +1,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "2.0.1"
+  publishedVersion: "2.0.2"
   publishedVersionMetadata:
-    releaseNote: Remove Redis; ESS Manager now stores its configuration in PostgreSQL. Upgrade Keycloak to 26.8.0 and Envoy to v1.38.6. Rebuild application and service images with patched OS packages (zlib, OpenSSL, libtiff, expat), and patch the deployer image's OpenSSL.
+    releaseNote: Security update. Upgrade NATS to 2.14.8 and rebuild nats-auth-service with Go 1.26.10 to fix Go standard library vulnerabilities (including CVE-2026-56857 and CVE-2026-78663); rebuild the deployer's nk tool with Go 1.26.9.
   managedUpdates:
     kalmSupported: false
 
