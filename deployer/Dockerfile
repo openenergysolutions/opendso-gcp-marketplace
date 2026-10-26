@@ -3,8 +3,9 @@
 # go1.24.12/go1.25.0 respectively — both vulnerable to CVE-2026-39821
 # (fixed in go1.25.13 / go1.26.6). Building from source with a patched
 # toolchain fixes it regardless of which nkeys release tag is used.
-# go1.26.9 also fixes CVE-2026-78667 (net/http DoS) in nk.
-FROM golang:1.26.9 AS nk-builder
+# go1.26.10 also fixes the later Go stdlib CVEs (CVE-2026-78667,
+# CVE-2026-111943) in nk.
+FROM golang:1.26.10 AS nk-builder
 ARG NK_VERSION=0.4.16
 RUN go install "github.com/nats-io/nkeys/nk@v${NK_VERSION}"
 
