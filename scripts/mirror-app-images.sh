@@ -88,7 +88,7 @@ IMAGE_SPECS=(
     "ahs-app|v3-0a7a7531|global.images.ahsApp"
     "omegadss|0fe80780|global.images.omegadssSvc"
     "rpcdss|b205b0c7|global.images.rpcdssSvc"
-    "nats-auth-service|8187085e|global.images.natsAuthSvc"
+    "nats-auth-service|c764b004|global.images.natsAuthSvc"
     "opendso-data-service|b76bae04|global.images.odsSvc"
 )
 
