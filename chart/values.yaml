@@ -343,9 +343,9 @@ global:
       digest: "sha256:9f325a79028c9309b18f8468346fd23f2de511184987254a15a726e3d0a54445"
     natsAuthSvc:
       repository: nats-auth-service
-      tag: "8187085e"
+      tag: "c764b004"
       pullPolicy: IfNotPresent
-      digest: "sha256:e47aa6af93d3d0992486e8104826fae1e1336b03b0a1d4a4b8ee9f4415733664"
+      digest: "sha256:840f835a00a5c287972baa1a55b9b51c8369392b3d076cfe613e90de4a425fa7"
     busybox:
       repository: busybox
       tag: "1.36"
