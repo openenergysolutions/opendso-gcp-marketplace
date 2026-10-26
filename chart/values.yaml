@@ -178,9 +178,9 @@ global:
     # Infrastructure images
     nats:
       repository: nats
-      tag: "2.14.6"
+      tag: "2.14.8"
       pullPolicy: IfNotPresent
-      digest: "sha256:02a89de69b13434ee2f5683647bad7b5d47e25929032ea390ab51f46aeae96db" # sha256:xxx - when set, overrides tag
+      digest: "sha256:0999b9316c4e6dc376b000981f266b847ec8790064cc01d90881d62eef413fa0" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
       tag: "26.8.0"

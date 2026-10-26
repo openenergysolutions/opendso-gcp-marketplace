@@ -56,7 +56,7 @@ DRY_RUN=false
 ANNOTATION=""
 
 IMAGE_SPECS=(
-    "nats|nats|2.14.6|global.images.nats|digest"
+    "nats|nats|2.14.8|global.images.nats|digest"
     "quay.io/keycloak/keycloak|quay.io/keycloak/keycloak|26.8.0|global.images.keycloak|digest"
     "envoyproxy/envoy|envoyproxy/envoy|v1.38.6|global.images.envoy|digest"
     "busybox|busybox|1.36|global.images.busybox|digest"
