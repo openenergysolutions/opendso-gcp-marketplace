@@ -5,9 +5,18 @@
 # toolchain fixes it regardless of which nkeys release tag is used.
 # go1.26.10 also fixes the later Go stdlib CVEs (CVE-2026-78667,
 # CVE-2026-111943) in nk.
+#
+# nkeys releases (through v0.4.17) still require golang.org/x/crypto v0.52.0,
+# which is vulnerable to CVE-2026-56854 (fixed in 0.55.0). Build nk inside a
+# throwaway module that also requires a fixed x/crypto, so Go's minimum
+# version selection picks the newer one.
 FROM golang:1.26.10 AS nk-builder
-ARG NK_VERSION=0.4.16
-RUN go install "github.com/nats-io/nkeys/nk@v${NK_VERSION}"
+ARG NK_VERSION=0.4.17
+ARG X_CRYPTO_VERSION=0.56.0
+WORKDIR /nk
+RUN go mod init nkbuild \
+    && go get "github.com/nats-io/nkeys@v${NK_VERSION}" "golang.org/x/crypto@v${X_CRYPTO_VERSION}" \
+    && go build -o /go/bin/nk github.com/nats-io/nkeys/nk
 
 FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
 
