@@ -23,6 +23,10 @@
 #   --fail-on      Exit 1 when a finding at this severity or higher exists
 #                  (CRITICAL, HIGH, MEDIUM, LOW, NONE; default: HIGH)
 #   --output       table, markdown or json        (default: table)
+#   --markdown-file
+#                  Also append the markdown report to this file (e.g.
+#                  "$GITHUB_STEP_SUMMARY"), so one scan serves both outputs
+#   --jobs         Parallel Artifact Registry queries (default: 8)
 #   --help         Show this help
 #
 # Requires gcloud (authenticated with Artifact Registry read and Container
@@ -37,6 +41,8 @@ VALUES_FILE="chart/values.yaml"
 DEPLOYER_TAG=""
 FAIL_ON="HIGH"
 OUTPUT="table"
+MARKDOWN_FILE=""
+JOBS=8
 
 log()  { echo "  [scan-listing] $*" >&2; }
 step() { echo "" >&2; echo "==> $*" >&2; }
@@ -58,6 +64,8 @@ while [[ $# -gt 0 ]]; do
         --deployer-tag) DEPLOYER_TAG="$2"; shift 2 ;;
         --fail-on) FAIL_ON="$(printf '%s' "$2" | tr '[:lower:]' '[:upper:]')"; shift 2 ;;
         --output) OUTPUT="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')"; shift 2 ;;
+        --markdown-file) MARKDOWN_FILE="$2"; shift 2 ;;
+        --jobs) JOBS="$2"; shift 2 ;;
         --help) usage ;;
         *) fail "Unknown option: $1 (try --help)" ;;
     esac
@@ -95,21 +103,25 @@ log "registry: ${REGISTRY}"
 log "images:   $(wc -l < "$WORK/refs.txt")"
 
 step "Querying Artifact Registry vulnerability scans"
+export REGISTRY PROJECT WORK
+awk '{print NR, $1, $2}' "$WORK/refs.txt" \
+  | xargs -P "$JOBS" -n 3 sh -c '
+      gcloud artifacts docker images describe "${REGISTRY}/$1$2" \
+          --project="$PROJECT" --show-package-vulnerability --format=json \
+          > "$WORK/$0.json" 2> "$WORK/$0.err" || touch "$WORK/$0.failed"'
 i=0
 while read -r repo ref; do
     i=$((i + 1))
-    if ! gcloud artifacts docker images describe "${REGISTRY}/${repo}${ref}" \
-            --project="$PROJECT" --show-package-vulnerability --format=json \
-            > "$WORK/$i.json" 2> "$WORK/$i.err"; then
+    if [[ -e "$WORK/$i.failed" ]]; then
         cat "$WORK/$i.err" >&2
         fail "could not describe ${REGISTRY}/${repo}${ref}"
     fi
     echo "${repo} ${ref} $WORK/$i.json" >> "$WORK/index.txt"
 done < "$WORK/refs.txt"
 
-python3 - "$WORK/index.txt" "$FAIL_ON" "$OUTPUT" <<'PY'
+python3 - "$WORK/index.txt" "$FAIL_ON" "$OUTPUT" "$MARKDOWN_FILE" <<'PY'
 import json, sys
-index_path, fail_on, output = sys.argv[1:4]
+index_path, fail_on, output, markdown_file = sys.argv[1:5]
 order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
 rank = {s: i for i, s in enumerate(order)}
 
@@ -143,29 +155,35 @@ threshold = len(order) if fail_on == "NONE" else rank[fail_on]
 failing = [f for f in findings if rank[f["severity"]] <= threshold]
 not_scanned = [s for s in summary if s["scan"] != "FINISHED_SUCCESS"]
 
+def markdown():
+    lines = ["## Marketplace listing image scan", "",
+             f"{len(summary)} images scanned; {len(failing)} finding(s) at {fail_on} or higher.", ""]
+    if failing:
+        lines += ["| Severity | CVE | Image | Package | Installed | Fixed | Fix available | Path |",
+                  "|---|---|---|---|---|---|---|---|"]
+        lines += [f"| {f['severity']} | {f['id']} | {f['image']} | {f['package']} | {f['installed']} "
+                  f"| {f['fixed'] or '-'} | {'yes' if f['fix_available'] else 'no'} | {f['path']} |"
+                  for f in failing]
+    if not_scanned:
+        lines += ["", "Not fully scanned: " + ", ".join(f"{s['image']} ({s['scan']})" for s in not_scanned)]
+    return "\n".join(lines) + "\n"
+
+if markdown_file:
+    with open(markdown_file, "a") as fh:
+        fh.write(markdown())
+
 if output == "json":
     print(json.dumps({"fail_on": fail_on, "images": summary, "findings": findings}, indent=2))
+elif output == "markdown":
+    print(markdown(), end="")
 else:
-    md = output == "markdown"
-    if md:
-        print(f"## Marketplace listing image scan\n")
-        print(f"{len(summary)} images scanned; {len(failing)} finding(s) at {fail_on} or higher.\n")
-        if failing:
-            print("| Severity | CVE | Image | Package | Installed | Fixed | Fix available | Path |")
-            print("|---|---|---|---|---|---|---|---|")
-            for f in failing:
-                print(f"| {f['severity']} | {f['id']} | {f['image']} | {f['package']} | {f['installed']} "
-                      f"| {f['fixed'] or '-'} | {'yes' if f['fix_available'] else 'no'} | {f['path']} |")
-        if not_scanned:
-            print("\nNot fully scanned: " + ", ".join(f"{s['image']} ({s['scan']})" for s in not_scanned))
-    else:
-        print(f"{'SEV':<9} {'CVE':<22} {'IMAGE':<28} {'PACKAGE':<28} {'INSTALLED':<22} {'FIXED':<16} FIX")
-        for f in failing:
-            print(f"{f['severity']:<9} {f['id']:<22} {f['image']:<28} {f['package'][:28]:<28} "
-                  f"{f['installed'][:22]:<22} {(f['fixed'] or '-')[:16]:<16} {'yes' if f['fix_available'] else 'no'}")
-        print(f"\n{len(summary)} images scanned; {len(failing)} finding(s) at {fail_on} or higher.")
-        for s in not_scanned:
-            print(f"not fully scanned: {s['image']} ({s['scan']})")
+    print(f"{'SEV':<9} {'CVE':<22} {'IMAGE':<28} {'PACKAGE':<28} {'INSTALLED':<22} {'FIXED':<16} FIX")
+    for f in failing:
+        print(f"{f['severity']:<9} {f['id']:<22} {f['image']:<28} {f['package'][:28]:<28} "
+              f"{f['installed'][:22]:<22} {(f['fixed'] or '-')[:16]:<16} {'yes' if f['fix_available'] else 'no'}")
+    print(f"\n{len(summary)} images scanned; {len(failing)} finding(s) at {fail_on} or higher.")
+    for s in not_scanned:
+        print(f"not fully scanned: {s['image']} ({s['scan']})")
 
 sys.exit(1 if failing and fail_on != "NONE" else 0)
 PY

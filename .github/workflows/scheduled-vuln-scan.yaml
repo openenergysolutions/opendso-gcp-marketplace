@@ -49,12 +49,11 @@ jobs:
           FAIL_ON: ${{ inputs.fail-on || 'HIGH' }}
         run: |
           set +e
-          ./scripts/scan-listing-images.sh --fail-on "$FAIL_ON" --output json > listing-scan.json
+          ./scripts/scan-listing-images.sh --fail-on "$FAIL_ON" --output json \
+            --markdown-file "$GITHUB_STEP_SUMMARY" > listing-scan.json
           rc=$?
           set -e
           [ "$rc" -le 1 ] || exit "$rc"  # 2 = script error, not findings
-          ./scripts/scan-listing-images.sh --fail-on "$FAIL_ON" --output markdown \
-            >> "$GITHUB_STEP_SUMMARY" || true
           echo "findings=$([ "$rc" -eq 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4

@@ -236,7 +236,7 @@ gcloud artifacts docker tags list \
 crane digest us-central1-docker.pkg.dev/<project-id>/oesinc/gms-api:2.0.1
 ```
 
-Check Artifact Registry vulnerability findings for exactly what the listing ships (the digests pinned in `chart/values.yaml` plus the released deployer). This is what the scheduled `scheduled-vuln-scan.yaml` workflow runs, and it takes about a minute:
+Check Artifact Registry vulnerability findings for exactly what the listing ships (the digests pinned in `chart/values.yaml` plus the released deployer). This is what the scheduled `scheduled-vuln-scan.yaml` workflow runs; it queries images in parallel (`--jobs`, default 8) and takes about 30 seconds:
 
 ```bash
 ./scripts/scan-listing-images.sh                  # table; exits 1 on HIGH or above
