@@ -1,0 +1,119 @@
+name: Scheduled listing vulnerability scan
+
+# Catches new CVEs in what the Marketplace listing actually ships, before
+# Google's review does:
+#   - listing-images: Artifact Registry's own scan (the scanner Marketplace
+#     review uses) of every image digest pinned in chart/values.yaml, plus the
+#     released deployer.
+#   - deployer-drift: rebuilds the deployer from main against the latest
+#     deployer_helm base and runs the same Trivy gate as PRs, so base-image
+#     or toolchain drift shows up before the next release build.
+#
+# Needs the GCP_WIF_PROVIDER secret (already used by build-deployer.yaml) and
+# GCP_SCANNER_SA: a service account with roles/artifactregistry.reader and
+# roles/containeranalysis.occurrences.viewer on openenergysolutionsinc-public.
+# TEAMS_WEBHOOK_URL is optional; when set, failures post a Teams card.
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Monday 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      fail-on:
+        description: 'Fail on findings at this severity or higher (CRITICAL, HIGH, MEDIUM, LOW, NONE)'
+        required: false
+        default: 'HIGH'
+
+permissions:
+  contents: read
+  id-token: write # keyless GCP auth via Workload Identity Federation
+
+jobs:
+  listing-images:
+    name: Scan listing images (Artifact Registry)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SCANNER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Scan pinned listing images and the released deployer
+        id: scan
+        env:
+          FAIL_ON: ${{ inputs.fail-on || 'HIGH' }}
+        run: |
+          set +e
+          ./scripts/scan-listing-images.sh --fail-on "$FAIL_ON" --output json > listing-scan.json
+          rc=$?
+          set -e
+          [ "$rc" -le 1 ] || exit "$rc"  # 2 = script error, not findings
+          ./scripts/scan-listing-images.sh --fail-on "$FAIL_ON" --output markdown \
+            >> "$GITHUB_STEP_SUMMARY" || true
+          echo "findings=$([ "$rc" -eq 1 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: listing-scan
+          path: listing-scan.json
+          if-no-files-found: ignore
+
+      - name: Notify Teams
+        if: steps.scan.outputs.findings == 'true'
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TITLE: Marketplace listing images have new vulnerability findings
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ./scripts/notify-teams.sh
+
+      - name: Fail on findings
+        if: steps.scan.outputs.findings == 'true'
+        run: exit 1
+
+  deployer-drift:
+    name: Rebuild and scan deployer (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # deployer_helm requires an authenticated Google identity to pull; see
+      # build-deployer.yaml for why the zero-role image-puller SA is used.
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_IMAGE_PULLER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate Docker to gcr.io
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build deployer from main against the latest base
+        run: |
+          docker pull gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
+          docker build --platform linux/amd64 -f deployer/Dockerfile -t deployer:scan .
+
+      - name: Scan with Trivy (same gate as PRs)
+        id: trivy
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: deployer:scan
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+        env:
+          TRIVY_DB_REPOSITORY: 'ghcr.io/aquasecurity/trivy-db:2'
+
+      - name: Notify Teams
+        if: failure() && steps.trivy.outcome == 'failure'
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TITLE: Deployer rebuilt from main fails the Trivy gate
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ./scripts/notify-teams.sh
