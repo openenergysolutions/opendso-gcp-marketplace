@@ -183,14 +183,14 @@ global:
       digest: "sha256:0999b9316c4e6dc376b000981f266b847ec8790064cc01d90881d62eef413fa0" # sha256:xxx - when set, overrides tag
     keycloak:
       repository: quay.io/keycloak/keycloak
-      tag: "26.8.0"
+      tag: "26.8.2"
       pullPolicy: IfNotPresent
-      digest: "sha256:2d778b66feb43414980f2c2d04998519f22135daa5ef8875a6d9304ec5486411"
+      digest: "sha256:d0f43e47ec4850b8c09f7720b9bb9673aabeeb5aa33baea0bf82024db0b5bc9d"
     envoy:
       repository: envoyproxy/envoy
-      tag: "v1.38.6"
+      tag: "distroless-v1.38.9"
       pullPolicy: IfNotPresent
-      digest: "sha256:1aeab6b12e823c4c051be6e0651fc8bd800d40fd859d419f429bd07a9af95649"
+      digest: "sha256:ba20b560ea814a6a9e6e8f32c3add1529a0d4100cdc75a5ec877b59db3131047"
     # opendso-apps-db's in-cluster StatefulSet image. Used whenever
     # externalDatabase.host is blank (local/dev/HA, and Marketplace's own
     # automated functionality test, which never supplies Cloud SQL params).
