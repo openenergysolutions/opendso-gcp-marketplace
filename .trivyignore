@@ -8,28 +8,18 @@
 # https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/issues/688
 # (still open as of this cleanup; comment there tracked it as fixed).
 
-# usr/local/bin/nk (ours, built from source): nkeys v0.4.16 (the latest
-# published release) only pulls golang.org/x/crypto v0.52.0; this CVE's
-# fix needs 0.55.0, not yet available in any nkeys release. Also present
-# in Google's own helm binary as of the last scan that found it.
-CVE-2026-56854
-
-# Google's deployer_helm base image (13.0.13, 2026-10-23). Go binaries:
-# opt/kubectl/v1.37/kubectl is built with go1.26.8 and old x/net / x/text
-# (the latest official kubectl, v1.37.1, is also built with go1.26.8), and
-# usr/local/bin/helm with go1.27.2. The Go stdlib fixes need go1.26.9-1.26.10
-# / go1.27.2-1.27.3. Our own nk binary is built with go1.26.10 and is not
-# affected. Remove these once a rescan of a newer base image comes back clean.
-CVE-2026-78667
-CVE-2026-97031
+# Google's deployer_helm base image (13.0.17, 2026-11-09). Its kubectl
+# (v1.37.2, go1.26.10) and helm (go1.27.2) binaries carry old Go modules:
+# golang.org/x/net and golang.org/x/text in kubectl, x/net and the go1.27.2
+# stdlib in helm. Our own nk binary is built with go1.26.10 and is not
+# affected by these. Remove each entry once a rescan of a newer base image
+# no longer reports it.
+CVE-2026-56851
+CVE-2026-78661
 CVE-2026-78669
 CVE-2026-111943
-CVE-2026-56851
 
-# Same base image: Python packages shipped with Google's deployer tooling
-# (setuptools 70.3.0, urllib3 2.7.0, msgpack 1.1.2). Not upgraded here to
-# avoid changing the dependencies of Google's deployer scripts.
+# Same base image: setuptools 70.3.0 vendored with Google's deployer
+# tooling. Not upgraded here to avoid changing the dependencies of Google's
+# deployer scripts.
 CVE-2025-47273
-CVE-2026-97687
-CVE-2026-97689
-GHSA-6v7p-g79w-8964

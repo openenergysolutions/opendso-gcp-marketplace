@@ -1,9 +1,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "2.0.2"
+  publishedVersion: "2.0.3"
   publishedVersionMetadata:
-    releaseNote: Security update. Upgrade NATS to 2.14.8 and rebuild nats-auth-service with Go 1.26.10 to fix Go standard library vulnerabilities (including CVE-2026-56857 and CVE-2026-78663); rebuild the deployer's nk tool with Go 1.26.9.
+    releaseNote: Security update. Upgrade Keycloak to 26.8.2 and switch Envoy to the distroless v1.38.9 image; rebuild the web UI apps, gms-api and ahs-sim on patched base packages (curl, brotli, expat, libxslt, certifi); move the deployer to the latest Google deployer_helm base and rebuild its nk tool with a patched golang.org/x/crypto.
   managedUpdates:
     kalmSupported: false
 
