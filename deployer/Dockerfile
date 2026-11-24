@@ -18,6 +18,24 @@ RUN go mod init nkbuild \
     && go get "github.com/nats-io/nkeys@v${NK_VERSION}" "golang.org/x/crypto@v${X_CRYPTO_VERSION}" \
     && go build -o /go/bin/nk github.com/nats-io/nkeys/nk
 
+# Rebuild the base image's kubectl with a patched Go toolchain. deployer_helm
+# 13.0.18 ships the upstream kubectl v1.37.2 release binary, built with
+# go1.26.10, which Artifact Registry flags for the Go stdlib CVEs fixed in
+# go1.26.11 (CVE-2026-97033 through CVE-2026-97043). Same source version,
+# newer compiler. Drop this stage once the base ships a kubectl built with a
+# fixed Go.
+FROM golang:1.26.11 AS kubectl-builder
+ARG KUBECTL_VERSION=v1.37.2
+ENV GOTOOLCHAIN=local CGO_ENABLED=0
+RUN git clone --depth 1 --branch "${KUBECTL_VERSION}" https://github.com/kubernetes/kubernetes.git /src
+WORKDIR /src
+RUN go build -trimpath -ldflags "-s -w \
+      -X k8s.io/client-go/pkg/version.gitVersion=${KUBECTL_VERSION} \
+      -X k8s.io/component-base/version.gitVersion=${KUBECTL_VERSION} \
+      -X k8s.io/client-go/pkg/version.gitTreeState=clean \
+      -X k8s.io/component-base/version.gitTreeState=clean" \
+      -o /out/kubectl ./cmd/kubectl
+
 FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
 
 # The base image's Ubuntu 22.04 openssl 3.0.2-0ubuntu1.29 is vulnerable to
@@ -28,6 +46,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=nk-builder /go/bin/nk /usr/local/bin/nk
+
+# Replace the base kubectl only when it is the version we rebuilt, so a base
+# image moving to another kubectl minor fails the build instead of silently
+# keeping (or mismatching) a binary.
+COPY --from=kubectl-builder /out/kubectl /tmp/kubectl
+RUN test "$(readlink /opt/kubectl/default)" = /opt/kubectl/v1.37 \
+    && install -m 0755 /tmp/kubectl /opt/kubectl/v1.37/kubectl \
+    && rm /tmp/kubectl \
+    && kubectl version --client | grep -q 'Client Version: v1.37.2'
 
 # Package chart in the format the deployer_helm runtime expects:
 #   /data/chart/chart.tar.gz  — tarball with chart/ at the top level
