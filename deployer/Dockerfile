@@ -3,14 +3,14 @@
 # go1.24.12/go1.25.0 respectively — both vulnerable to CVE-2026-39821
 # (fixed in go1.25.13 / go1.26.6). Building from source with a patched
 # toolchain fixes it regardless of which nkeys release tag is used.
-# go1.26.10 also fixes the later Go stdlib CVEs (CVE-2026-78667,
-# CVE-2026-111943) in nk.
+# go1.26.11 also fixes the later Go stdlib CVEs (CVE-2026-78667,
+# CVE-2026-111943, CVE-2026-97033 through CVE-2026-97043) in nk.
 #
 # nkeys releases (through v0.4.17) still require golang.org/x/crypto v0.52.0,
 # which is vulnerable to CVE-2026-56854 (fixed in 0.55.0). Build nk inside a
 # throwaway module that also requires a fixed x/crypto, so Go's minimum
 # version selection picks the newer one.
-FROM golang:1.26.10 AS nk-builder
+FROM golang:1.26.11 AS nk-builder
 ARG NK_VERSION=0.4.17
 ARG X_CRYPTO_VERSION=0.56.0
 WORKDIR /nk
