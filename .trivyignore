@@ -8,16 +8,13 @@
 # https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/issues/688
 # (still open as of this cleanup; comment there tracked it as fixed).
 
-# Google's deployer_helm base image (13.0.17, 2026-11-09). Its kubectl
-# (v1.37.2, go1.26.10) and helm (go1.27.2) binaries carry old Go modules:
-# golang.org/x/net and golang.org/x/text in kubectl, x/net and the go1.27.2
-# stdlib in helm. Our own nk binary is built with go1.26.10 and is not
-# affected by these. Remove each entry once a rescan of a newer base image
-# no longer reports it.
+# Google's deployer_helm base image (13.0.18). Its kubectl (v1.37) binary
+# carries old Go modules: golang.org/x/net and golang.org/x/text. Our own nk
+# binary is built with go1.26.11 and is not affected by these. Remove each
+# entry once a rescan of a newer base image no longer reports it.
 CVE-2026-56851
 CVE-2026-78661
 CVE-2026-78669
-CVE-2026-111943
 
 # Same base image: setuptools 70.3.0 vendored with Google's deployer
 # tooling. Not upgraded here to avoid changing the dependencies of Google's

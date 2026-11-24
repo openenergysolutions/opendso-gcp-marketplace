@@ -1,9 +1,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "2.0.3"
+  publishedVersion: "2.0.4"
   publishedVersionMetadata:
-    releaseNote: Security update. Upgrade Keycloak to 26.8.2 and switch Envoy to the distroless v1.38.9 image; rebuild the web UI apps, gms-api and ahs-sim on patched base packages (curl, brotli, expat, libxslt, certifi); move the deployer to the latest Google deployer_helm base and rebuild its nk tool with a patched golang.org/x/crypto.
+    releaseNote: Security update. Fix NGINX CVE-2026-123633 by moving the web UI apps to nginx 1.31.10; upgrade NATS to 2.14.10 and rebuild nats-auth-service and the deployer\'s nk tool with Go 1.26.11; rebuild the web UI apps, gms-api and ahs-sim on patched openssl and libxml2; move the deployer to the latest Google deployer_helm base.
   managedUpdates:
     kalmSupported: false
 

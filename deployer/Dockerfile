@@ -3,20 +3,38 @@
 # go1.24.12/go1.25.0 respectively — both vulnerable to CVE-2026-39821
 # (fixed in go1.25.13 / go1.26.6). Building from source with a patched
 # toolchain fixes it regardless of which nkeys release tag is used.
-# go1.26.10 also fixes the later Go stdlib CVEs (CVE-2026-78667,
-# CVE-2026-111943) in nk.
+# go1.26.11 also fixes the later Go stdlib CVEs (CVE-2026-78667,
+# CVE-2026-111943, CVE-2026-97033 through CVE-2026-97043) in nk.
 #
 # nkeys releases (through v0.4.17) still require golang.org/x/crypto v0.52.0,
 # which is vulnerable to CVE-2026-56854 (fixed in 0.55.0). Build nk inside a
 # throwaway module that also requires a fixed x/crypto, so Go's minimum
 # version selection picks the newer one.
-FROM golang:1.26.10 AS nk-builder
+FROM golang:1.26.11 AS nk-builder
 ARG NK_VERSION=0.4.17
 ARG X_CRYPTO_VERSION=0.56.0
 WORKDIR /nk
 RUN go mod init nkbuild \
     && go get "github.com/nats-io/nkeys@v${NK_VERSION}" "golang.org/x/crypto@v${X_CRYPTO_VERSION}" \
     && go build -o /go/bin/nk github.com/nats-io/nkeys/nk
+
+# Rebuild the base image's kubectl with a patched Go toolchain. deployer_helm
+# 13.0.18 ships the upstream kubectl v1.37.2 release binary, built with
+# go1.26.10, which Artifact Registry flags for the Go stdlib CVEs fixed in
+# go1.26.11 (CVE-2026-97033 through CVE-2026-97043). Same source version,
+# newer compiler. Drop this stage once the base ships a kubectl built with a
+# fixed Go.
+FROM golang:1.26.11 AS kubectl-builder
+ARG KUBECTL_VERSION=v1.37.2
+ENV GOTOOLCHAIN=local CGO_ENABLED=0
+RUN git clone --depth 1 --branch "${KUBECTL_VERSION}" https://github.com/kubernetes/kubernetes.git /src
+WORKDIR /src
+RUN go build -trimpath -ldflags "-s -w \
+      -X k8s.io/client-go/pkg/version.gitVersion=${KUBECTL_VERSION} \
+      -X k8s.io/component-base/version.gitVersion=${KUBECTL_VERSION} \
+      -X k8s.io/client-go/pkg/version.gitTreeState=clean \
+      -X k8s.io/component-base/version.gitTreeState=clean" \
+      -o /out/kubectl ./cmd/kubectl
 
 FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:latest
 
@@ -28,6 +46,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=nk-builder /go/bin/nk /usr/local/bin/nk
+
+# Replace the base kubectl only when it is the version we rebuilt, so a base
+# image moving to another kubectl minor fails the build instead of silently
+# keeping (or mismatching) a binary.
+COPY --from=kubectl-builder /out/kubectl /tmp/kubectl
+RUN test "$(readlink /opt/kubectl/default)" = /opt/kubectl/v1.37 \
+    && install -m 0755 /tmp/kubectl /opt/kubectl/v1.37/kubectl \
+    && rm /tmp/kubectl \
+    && kubectl version --client | grep -q 'Client Version: v1.37.2'
 
 # Package chart in the format the deployer_helm runtime expects:
 #   /data/chart/chart.tar.gz  — tarball with chart/ at the top level
